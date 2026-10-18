@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,7 +23,15 @@ jobs:
           cache: 'gradle'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
+          mkdir -p $HOME/.android
+          touch $HOME/.android/repositories.cfg || true
+          yes | sdkmanager --licenses || true
+          yes | sdkmanager --install "build-tools;34.0.0" "platforms;android-34" "platform-tools" || true
 
       - name: Cache debug keystore
         uses: actions/cache@v4
@@ -47,16 +55,17 @@ jobs:
 
       - name: Setup NDK
         run: |
-          sdkmanager --install "ndk;27.0.11718014" || sdkmanager --install "ndk;26.3.11579264" || echo "NDK install via sdkmanager fallback"
+          yes | sdkmanager --install "ndk;27.0.11718014" || yes | sdkmanager --install "ndk;26.3.11579264" || echo "NDK fallback"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.11718014" >> $GITHUB_ENV
           echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.11718014" >> $GITHUB_ENV
+          ls -la $ANDROID_HOME/ndk/ || true
 
-      - name: Build with Gradle
-        run: chmod +x ./gradlew && ./gradlew assembleRelease --no-daemon --stacktrace --info
+      - name: Build with Gradle (arm64 only)
+        run: chmod +x ./gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Sign APK
         run: |
-          find . -name "*.apk" -not -path "*/.* " -exec $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+          find . -name "*.apk" -not -path "*/.*" -exec $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
             --ks debug.keystore \
             --ks-pass pass:android \
             --key-pass pass:android \
