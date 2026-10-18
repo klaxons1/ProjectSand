@@ -1,0 +1,25 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
+  <SurfaceView android:id="@+id/sand_view" android:layout_width="match_parent" android:layout_height="0.000000px" android:layout_above="@+id/scroll_tools" android:layout_alignParentTop="true"/>
+  <HorizontalScrollView android:id="@+id/scroll_tools" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentLeft="true" android:layout_alignParentBottom="true">
+    <TableLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+      <TableRow android:id="@+id/tableRow1" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageButton android:id="@+id/tool_rotate" android:src="@drawable/rotate" android:onClick="tool" android:contentDescription="@string/rotate" style="@style/tool_image"/>
+        <ImageButton android:id="@+id/tool_save" android:visibility="gone" android:src="@drawable/save" android:onClick="tool" android:contentDescription="@string/save" style="@style/tool_image"/>
+        <ImageButton android:id="@+id/tool_zoom" android:src="@drawable/zoom" android:onClick="tool" android:contentDescription="@string/zoom" style="@style/tool_image"/>
+        <ImageButton android:id="@+id/tool_view" android:src="@drawable/view" android:onClick="tool" android:contentDescription="@string/view" style="@style/tool_image"/>
+        <ImageButton android:id="@+id/tool_spouts" android:src="@drawable/spouts" android:onClick="tool" android:contentDescription="@string/spouts" style="@style/tool_image"/>
+        <include layout="@layout/elements1"/>
+        <Button android:id="@+id/tool_fix" android:visibility="gone" android:text="Fix" android:onClick="tool" android:contentDescription="@string/debug" style="@style/tool_image"/>
+        <Button android:id="@+id/tool_segfault" android:visibility="gone" android:text="SegFault" android:onClick="tool" android:contentDescription="@string/debug" style="@style/tool_image"/>
+      </TableRow>
+      <TableRow android:id="@+id/tableRow2" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageButton android:id="@+id/tool_clear" android:src="@drawable/clear" android:onClick="tool" android:contentDescription="@string/clear" style="@style/tool_image"/>
+        <ImageButton android:id="@+id/tool_borders" android:src="@drawable/borders" android:onClick="tool" android:contentDescription="@string/borders" style="@style/tool_image"/>
+        <ImageButton android:id="@+id/tool_slomo" android:src="@drawable/pause" android:onClick="tool" android:contentDescription="@string/speed" style="@style/tool_image"/>
+        <ImageButton android:id="@+id/tool_settings" android:src="@drawable/cog" android:onClick="tool" android:contentDescription="@string/settings" style="@style/tool_image"/>
+        <include layout="@layout/elements2"/>
+        <Button android:id="@+id/tool_debug" android:visibility="gone" android:text="Debug" android:onClick="tool" android:contentDescription="@string/debug" style="@style/tool_image"/>
+      </TableRow>
+    </TableLayout>
+  </HorizontalScrollView>
+</RelativeLayout>

@@ -1,0 +1,21 @@
+<merge xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
+  <ImageButton android:id="@+id/tool_eraser" android:src="@drawable/eraser" android:onClick="tool" android:contentDescription="@string/eraser" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_wall" android:src="@drawable/wall" android:onClick="tool" android:contentDescription="@string/wall" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_glass" android:src="@drawable/glass" android:onClick="tool" android:contentDescription="@string/glass" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_ice" android:src="@drawable/ice" android:onClick="tool" android:contentDescription="@string/ice" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_pump" android:src="@drawable/pump" android:onClick="tool" android:contentDescription="@string/pump" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_wood" android:src="@drawable/wood" android:onClick="tool" android:contentDescription="@string/wood" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_oil" android:src="@drawable/oil" android:onClick="tool" android:contentDescription="@string/oil" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_wax" android:src="@drawable/wax" android:onClick="tool" android:contentDescription="@string/wax" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_gas" android:src="@drawable/gas" android:onClick="tool" android:contentDescription="@string/gas" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_fire" android:src="@drawable/fire" android:onClick="tool" android:contentDescription="@string/fire" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_lava" android:src="@drawable/lava" android:onClick="tool" android:contentDescription="@string/lava" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_sand" android:src="@drawable/sand" android:onClick="tool" android:contentDescription="@string/sand" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_salt" android:src="@drawable/salt" android:onClick="tool" android:contentDescription="@string/salt" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_filter" android:src="@drawable/filter" android:onClick="tool" android:contentDescription="@string/filter" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_mercury" android:src="@drawable/mercury" android:onClick="tool" android:contentDescription="@string/mercury" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_gunpowder" android:src="@drawable/gunpowder" android:onClick="tool" android:contentDescription="@string/gunpowder" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_c4" android:src="@drawable/c4" android:onClick="tool" android:contentDescription="@string/c4" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_thermite" android:src="@drawable/thermite" android:onClick="tool" android:contentDescription="@string/thermite" style="@style/tool_image"/>
+  <ImageButton android:id="@+id/tool_nuke" android:src="@drawable/nuke" android:onClick="tool" android:contentDescription="@string/nuke" style="@style/tool_image"/>
+</merge>

@@ -1,0 +1,10 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:gravity="0x00000011" android:orientation="1" android:layout_width="match_parent" android:layout_height="match_parent">
+  <SurfaceView android:id="@+id/sand_view" android:layout_width="match_parent" android:layout_height="0.000000dip" android:layout_weight="1.000000"/>
+  <Button android:id="@+id/menu_sandbox" android:text="@string/menu_sandbox" android:onClick="menu_button" style="@style/main_menu_button"/>
+  <Button android:id="@+id/menu_puzzle" android:visibility="gone" android:text="@string/menu_puzzle" android:onClick="menu_button" style="@style/main_menu_button"/>
+  <Button android:id="@+id/menu_editor" android:visibility="gone" android:text="@string/menu_editor" android:onClick="menu_button" style="@style/main_menu_button"/>
+  <Button android:id="@+id/menu_settings" android:text="@string/menu_settings" android:onClick="menu_button" style="@style/main_menu_button"/>
+  <Button android:textColor="#FFFFFF00" android:id="@+id/menu_rate" android:visibility="gone" android:text="@string/menu_rate" android:onClick="menu_button" style="@style/main_menu_button"/>
+  <Button android:id="@+id/menu_help" android:text="@string/menu_help" android:onClick="menu_button" style="@style/main_menu_button"/>
+  <Button android:id="@+id/menu_about" android:text="@string/menu_about" android:onClick="menu_button" style="@style/main_menu_button"/>
+</LinearLayout>
