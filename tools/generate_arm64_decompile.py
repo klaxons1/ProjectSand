@@ -92,6 +92,12 @@ def main() -> None:
         return f"hx_i128(0x{high:016X}ULL, 0x{low:016X}ULL)"
     src = re.sub(r"0x([0-9A-Fa-f]{17,32})LL\b", normalize_i128, src)
     src = src.replace("if ( _bss_start__ > 0 )", "if ( _bss_start__[0] > 0 )")
+    bad_record_read = "(_WORD *)((char *)&dword_0 + (_QWORD)v3 + 2)"
+    if src.count(bad_record_read) != 1:
+        raise SystemExit("Expected one draw_particle base-relative record access")
+    # v3 is already reconstructed as a native pointer into the shared arena;
+    # adding it to the unrelated ELF-header dword_0 symbol forms a wild address.
+    src = src.replace(bad_record_read, "(_WORD *)((char *)v3 + 2)")
     src = re.sub(r"\(unsigned __int8\)byte_33008(?!\[)", "(unsigned __int8)byte_33008[0]", src)
     src = re.sub(r"\bbyte_33008\s*(==|!=)", r"byte_33008[0] \1", src)
     src = src.replace("(_bss_start__ - 1)", "(_bss_start__[0] - 1)")
@@ -185,7 +191,15 @@ def main() -> None:
                     continue
                 suffix = ""
                 if old_size is not None:
-                    length = bss_array_size(name, old_size)
+                    if name in {"byte_33008", "byte_33018", "algn_E50AA4"}:
+                        # These are views into larger contiguous records/buffers;
+                        # their Hex-Rays declarator lengths only describe the first field.
+                        length = BSS_END - addr
+                    elif name == "word_4C7380":
+                        # Particle records are indexed at 10 shorts per particle.
+                        length = (BSS_END - addr) // 2
+                    else:
+                        length = bss_array_size(name, old_size)
                     suffix = f" (*)[{length}]"
                     expr = f"(*reinterpret_cast<{typ}{suffix}>(g_native_memory + {offset:#x}))"
                 else:

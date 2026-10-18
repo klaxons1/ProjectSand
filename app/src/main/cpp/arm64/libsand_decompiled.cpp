@@ -993,11 +993,11 @@ __attribute__((constructor)) static void initialize_native_memory() {
 #define unk_33018 byte_33018
 #define unk_E50B08 byte_E50B08
 #define unk_33000 (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0x0))
-#define byte_33008 (*reinterpret_cast<char (*)[1]>(g_native_memory + 0x8))
+#define byte_33008 (*reinterpret_cast<char (*)[14802672]>(g_native_memory + 0x8))
 #define dword_3300C (*reinterpret_cast<int *>(g_native_memory + 0xc))
 #define byte_33010 (*reinterpret_cast<char *>(g_native_memory + 0x10))
 #define dword_33014 (*reinterpret_cast<int *>(g_native_memory + 0x14))
-#define byte_33018 (*reinterpret_cast<_BYTE (*)[16]>(g_native_memory + 0x18))
+#define byte_33018 (*reinterpret_cast<_BYTE (*)[14802656]>(g_native_memory + 0x18))
 #define byte_33028 (*reinterpret_cast<char *>(g_native_memory + 0x28))
 #define byte_33058 (*reinterpret_cast<char *>(g_native_memory + 0x58))
 #define byte_33070 (*reinterpret_cast<char *>(g_native_memory + 0x70))
@@ -1041,7 +1041,7 @@ __attribute__((constructor)) static void initialize_native_memory() {
 #define byte_4C7374 (*reinterpret_cast<char *>(g_native_memory + 0x494374))
 #define byte_4C7375 (*reinterpret_cast<char *>(g_native_memory + 0x494375))
 #define byte_4C7378 (*reinterpret_cast<char *>(g_native_memory + 0x494378))
-#define word_4C7380 (*reinterpret_cast<__int16 (*)[72]>(g_native_memory + 0x494380))
+#define word_4C7380 (*reinterpret_cast<__int16 (*)[5000636]>(g_native_memory + 0x494380))
 #define byte_4C7410 (*reinterpret_cast<_BYTE (*)[9996544]>(g_native_memory + 0x494410))
 #define unk_E4FD10 (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1cd10))
 #define unk_E50000 (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1d000))
@@ -1076,7 +1076,7 @@ __attribute__((constructor)) static void initialize_native_memory() {
 #define dword_E50A98 (*reinterpret_cast<int *>(g_native_memory + 0xe1da98))
 #define word_E50AA0 (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1daa0))
 #define word_E50AA2 (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1daa2))
-#define algn_E50AA4 (*reinterpret_cast<_BYTE (*)[12]>(g_native_memory + 0xe1daa4))
+#define algn_E50AA4 (*reinterpret_cast<_BYTE (*)[1108]>(g_native_memory + 0xe1daa4))
 #define dword_E50AB0 (*reinterpret_cast<int *>(g_native_memory + 0xe1dab0))
 #define qword_E50AB8 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dab8))
 #define byte_E50AD8 (*reinterpret_cast<char *>(g_native_memory + 0xe1dad8))
@@ -1655,7 +1655,7 @@ LABEL_3:
       v7 = HIDWORD(qword_33518[150003 * (unsigned __int8)byte_33516 + 1]);
       if ( v5 == 300000 )
         v5 = 0;
-      v8 = *(_WORD *)((char *)&dword_0 + (_QWORD)v3 + 2);
+      v8 = *(_WORD *)((char *)v3 + 2);
       *((_WORD *)v6 + 2) = *v3;
       *((_WORD *)v6 + 3) = v8;
       if ( v7 == v5 )

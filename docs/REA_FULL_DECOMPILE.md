@@ -10,7 +10,7 @@ The requested ABI is `arm64-v8a`. The reference inputs are `docs/lib/arm64-v8a/l
 
 The generator maps the ELF `.data` and `.bss` address range into one contiguous, zero-initialized native memory arena. It copies the original `.data` bytes into the start of that arena and maps the decompiler's named globals at their original offsets. This is needed because engine code indexes through the decompiler's `byte_33008` base across the `.data`/`.bss` boundary. The `.bss` range remains `0x33510`–`0xE50EF8` (size `0xE1D9E8`). A referenced read-only table is kept in the generated source. ELF startup/libc++abi teardown shims are omitted in favor of Android's runtime, the private JNI dispatch is expressed through the NDK `JNIEnv` API, and both native entry points retain unmangled `JNIEXPORT`/`JNICALL` linkage for ART lookup.
 
-The generator also makes several decompiler pointer/integer casts explicit and preserves unsigned initializer bit patterns. These are source-normalization steps, not proof that every inferred type or operation matches the original behavior.
+The generator also makes several decompiler pointer/integer casts explicit and preserves unsigned initializer bit patterns. It expands the decompiler's truncated array views for the material table, particle records, and native-window buffer to the bounds of the shared arena. It rewrites one invalid `dword_0 + particle_pointer` expression in `draw_particle` to read the field at `particle_pointer + 2`, matching the ARM64 load from `[x7, #2]`. These corrections address concrete source-level faults but are not proof that every inferred type or operation matches the original behavior.
 
 ## Verification and remaining work
 
