@@ -54,9 +54,14 @@ The two decompiler globals at `0x4C7380` and `0x4C7410` are not separate arrays.
 | `16` | Mutable per-particle counter (incremented, cleared, and assigned by update routines; exact gameplay meaning remains under audit). |
 | Other bytes | Not assigned semantic names until their use is fully traced. |
 
+### Movement routine findings
+
+- `seek_gas()` seeds the shared eight-direction scan cursor from the engine RNG, tests neighbors through `near_point()`, then relocates the gas particle record and cell-grid entry to the match. Its two `byte_E50A96` paths apply different boundary/fallback checks; that flag remains unnamed pending a full lifecycle trace.
+- `seek_particle()` takes its x/y step from direction-table entries 4 and 5, compares the adjacent material property at offset 1 (the density ordering used elsewhere), and selects the material motion family from the property record: category 3 dispatches to `slide_powder()`, category 4 to `slide_liquid()`. The generated function now names the main position, delta, density, scan, and target-cell locals, while preserving the original branches.
+
 ## Verification and remaining work
 
-- **Passed:** generator execution; strict host `g++ -std=c++17 -fsyntax-only` using temporary host Android/JNI stubs (zero syntax errors); host object compilation; `nm` confirms both unmangled JNI exports; focused assertions confirm the startup mode-7 path and that particle accesses use the recovered record-relative accessors; `git diff --check`.
+- **Passed:** generator execution; strict host `g++ -std=c++17 -fsyntax-only` using temporary host Android/JNI stubs (zero syntax errors); host object compilation; `nm` confirms both unmangled JNI exports; focused assertions confirm the startup mode-7 path and particle-record accessors; `git diff --check`.
 - **Not run here:** Android/NDK compile and link. This environment has no Android NDK toolchain or Java/JDK executable available.
 - **External Gradle log received:** it linked `sand_engine.cpp.o` and `ported_decompile.cpp.o` and failed on undefined simulation globals (`g_zoom_raw`, `g_selectedMat`, etc.). That log used the old CMake source list, so it did not build this generated source. The current `CMakeLists.txt` lists only `arm64/libsand_decompiled.cpp`; do not fix that old failure by adding simulation stubs.
 - **Not run:** device/emulator behavior comparison against the original ARM64 library.

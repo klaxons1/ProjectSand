@@ -339,6 +339,106 @@ def main() -> None:
         raise SystemExit("Could not locate particle byte-view alias for accessors")
     generated = generated[:record_alias.end()] + accessors + generated[record_alias.end():]
 
+    # Make the gas-particle update readable without changing its control flow:
+    # distinguish RNG state, search results, record pointers, and grid addresses.
+    start_marker = "//----- (000000000000FFF8)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    seek_gas = generated[start:end]
+    for old_name, semantic_name in {
+        "v0": "rng_first_pass",
+        "v1": "rng_direction_parity",
+        "v2": "rng_next_state",
+        "v3": "rng_direction_sample",
+        "v4": "scan_step",
+        "v5": "destination_x",
+        "v6": "destination_y",
+        "v7": "grid_width",
+        "v8": "particle_index",
+        "v9": "source_particle_record",
+        "v10": "destination_particle_record",
+        "v11": "destination_cell_offset",
+        "v12": "cell_state_grid_base",
+        "v13": "current_particle_index",
+        "v14": "found_x",
+        "v15": "found_y",
+        "v16": "current_particle_record",
+        "v17": "destination_record_slot",
+        "v18": "destination_cell",
+    }.items():
+        seek_gas = re.sub(r"\b" + old_name + r"\b", semantic_name, seek_gas)
+    generated = generated[:start] + seek_gas + generated[end:]
+
+    # Annotate the principal variables in the particle movement scheduler.
+    # Names follow direct uses: record coordinates, direction deltas, density
+    # checks, scan progress, and the grid slot being moved into.
+    start_marker = "//----- (000000000000CDFC)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    seek_particle = generated[start:end]
+    for old_name, semantic_name in {
+        "v0": "active_particle_index",
+        "v1": "direction_index",
+        "v2": "direction_entry",
+        "v4": "direction_delta_y",
+        "v5": "particle_x",
+        "v6": "direction_delta_x",
+        "v7": "particle_y",
+        "v8": "adjacent_x",
+        "v9": "adjacent_y",
+        "v10": "particle_density",
+        "v11": "scan_counter",
+        "v12": "lower_y_bound",
+        "v13": "scan_x",
+        "v14": "scan_distance",
+        "v15": "scan_iteration",
+        "v17": "working_particle_index",
+        "v18": "working_index_copy",
+        "v19": "working_particle_record",
+        "v20": "particle_material_id_value",
+        "v21": "slide_variant",
+        "v22": "material_motion_type",
+        "v23": "minimum_powder_progress",
+        "v24": "liquid_move_succeeded",
+        "v25": "powder_move_result",
+        "v26": "transition_particle_record",
+        "v27": "random_state_snapshot",
+        "v28": "particle_motion_class",
+        "v29": "state_particle_index",
+        "v30": "next_particle_state",
+        "v31": "target_particle_found",
+        "v32": "retry_particle_record",
+        "v33": "retry_particle_x",
+        "v34": "retry_particle_y",
+        "v35": "displacement_x",
+        "v36": "displacement_y",
+        "v37": "moving_particle_record",
+        "v38": "moving_state_record",
+        "v39": "packed_state_byte",
+        "v40": "previous_x",
+        "v41": "previous_y",
+        "v42": "next_x",
+        "v43": "next_y",
+        "v44": "target_particle_found_again",
+        "v45": "target_x",
+        "v46": "target_y",
+        "v47": "target_particle_index",
+        "v48": "target_particle_record",
+        "v49": "grid_width",
+        "v50": "target_record_slot",
+        "v51": "cell_grid_base",
+        "v52": "target_cell",
+        "v53": "direction_entry_offset",
+        "v54": "saved_density_for_liquid",
+        "v55": "saved_density_for_powder",
+        "v56": "saved_density_for_retry",
+        "v57": "saved_density_for_scan",
+        "v58": "saved_density_for_fallback",
+        "v59": "original_cell_material",
+    }.items():
+        seek_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, seek_particle)
+    generated = generated[:start] + seek_particle + generated[end:]
+
     # Name the key locals in the particle renderer instead of carrying the
     # decompiler's opaque vN labels through the repaired memory access.
     start_marker = "//----- (00000000000062B8)"

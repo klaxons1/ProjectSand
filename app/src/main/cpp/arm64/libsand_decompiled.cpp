@@ -6071,317 +6071,317 @@ LABEL_15:
 //----- (000000000000CDFC) ----------------------------------------------------
 __int64 __fastcall seek_particle()
 {
-  unsigned int v0; // w26
-  __int64 v1; // x12
-  _WORD *v2; // x0
+  unsigned int active_particle_index; // w26
+  __int64 direction_index; // x12
+  _WORD *direction_entry; // x0
   __int16 *v3; // x4
-  __int16 v4; // w6
-  int v5; // w19
-  __int16 v6; // w27
-  int v7; // w20
-  int v8; // w0
-  int v9; // w9
-  unsigned int v10; // w11
-  int v11; // w1
-  int v12; // w10
-  int v13; // w3
-  int v14; // w23
-  int v15; // w2
+  __int16 direction_delta_y; // w6
+  int particle_x; // w19
+  __int16 direction_delta_x; // w27
+  int particle_y; // w20
+  int adjacent_x; // w0
+  int adjacent_y; // w9
+  unsigned int particle_density; // w11
+  int scan_counter; // w1
+  int lower_y_bound; // w10
+  int scan_x; // w3
+  int scan_distance; // w23
+  int scan_iteration; // w2
   __int64 result; // x0
-  int v17; // w2
-  __int64 v18; // x1
-  __int16 *v19; // x5
-  __int64 v20; // x3
-  unsigned __int8 v21; // w19
-  int v22; // w0
-  unsigned int v23; // w23
-  _BOOL4 v24; // w0
-  int v25; // w0
-  __int16 *v26; // x1
-  __int64 v27; // x6
-  int v28; // w3
-  unsigned __int64 v29; // x0
-  char v30; // w1
-  bool v31; // w0
-  __int16 *v32; // x2
-  __int16 v33; // w0
-  __int16 v34; // w1
-  __int16 v35; // h8
-  __int16 v36; // h10
-  __int16 *v37; // x0
-  __int16 *v38; // x3
-  char v39; // w1
-  __int16 v40; // w27
-  __int16 v41; // w28
-  int v42; // w4
-  int v43; // w8
-  bool v44; // w0
-  int v45; // w4
-  int v46; // w8
-  int v47; // w5
-  __int16 *v48; // x0
-  int v49; // w1
-  __int16 *v50; // x10
-  __int64 v51; // x0
-  __int64 v52; // x9
-  __int64 v53; // x4
-  char v54; // [xsp+78h] [xbp-18h]
-  unsigned __int8 v55; // [xsp+78h] [xbp-18h]
-  unsigned __int8 v56; // [xsp+78h] [xbp-18h]
-  char v57; // [xsp+78h] [xbp-18h]
-  char v58; // [xsp+78h] [xbp-18h]
-  char v59; // [xsp+78h] [xbp-18h]
+  int working_particle_index; // w2
+  __int64 working_index_copy; // x1
+  __int16 *working_particle_record; // x5
+  __int64 particle_material_id_value; // x3
+  unsigned __int8 slide_variant; // w19
+  int material_motion_type; // w0
+  unsigned int minimum_powder_progress; // w23
+  _BOOL4 liquid_move_succeeded; // w0
+  int powder_move_result; // w0
+  __int16 *transition_particle_record; // x1
+  __int64 random_state_snapshot; // x6
+  int particle_motion_class; // w3
+  unsigned __int64 state_particle_index; // x0
+  char next_particle_state; // w1
+  bool target_particle_found; // w0
+  __int16 *retry_particle_record; // x2
+  __int16 retry_particle_x; // w0
+  __int16 retry_particle_y; // w1
+  __int16 displacement_x; // h8
+  __int16 displacement_y; // h10
+  __int16 *moving_particle_record; // x0
+  __int16 *moving_state_record; // x3
+  char packed_state_byte; // w1
+  __int16 previous_x; // w27
+  __int16 previous_y; // w28
+  int next_x; // w4
+  int next_y; // w8
+  bool target_particle_found_again; // w0
+  int target_x; // w4
+  int target_y; // w8
+  int target_particle_index; // w5
+  __int16 *target_particle_record; // x0
+  int grid_width; // w1
+  __int16 *target_record_slot; // x10
+  __int64 cell_grid_base; // x0
+  __int64 target_cell; // x9
+  __int64 direction_entry_offset; // x4
+  char saved_density_for_liquid; // [xsp+78h] [xbp-18h]
+  unsigned __int8 saved_density_for_powder; // [xsp+78h] [xbp-18h]
+  unsigned __int8 saved_density_for_retry; // [xsp+78h] [xbp-18h]
+  char saved_density_for_scan; // [xsp+78h] [xbp-18h]
+  char saved_density_for_fallback; // [xsp+78h] [xbp-18h]
+  char original_cell_material; // [xsp+78h] [xbp-18h]
 
-  v0 = g_current_particle_index;
-  v1 = (unsigned __int8)g_direction_index;
-  v2 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+  active_particle_index = g_current_particle_index;
+  direction_index = (unsigned __int8)g_direction_index;
+  direction_entry = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
   v3 = &g_particle_records[10 * g_current_particle_index];
-  v4 = v2[5];
-  v5 = *v3;
-  v6 = v2[4];
-  v7 = v3[1];
-  v8 = (__int16)(v6 + *v3);
-  v9 = (__int16)(v4 + v3[1]);
-  v10 = (unsigned __int8)g_material_properties[12 * *((unsigned __int8 *)v3 + 8) + 1];
-  if ( *(_BYTE *)(g_cell_state_grid + 8LL * (v8 + v9 * g_view_width[0])) != 0
-    && (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v8 + v9 * g_view_width[0])) + 1] >= v10 )
+  direction_delta_y = direction_entry[5];
+  particle_x = *v3;
+  direction_delta_x = direction_entry[4];
+  particle_y = v3[1];
+  adjacent_x = (__int16)(direction_delta_x + *v3);
+  adjacent_y = (__int16)(direction_delta_y + v3[1]);
+  particle_density = (unsigned __int8)g_material_properties[12 * *((unsigned __int8 *)v3 + 8) + 1];
+  if ( *(_BYTE *)(g_cell_state_grid + 8LL * (adjacent_x + adjacent_y * g_view_width[0])) != 0
+    && (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (adjacent_x + adjacent_y * g_view_width[0])) + 1] >= particle_density )
   {
-    v17 = g_current_particle_index;
+    working_particle_index = g_current_particle_index;
     if ( (*((_BYTE *)v3 + 9) & 2) == 0 )
       goto LABEL_19;
-    if ( v8 <= 1 || v9 <= 1 || v9 >= g_view_height - 2 || v8 >= g_view_width[0] - 2 )
+    if ( adjacent_x <= 1 || adjacent_y <= 1 || adjacent_y >= g_view_height - 2 || adjacent_x >= g_view_width[0] - 2 )
     {
-      v34 = v3[1];
-      v33 = *v3;
+      retry_particle_y = v3[1];
+      retry_particle_x = *v3;
       goto LABEL_51;
     }
-    v57 = g_material_properties[12 * *((unsigned __int8 *)v3 + 8) + 1];
-    v31 = return_particle(v8, v9, 1, 0);
-    LOBYTE(v10) = v57;
-    if ( !v31 || ((result = HIBYTE(g_particle_records[10 * dword_E50A00 + 4])) & 2) == 0 )
+    saved_density_for_scan = g_material_properties[12 * *((unsigned __int8 *)v3 + 8) + 1];
+    target_particle_found = return_particle(adjacent_x, adjacent_y, 1, 0);
+    LOBYTE(particle_density) = saved_density_for_scan;
+    if ( !target_particle_found || ((result = HIBYTE(g_particle_records[10 * dword_E50A00 + 4])) & 2) == 0 )
     {
-      v1 = (unsigned __int8)g_direction_index;
-      v32 = &g_particle_records[10 * g_current_particle_index];
-      v33 = *v32;
-      v34 = v32[1];
+      direction_index = (unsigned __int8)g_direction_index;
+      retry_particle_record = &g_particle_records[10 * g_current_particle_index];
+      retry_particle_x = *retry_particle_record;
+      retry_particle_y = retry_particle_record[1];
 LABEL_51:
-      v58 = v10;
-      scan_line(v33, v34, g_direction_lut[16 * v1], g_direction_lut[16 * v1 + 1], 0, 4u);
-      LOBYTE(v10) = v58;
-      v17 = g_current_particle_index;
+      saved_density_for_fallback = particle_density;
+      scan_line(retry_particle_x, retry_particle_y, g_direction_lut[16 * direction_index], g_direction_lut[16 * direction_index + 1], 0, 4u);
+      LOBYTE(particle_density) = saved_density_for_fallback;
+      working_particle_index = g_current_particle_index;
 LABEL_19:
-      v18 = v17;
-      v19 = &g_particle_records[10 * v17];
-      result = v19[6] & 7;
+      working_index_copy = working_particle_index;
+      working_particle_record = &g_particle_records[10 * working_particle_index];
+      result = working_particle_record[6] & 7;
       if ( hx_cast<_DWORD>(result) == 3 )
       {
-        *((_BYTE *)v19 + 12) &= 0xF8u;
+        *((_BYTE *)working_particle_record + 12) &= 0xF8u;
         return result;
       }
-      v20 = *((unsigned __int8 *)v19 + 8);
-      if ( (v19[6] & 7) != 0 )
+      particle_material_id_value = *((unsigned __int8 *)working_particle_record + 8);
+      if ( (working_particle_record[6] & 7) != 0 )
       {
-        v21 = hx_cast<_DWORD>(result) == 1;
-        v22 = (unsigned __int8)g_shared_engine_data[12 * v20 + 20];
-        if ( v22 == 3 )
+        slide_variant = hx_cast<_DWORD>(result) == 1;
+        material_motion_type = (unsigned __int8)g_shared_engine_data[12 * particle_material_id_value + 20];
+        if ( material_motion_type == 3 )
         {
-          v25 = (unsigned __int8)slide_powder(g_particle_records[10 * v17], g_particle_records[10 * v17 + 1], v17, v21, v10);
+          powder_move_result = (unsigned __int8)slide_powder(g_particle_records[10 * working_particle_index], g_particle_records[10 * working_particle_index + 1], working_particle_index, slide_variant, particle_density);
           goto LABEL_28;
         }
-        if ( v22 != 4 )
+        if ( material_motion_type != 4 )
         {
 LABEL_30:
-          v26 = &g_particle_records[10 * v18];
-          result = hx_cast<_BYTE>(v26[6]) & 0xF8;
-          *((_BYTE *)v26 + 12) = result;
+          transition_particle_record = &g_particle_records[10 * working_index_copy];
+          result = hx_cast<_BYTE>(transition_particle_record[6]) & 0xF8;
+          *((_BYTE *)transition_particle_record + 12) = result;
           return result;
         }
-        v54 = v10;
-        v23 = 0;
-        v24 = slide_liquid(g_particle_records[10 * v17], v19[1], v17, v21, v10);
-        LOBYTE(v10) = v54;
+        saved_density_for_liquid = particle_density;
+        minimum_powder_progress = 0;
+        liquid_move_succeeded = slide_liquid(g_particle_records[10 * working_particle_index], working_particle_record[1], working_particle_index, slide_variant, particle_density);
+        LOBYTE(particle_density) = saved_density_for_liquid;
       }
       else
       {
-        v27 = g_random_state;
-        v28 = (unsigned __int8)g_shared_engine_data[12 * v20 + 20];
-        g_random_state = (v27 - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(v27 - 0x61C8864680B583EBLL) >> 27);
-        v21 = !(((unsigned __int8)(v27 + 21)
-               ^ (unsigned __int8)((unsigned __int64)(v27 - 0x61C8864680B583EBLL) >> 27))
+        random_state_snapshot = g_random_state;
+        particle_motion_class = (unsigned __int8)g_shared_engine_data[12 * particle_material_id_value + 20];
+        g_random_state = (random_state_snapshot - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(random_state_snapshot - 0x61C8864680B583EBLL) >> 27);
+        slide_variant = !(((unsigned __int8)(random_state_snapshot + 21)
+               ^ (unsigned __int8)((unsigned __int64)(random_state_snapshot - 0x61C8864680B583EBLL) >> 27))
               & 1);
-        if ( v28 == 3 )
+        if ( particle_motion_class == 3 )
         {
-          v23 = 1;
+          minimum_powder_progress = 1;
 LABEL_26:
-          v55 = v10;
-          v25 = (unsigned __int8)slide_powder(g_particle_records[10 * v18], g_particle_records[10 * v18 + 1], v17, v21, v10);
-          if ( hx_cast<unsigned __int8>(v25) < v23 )
-            v25 = (unsigned __int8)slide_powder(
+          saved_density_for_powder = particle_density;
+          powder_move_result = (unsigned __int8)slide_powder(g_particle_records[10 * working_index_copy], g_particle_records[10 * working_index_copy + 1], working_particle_index, slide_variant, particle_density);
+          if ( hx_cast<unsigned __int8>(powder_move_result) < minimum_powder_progress )
+            powder_move_result = (unsigned __int8)slide_powder(
                                      g_particle_records[10 * g_current_particle_index],
                                      g_particle_records[10 * g_current_particle_index + 1],
                                      g_current_particle_index,
-                                     v21 ^ 1u,
-                                     v55);
+                                     slide_variant ^ 1u,
+                                     saved_density_for_powder);
 LABEL_28:
-          if ( v25 == 0 )
+          if ( powder_move_result == 0 )
           {
-            v18 = g_current_particle_index;
+            working_index_copy = g_current_particle_index;
             goto LABEL_30;
           }
           goto LABEL_77;
         }
-        if ( v28 != 4 )
+        if ( particle_motion_class != 4 )
           goto LABEL_30;
-        v56 = v10;
-        v23 = 1;
-        v24 = slide_liquid(g_particle_records[10 * v17], v19[1], v17, v21, v10);
-        LOBYTE(v10) = v56;
-        if ( !v24 )
+        saved_density_for_retry = particle_density;
+        minimum_powder_progress = 1;
+        liquid_move_succeeded = slide_liquid(g_particle_records[10 * working_particle_index], working_particle_record[1], working_particle_index, slide_variant, particle_density);
+        LOBYTE(particle_density) = saved_density_for_retry;
+        if ( !liquid_move_succeeded )
         {
-          v24 = slide_liquid(
+          liquid_move_succeeded = slide_liquid(
                   g_particle_records[10 * g_current_particle_index],
                   g_particle_records[10 * g_current_particle_index + 1],
                   g_current_particle_index,
-                  v21 ^ 1,
-                  v56);
-          LOBYTE(v10) = v56;
+                  slide_variant ^ 1,
+                  saved_density_for_retry);
+          LOBYTE(particle_density) = saved_density_for_retry;
         }
       }
-      if ( v24 )
+      if ( liquid_move_succeeded )
       {
 LABEL_77:
-        v30 = 1;
+        next_particle_state = 1;
         goto LABEL_48;
       }
-      v17 = g_current_particle_index;
-      v18 = g_current_particle_index;
+      working_particle_index = g_current_particle_index;
+      working_index_copy = g_current_particle_index;
       goto LABEL_26;
     }
   }
   else
   {
-    if ( v8 <= 1 || (v11 = v9 <= 1) != 0 || (v12 = g_view_height - 2, v9 >= v12) || v8 >= g_view_width[0] - 2 )
+    if ( adjacent_x <= 1 || (scan_counter = adjacent_y <= 1) != 0 || (lower_y_bound = g_view_height - 2, adjacent_y >= lower_y_bound) || adjacent_x >= g_view_width[0] - 2 )
     {
       if ( (g_particle_records[10 * g_current_particle_index + 4] & 0x200) != 0 )
       {
         drop_interupted(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
-        v0 = g_current_particle_index;
+        active_particle_index = g_current_particle_index;
       }
       if ( byte_E50A96 == 0 )
       {
-        v29 = v0;
-        v30 = 9;
-        return (__int64)set_state((__int16 *)v29, v30);
+        state_particle_index = active_particle_index;
+        next_particle_state = 9;
+        return (__int64)set_state((__int16 *)state_particle_index, next_particle_state);
       }
       scan_line(
-        g_particle_records[10 * v0],
-        g_particle_records[10 * v0 + 1],
+        g_particle_records[10 * active_particle_index],
+        g_particle_records[10 * active_particle_index + 1],
         g_direction_lut[16 * (unsigned __int8)g_direction_index],
         g_direction_lut[16 * (unsigned __int8)g_direction_index + 1],
         0,
         4u);
-      v30 = 7;
+      next_particle_state = 7;
 LABEL_48:
-      v29 = (unsigned int)g_current_particle_index;
-      return (__int64)set_state((__int16 *)v29, v30);
+      state_particle_index = (unsigned int)g_current_particle_index;
+      return (__int64)set_state((__int16 *)state_particle_index, next_particle_state);
     }
     LOWORD(v3) = v3[1];
-    LOWORD(v13) = v5;
-    v14 = (unsigned __int8)byte_E50A97;
+    LOWORD(scan_x) = particle_x;
+    scan_distance = (unsigned __int8)byte_E50A97;
     while ( 1 )
     {
-      v15 = hx_cast<unsigned __int8>(v11);
-      v13 = (__int16)(v6 + v13);
-      LODWORD(v3) = (__int16)(v4 + hx_cast<_WORD>(v3));
-      if ( v11 == (unsigned __int8)byte_E50A97 )
+      scan_iteration = hx_cast<unsigned __int8>(scan_counter);
+      scan_x = (__int16)(direction_delta_x + scan_x);
+      LODWORD(v3) = (__int16)(direction_delta_y + hx_cast<_WORD>(v3));
+      if ( scan_counter == (unsigned __int8)byte_E50A97 )
         break;
-      ++v11;
-      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (v13 + g_view_width[0] * hx_cast<int>(v3))) != 0 )
+      ++scan_counter;
+      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (scan_x + g_view_width[0] * hx_cast<int>(v3))) != 0 )
         break;
-      if ( v13 <= 1 || hx_cast<int>(v3) <= 1 || v12 <= hx_cast<int>(v3) || g_view_width[0] - 2 <= v13 )
+      if ( scan_x <= 1 || hx_cast<int>(v3) <= 1 || lower_y_bound <= hx_cast<int>(v3) || g_view_width[0] - 2 <= scan_x )
       {
         if ( byte_E50A96 != 0 )
-          v14 = v15;
-        if ( v14 == 0 )
-          return shift_drop(v5, v7);
+          scan_distance = scan_iteration;
+        if ( scan_distance == 0 )
+          return shift_drop(particle_x, particle_y);
         goto LABEL_53;
       }
     }
-    LOWORD(v14) = v15;
-    if ( v15 == 0 )
-      return shift_drop(v5, v7);
+    LOWORD(scan_distance) = scan_iteration;
+    if ( scan_iteration == 0 )
+      return shift_drop(particle_x, particle_y);
 LABEL_53:
-    v35 = v14 * v6;
-    v36 = v14 * v4;
+    displacement_x = scan_distance * direction_delta_x;
+    displacement_y = scan_distance * direction_delta_y;
     while ( 1 )
     {
-      if ( (v0 & 0x80000000) == 0 )
+      if ( (active_particle_index & 0x80000000) == 0 )
       {
-        v37 = &g_particle_records[10 * v0];
-        if ( (*((_BYTE *)v37 + 9) & 4) != 0 )
+        moving_particle_record = &g_particle_records[10 * active_particle_index];
+        if ( (*((_BYTE *)moving_particle_record + 9) & 4) != 0 )
         {
-          if ( *((_BYTE *)v37 + 16) != 0 )
-            *((_BYTE *)v37 + 16) += v14;
+          if ( *((_BYTE *)moving_particle_record + 16) != 0 )
+            *((_BYTE *)moving_particle_record + 16) += scan_distance;
           else
-            *((_BYTE *)v37 + 16) = v14;
+            *((_BYTE *)moving_particle_record + 16) = scan_distance;
         }
-        v38 = &g_particle_records[10 * v0];
-        if ( (*((_BYTE *)v38 + 9) & 1) == 0 )
+        moving_state_record = &g_particle_records[10 * active_particle_index];
+        if ( (*((_BYTE *)moving_state_record + 9) & 1) == 0 )
         {
-          v39 = *((_BYTE *)v38 + 12);
-          *((_BYTE *)v38 + 9) |= 2u;
-          *((_BYTE *)v38 + 12) = v39 & 0xC7 | 8;
+          packed_state_byte = *((_BYTE *)moving_state_record + 12);
+          *((_BYTE *)moving_state_record + 9) |= 2u;
+          *((_BYTE *)moving_state_record + 12) = packed_state_byte & 0xC7 | 8;
         }
       }
-      v40 = v5;
-      v41 = v7;
-      v42 = (__int16)(v5 + v35);
-      if ( v42 <= 1 || (v43 = (__int16)(v7 + v36)) <= 1 || v43 >= g_view_height - 2 || v42 >= g_view_width[0] - 2 )
+      previous_x = particle_x;
+      previous_y = particle_y;
+      next_x = (__int16)(particle_x + displacement_x);
+      if ( next_x <= 1 || (next_y = (__int16)(particle_y + displacement_y)) <= 1 || next_y >= g_view_height - 2 || next_x >= g_view_width[0] - 2 )
       {
         drop_interupted(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
-        set_state((__int16 *)v0, 9);
+        set_state((__int16 *)active_particle_index, 9);
       }
       else
       {
-        v59 = *(_BYTE *)(g_cell_state_grid + 8LL * (v5 + g_view_width[0] * v7));
-        v44 = return_particle(v5, v7, 1, 0);
-        v45 = (__int16)(v5 + v35);
-        v46 = (__int16)(v7 + v36);
-        if ( v44 )
+        original_cell_material = *(_BYTE *)(g_cell_state_grid + 8LL * (particle_x + g_view_width[0] * particle_y));
+        target_particle_found_again = return_particle(particle_x, particle_y, 1, 0);
+        target_x = (__int16)(particle_x + displacement_x);
+        target_y = (__int16)(particle_y + displacement_y);
+        if ( target_particle_found_again )
         {
-          v47 = dword_E50A00;
-          v48 = &g_particle_records[10 * dword_E50A00];
-          if ( (*((_BYTE *)v48 + 9) & 4) != 0 )
+          target_particle_index = dword_E50A00;
+          target_particle_record = &g_particle_records[10 * dword_E50A00];
+          if ( (*((_BYTE *)target_particle_record + 9) & 4) != 0 )
           {
-            if ( *((_BYTE *)v48 + 16) != 0 )
-              ++*((_BYTE *)v48 + 16);
+            if ( *((_BYTE *)target_particle_record + 16) != 0 )
+              ++*((_BYTE *)target_particle_record + 16);
             else
-              *((_BYTE *)v48 + 16) = 1;
+              *((_BYTE *)target_particle_record + 16) = 1;
           }
-          v49 = g_view_width[0];
-          v50 = &g_particle_records[10 * v47];
-          v51 = g_cell_state_grid;
-          *v50 = v45;
-          v52 = v51 + 8LL * (v45 + v46 * v49);
-          v50[1] = v46;
-          *(_BYTE *)v52 = v59;
-          *(_DWORD *)(v52 + 4) = v47;
+          grid_width = g_view_width[0];
+          target_record_slot = &g_particle_records[10 * target_particle_index];
+          cell_grid_base = g_cell_state_grid;
+          *target_record_slot = target_x;
+          target_cell = cell_grid_base + 8LL * (target_x + target_y * grid_width);
+          target_record_slot[1] = target_y;
+          *(_BYTE *)target_cell = original_cell_material;
+          *(_DWORD *)(target_cell + 4) = target_particle_index;
         }
         else
         {
-          v49 = g_view_width[0];
-          v51 = g_cell_state_grid;
-          *(_BYTE *)(g_cell_state_grid + 8LL * ((__int16)(v5 + v35) + (__int16)(v7 + v36) * g_view_width[0])) = v59;
+          grid_width = g_view_width[0];
+          cell_grid_base = g_cell_state_grid;
+          *(_BYTE *)(g_cell_state_grid + 8LL * ((__int16)(particle_x + displacement_x) + (__int16)(particle_y + displacement_y) * g_view_width[0])) = original_cell_material;
         }
-        *(_BYTE *)(v51 + 8LL * (v5 + v49 * v7)) = 0;
+        *(_BYTE *)(cell_grid_base + 8LL * (particle_x + grid_width * particle_y)) = 0;
       }
-      v53 = 16LL * (unsigned __int8)g_direction_index;
-      v5 = (__int16)(v5 + g_direction_lut[v53]);
-      v7 = (__int16)(v7 + g_direction_lut[v53 + 1]);
-      result = return_particle(v40 + g_direction_lut[v53], v41 + g_direction_lut[v53 + 1], 1, 1);
+      direction_entry_offset = 16LL * (unsigned __int8)g_direction_index;
+      particle_x = (__int16)(particle_x + g_direction_lut[direction_entry_offset]);
+      particle_y = (__int16)(particle_y + g_direction_lut[direction_entry_offset + 1]);
+      result = return_particle(previous_x + g_direction_lut[direction_entry_offset], previous_y + g_direction_lut[direction_entry_offset + 1], 1, 1);
       if ( hx_cast<_BYTE>(result) == 0 )
         break;
-      v0 = dword_E50A00;
+      active_particle_index = dword_E50A00;
     }
   }
   return result;
@@ -8303,41 +8303,41 @@ __int64 __fastcall near_count(__int16 a1, __int16 a2, unsigned __int8 a3, unsign
 //----- (000000000000FFF8) ----------------------------------------------------
 __int64 __fastcall seek_gas()
 {
-  unsigned __int64 v0; // x0
-  bool v1; // zf
-  unsigned __int64 v2; // x3
-  unsigned __int64 v3; // x0
-  char v4; // w4
-  int v5; // w2
-  int v6; // w3
-  int v7; // w1
-  int v8; // w7
-  __int16 *v9; // x25
-  __int16 *v10; // x5
-  __int64 v11; // x4
-  __int64 v12; // x6
-  int v13; // w8
-  int v14; // w7
-  int v15; // w6
-  __int16 *v16; // x24
-  __int16 *v17; // x4
-  __int64 v18; // x9
+  unsigned __int64 rng_first_pass; // x0
+  bool rng_direction_parity; // zf
+  unsigned __int64 rng_next_state; // x3
+  unsigned __int64 rng_direction_sample; // x0
+  char scan_step; // w4
+  int destination_x; // w2
+  int destination_y; // w3
+  int grid_width; // w1
+  int particle_index; // w7
+  __int16 *source_particle_record; // x25
+  __int16 *destination_particle_record; // x5
+  __int64 destination_cell_offset; // x4
+  __int64 cell_state_grid_base; // x6
+  int current_particle_index; // w8
+  int found_x; // w7
+  int found_y; // w6
+  __int16 *current_particle_record; // x24
+  __int16 *destination_record_slot; // x4
+  __int64 destination_cell; // x9
   __int64 result; // x0
 
-  v0 = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-  v1 = (v0 & 1) == 0;
-  v2 = (v0 - 0x61C8864680B583EBLL) ^ ((v0 - 0x61C8864680B583EBLL) >> 27);
-  v3 = (unsigned __int16)((((g_random_state + 31765) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27))
+  rng_first_pass = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
+  rng_direction_parity = (rng_first_pass & 1) == 0;
+  rng_next_state = (rng_first_pass - 0x61C8864680B583EBLL) ^ ((rng_first_pass - 0x61C8864680B583EBLL) >> 27);
+  rng_direction_sample = (unsigned __int16)((((g_random_state + 31765) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27))
                          + 31765)
-                        ^ ((v0 - 0x61C8864680B583EBLL) >> 27));
-  if ( v1 )
-    v4 = 1;
+                        ^ ((rng_first_pass - 0x61C8864680B583EBLL) >> 27));
+  if ( rng_direction_parity )
+    scan_step = 1;
   else
-    v4 = -1;
-  g_random_state = v2;
-  g_search_step = v4;
+    scan_step = -1;
+  g_random_state = rng_next_state;
+  g_search_step = scan_step;
   g_search_remaining = 8;
-  g_search_direction = (g_direction_index - 2 + v3 % 5 - v4) & 7;
+  g_search_direction = (g_direction_index - 2 + rng_direction_sample % 5 - scan_step) & 7;
   if ( byte_E50A96 != 0 )
   {
     if ( (unsigned __int8)near_point(
@@ -8353,25 +8353,25 @@ LABEL_6:
       g_search_step = 1;
       return near_point((unsigned int)g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1], 0, 16, 3);
     }
-    v13 = g_current_particle_index;
-    v14 = g_found_x;
-    v15 = g_found_y;
-    v16 = &g_particle_records[10 * g_current_particle_index];
-    if ( (*((_BYTE *)v16 + 9) & 4) != 0 )
+    current_particle_index = g_current_particle_index;
+    found_x = g_found_x;
+    found_y = g_found_y;
+    current_particle_record = &g_particle_records[10 * g_current_particle_index];
+    if ( (*((_BYTE *)current_particle_record + 9) & 4) != 0 )
     {
-      if ( *((_BYTE *)v16 + 16) != 0 )
-        ++*((_BYTE *)v16 + 16);
+      if ( *((_BYTE *)current_particle_record + 16) != 0 )
+        ++*((_BYTE *)current_particle_record + 16);
       else
-        *((_BYTE *)v16 + 16) = 1;
+        *((_BYTE *)current_particle_record + 16) = 1;
     }
-    result = 10LL * v13;
-    v17 = &g_particle_records[result];
-    v18 = g_cell_state_grid + 8LL * (v14 + g_view_width[0] * v15);
+    result = 10LL * current_particle_index;
+    destination_record_slot = &g_particle_records[result];
+    destination_cell = g_cell_state_grid + 8LL * (found_x + g_view_width[0] * found_y);
     *(_BYTE *)(g_cell_state_grid + 8LL * (g_particle_records[result] + g_particle_records[result + 1] * g_view_width[0])) = 0;
-    *(_BYTE *)v18 = g_particle_records[result + 4];
-    *(_DWORD *)(v18 + 4) = v13;
-    *v17 = v14;
-    v17[1] = v15;
+    *(_BYTE *)destination_cell = g_particle_records[result + 4];
+    *(_DWORD *)(destination_cell + 4) = current_particle_index;
+    *destination_record_slot = found_x;
+    destination_record_slot[1] = found_y;
   }
   else
   {
@@ -8382,39 +8382,39 @@ LABEL_6:
                             10,
                             3) == 0 )
       goto LABEL_6;
-    v5 = g_found_x;
-    v6 = g_found_y;
+    destination_x = g_found_x;
+    destination_y = g_found_y;
     if ( g_found_x <= 1 )
       return (__int64)set_state((__int16 *)(unsigned int)g_current_particle_index, 9);
     if ( g_found_y <= 1 )
       return (__int64)set_state((__int16 *)(unsigned int)g_current_particle_index, 9);
     if ( g_found_y >= g_view_height - 2 )
       return (__int64)set_state((__int16 *)(unsigned int)g_current_particle_index, 9);
-    v7 = g_view_width[0];
+    grid_width = g_view_width[0];
     if ( g_found_x >= g_view_width[0] - 2 )
     {
       return (__int64)set_state((__int16 *)(unsigned int)g_current_particle_index, 9);
     }
     else
     {
-      v8 = g_current_particle_index;
-      v9 = &g_particle_records[10 * g_current_particle_index];
-      if ( (*((_BYTE *)v9 + 9) & 4) != 0 )
+      particle_index = g_current_particle_index;
+      source_particle_record = &g_particle_records[10 * g_current_particle_index];
+      if ( (*((_BYTE *)source_particle_record + 9) & 4) != 0 )
       {
-        if ( *((_BYTE *)v9 + 16) != 0 )
-          ++*((_BYTE *)v9 + 16);
+        if ( *((_BYTE *)source_particle_record + 16) != 0 )
+          ++*((_BYTE *)source_particle_record + 16);
         else
-          *((_BYTE *)v9 + 16) = 1;
+          *((_BYTE *)source_particle_record + 16) = 1;
       }
-      result = 10LL * v8;
-      v10 = &g_particle_records[result];
-      v11 = 8LL * (v5 + v6 * v7);
-      v12 = g_cell_state_grid;
-      *(_BYTE *)(g_cell_state_grid + 8LL * (g_particle_records[result] + v7 * g_particle_records[result + 1])) = 0;
-      *(_BYTE *)(v12 + v11) = g_particle_records[result + 4];
-      *(_DWORD *)(v12 + v11 + 4) = v8;
-      *v10 = v5;
-      v10[1] = v6;
+      result = 10LL * particle_index;
+      destination_particle_record = &g_particle_records[result];
+      destination_cell_offset = 8LL * (destination_x + destination_y * grid_width);
+      cell_state_grid_base = g_cell_state_grid;
+      *(_BYTE *)(g_cell_state_grid + 8LL * (g_particle_records[result] + grid_width * g_particle_records[result + 1])) = 0;
+      *(_BYTE *)(cell_state_grid_base + destination_cell_offset) = g_particle_records[result + 4];
+      *(_DWORD *)(cell_state_grid_base + destination_cell_offset + 4) = particle_index;
+      *destination_particle_record = destination_x;
+      destination_particle_record[1] = destination_y;
     }
   }
   return result * 2;
