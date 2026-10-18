@@ -634,6 +634,512 @@ def main() -> None:
     }.items():
         draw_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, draw_particle)
     generated = generated[:start] + draw_particle + generated[end:]
+
+    # Name the interpolation, brush footprint, and wake coordinates in the
+    # pointer-stroke renderer. This is a naming-only pass: arithmetic and
+    # control flow remain the Hex-Rays translation of the ARM64 routine.
+    start_marker = "//----- (0000000000014F98)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    draw_to = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "target_x",
+        "a2": "target_y",
+        "result": "x_step_offset",
+        "v5": "x_delta",
+        "v7": "abs_x_delta",
+        "v8": "line_step_count",
+        "v9": "line_step_count_float",
+        "v10": "brush_radius",
+        "v11": "brush_edge_x",
+        "v12": "brush_edge_y",
+        "v13": "x_increment_per_step",
+        "v14": "y_increment_per_step",
+        "v15": "interpolation_step",
+        "v16": "y_step_offset",
+        "v17": "step_index",
+        "v18": "brush_far_y",
+        "v19": "x_offset",
+        "v20": "brush_column_x",
+        "v21": "brush_row_y",
+        "v22": "brush_step",
+        "v23": "brush_radius_unsigned",
+        "v24": "wake_x",
+        "v25": "gravity_direction_entry",
+        "v26": "gravity_direction_for_wake",
+        "v27": "interpolated_x",
+        "v28": "interpolated_y",
+        "v29": "top_brush_step_index",
+        "v30": "brush_edge_offset",
+        "v31": "candidate_y",
+        "v32": "candidate_x",
+        "v33": "interior_brush_step_index",
+        "v34": "side_candidate_y",
+        "v35": "candidate_y_limit",
+        "v36": "left_brush_step_index",
+        "v37": "left_brush_offset",
+        "v38": "left_brush_x",
+        "v39": "brush_top_y",
+        "v40": "brush_left_x",
+    }.items():
+        draw_to = re.sub(r"\b" + old_name + r"\b", semantic_name, draw_to)
+    generated = generated[:start] + draw_to + generated[end:]
+
+    # Name the brush material mapping and variant-selection state. This helper
+    # is called for each sampled point by draw_to(), so preserve its lookup,
+    # random-number, and placement logic exactly.
+    start_marker = "//----- (000000000000E2E4)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    add_group_type = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "x",
+        "a2": "y",
+        "a3": "tool_id",
+        "a4": "force_place",
+        "v4": "x_position",
+        "v5": "y_position",
+        "v6": "bottom_boundary",
+        "v7": "right_boundary",
+        "v8": "paired_material_x",
+        "v9": "paired_material_y",
+        "v11": "material_group_entry",
+        "v12": "base_material_id",
+        "v13": "placement_pattern",
+        "v14": "variant_count",
+        "v15": "random_state_snapshot",
+        "v16": "variant_offset",
+        "v17": "material_id",
+        "v18": "existing_material_id",
+        "v19": "existing_material_flags",
+        "v20": "random_state_value",
+        "v21": "diagonal_pattern_match",
+        "v22": "diagonal_distance",
+        "v23": "grid_pattern_match",
+    }.items():
+        add_group_type = re.sub(r"\b" + old_name + r"\b", semantic_name, add_group_type)
+    generated = generated[:start] + add_group_type + generated[end:]
+
+    # Name the rectangular brush bounds, material mapping state, and perimeter
+    # wake-up scan in draw_square(). The traversal order and all clipping tests
+    # are intentionally left untouched.
+    start_marker = "//----- (0000000000014768)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    draw_square = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "left_x",
+        "a2": "top_y",
+        "a3": "right_x",
+        "a4": "bottom_y",
+        "a5": "tool_id",
+        "v5": "first_row_y",
+        "v7": "last_row_y",
+        "v8": "right_column_x",
+        "v9": "selected_tool_id",
+        "v10": "column_x",
+        "v11": "material_group_entry",
+        "v12": "paint_y",
+        "v13": "bottom_inner_bound",
+        "v14": "right_inner_bound",
+        "v15": "saved_paint_y",
+        "v16": "paired_material_x",
+        "v17": "paired_material_y",
+        "v19": "left_wake_bound_x",
+        "v20": "right_wake_bound_x",
+        "v21": "bottom_wake_bound_y",
+        "v22": "wake_scan_start_x",
+        "v23": "wake_scan_x",
+        "v24": "placement_pattern",
+        "v25": "material_id",
+        "v26": "variant_count",
+        "v27": "random_state_snapshot",
+        "v28": "variant_offset",
+        "v29": "diagonal_pattern_match",
+        "v30": "diagonal_distance",
+        "v31": "row_pattern_match",
+        "v32": "wake_row_x",
+        "v33": "next_paint_y",
+        "v34": "wake_column_x",
+        "v35": "wake_column_cursor_x",
+    }.items():
+        draw_square = re.sub(r"\b" + old_name + r"\b", semantic_name, draw_square)
+    generated = generated[:start] + draw_square + generated[end:]
+
+    # Clarify the small convenience wrappers that feed rectangles or a centered
+    # brush dab into the shared rasterizer.
+    for start_marker, parameter_names in (
+        ("//----- (0000000000014F68)", {
+            "a1": "left_x", "a2": "top_y", "a3": "right_x", "a4": "bottom_y",
+        }),
+        ("//----- (0000000000014F74)", {
+            "a1": "center_x", "a2": "center_y",
+        }),
+    ):
+        start = generated.index(start_marker)
+        end = generated.index("//-----", start + len(start_marker))
+        wrapper = generated[start:end]
+        for old_name, semantic_name in parameter_names.items():
+            wrapper = re.sub(r"\b" + old_name + r"\b", semantic_name, wrapper)
+        generated = generated[:start] + wrapper + generated[end:]
+    # Make the JNI command dispatcher readable in terms of packed arguments,
+    # touch coordinates, material-table selection, and grid clearing.
+    start_marker = "//----- (00000000000155A0)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    run_command = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "packed_command",
+        "v1": "command_case_index",
+        "v2": "command_parameter_1",
+        "v3": "command_parameter_2",
+        "v8": "scaled_touch_x",
+        "v9": "touch_x",
+        "v10": "touch_y",
+        "v11": "material_group_entry",
+        "v12": "base_material_id",
+        "v13": "material_variant_count",
+        "v14": "material_variant_offset",
+        "v15": "cell_count",
+        "v16": "cell_cursor",
+        "v17": "cell_grid_end",
+        "v18": "eraser_toggle_state",
+    }.items():
+        run_command = re.sub(r"\b" + old_name + r"\b", semantic_name, run_command)
+    generated = generated[:start] + run_command + generated[end:]
+
+    # Name the frame scheduler's command-queue indices, simulation passes,
+    # particle-list cursors, pixel banks, and bounds-check temporaries.
+    start_marker = "//----- (0000000000015BB0)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    main_loop = generated[start:end]
+    for old_name, semantic_name in {
+        "v0": "engine_mode_snapshot",
+        "v2": "command_read_cursor",
+        "v3": "command_write_snapshot",
+        "v4": "command_slot_index",
+        "v5": "mode_after_command_queue",
+        "v6": "mode_phase",
+        "v7": "particle_state_class",
+        "v8": "processed_particle_count",
+        "v9": "particle_state_list",
+        "v10": "active_particle_index",
+        "v11": "active_particle_record",
+        "v12": "next_particle_index",
+        "v13": "render_particle_index",
+        "v14": "render_particle_record",
+        "v15": "framebuffer_bank_index",
+        "v16": "dirty_ring_read_index",
+        "v17": "dirty_ring_write_offset",
+        "v18": "dirty_ring_next_index",
+        "v19": "dirty_ring_end_index",
+        "v20": "dirty_ring_entry",
+        "v21": "framebuffer_bank_entry",
+        "v22": "framebuffer_bank_cursor",
+        "v23": "framebuffer_bank_state",
+        "v24": "grid_width",
+        "v25": "grid_height",
+        "v26": "grid_x",
+        "v27": "background_pixel",
+        "v28": "right_grid_bound",
+        "v29": "cell_grid_base",
+        "v30": "grid_y_cursor",
+        "v31": "framebuffer_stride",
+        "v32": "bottom_grid_bound",
+        "v33": "grid_x_cursor",
+        "v34": "grid_y",
+        "v35": "transition_particle_record",
+        "v36": "transition_material_id",
+        "v37": "transition_period",
+        "v38": "simulation_substep",
+        "v39": "simulation_substep_limit",
+        "v40": "field_center_x",
+        "v41": "field_sample_spacing",
+        "v42": "field_sample_width",
+        "v43": "field_row_index",
+        "v44": "field_column_count",
+        "v45": "field_left_edge_x",
+        "v46": "field_inner_left_x",
+        "v47": "field_inner_right_x",
+        "v48": "field_right_edge_x",
+        "v49": "field_column_index",
+        "v50": "field_random_state",
+        "v51": "field_material_x_1",
+        "v52": "field_material_x_2",
+        "v53": "field_material_x_3",
+        "v54": "simulation_particle_index",
+        "v55": "particle_iteration_budget",
+        "v56": "simulation_particle_record",
+        "v57": "next_simulation_particle",
+        "v58": "simulation_particle_state",
+        "v59": "transition_random_state",
+        "v60": "dirty_clear_cell_grid",
+        "v61": "dirty_clear_framebuffer",
+        "v62": "dirty_clear_grid_width",
+        "v63": "dirty_clear_queue_index",
+        "v64": "dirty_clear_stride",
+        "v65": "dirty_clear_color",
+        "v66": "dirty_clear_entry",
+        "v67": "dirty_clear_x",
+        "v68": "dirty_clear_particle_record",
+        "v69": "previous_frame_timestamp",
+        "v70": "elapsed_frame_ticks",
+        "v71": "frame_timestamp_storage",
+        "v72": "frame_timestamp_ticks",
+    }.items():
+        main_loop = re.sub(r"\b" + old_name + r"\b", semantic_name, main_loop)
+    generated = generated[:start] + main_loop + generated[end:]
+
+    # Clarify the material placement path: target grid cell, incumbent material,
+    # replacement checks, new-particle allocation, and state-list insertion.
+    start_marker = "//----- (000000000000DA28)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    add_type = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "x",
+        "a2": "y",
+        "a3": "material_id",
+        "a4": "force_place",
+        "v4": "requested_material_id",
+        "v5": "target_x",
+        "v6": "target_y",
+        "v7": "target_row_offset",
+        "v8": "existing_material_id",
+        "v9": "requested_material_properties_offset",
+        "v11": "replacement_material_id",
+        "v12": "existing_particle_index",
+        "v13": "new_particle_record",
+        "v14": "new_particle_packed_state",
+        "v15": "framebuffer_bank_count",
+        "v16": "framebuffer_pixel_offset",
+        "v17": "background_pixel",
+        "v18": "particle_state_group",
+        "v19": "state_group_tail_index",
+        "v20": "state_group_particle_record",
+        "v21": "state_group_packed_state",
+        "v22": "material_render_bank_count",
+        "v23": "material_pixel",
+        "v24": "material_pixel_offset",
+    }.items():
+        add_type = re.sub(r"\b" + old_name + r"\b", semantic_name, add_type)
+    generated = generated[:start] + add_type + generated[end:]
+
+    # Name the particle material conversion, grid write, and transition metadata.
+    start_marker = "//----- (000000000000DE24)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    trans_particle = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "particle_index",
+        "a2": "target_material_or_tool_id",
+        "a3": "select_random_variant",
+        "v3": "material_group_entry",
+        "v4": "base_material_id",
+        "v5": "variant_count",
+        "v6": "variant_offset",
+        "v7": "target_motion_class",
+        "v8": "particle_index_value",
+        "v9": "is_new_particle",
+        "v10": "particle_record",
+        "v11": "grid_width",
+        "v13": "particle_flags",
+        "v14": "particle_transition_record",
+        "v15": "particle_packed_state",
+        "v16": "particle_flags_byte",
+        "v17": "transition_random_state",
+        "v18": "transition_source_material_id",
+        "v19": "next_transition_random_state",
+    }.items():
+        trans_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, trans_particle)
+    generated = generated[:start] + trans_particle + generated[end:]
+
+    # Deobfuscate the particle displacement helpers. Keep the scan/hold/release
+    # state manipulation intact while naming coordinates, candidate cells, and
+    # temporarily saved pixel state.
+    start_marker = "//----- (000000000000BF48)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    shift_line = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "source_x",
+        "a2": "source_y",
+        "a3": "line_delta_x",
+        "a4": "line_delta_y",
+        "v6": "destination_x",
+        "v7": "destination_y",
+        "v8": "found_x",
+        "v9": "found_y",
+        "v10": "current_particle_index",
+        "v11": "current_particle_record",
+        "v12": "grid_width",
+        "v13": "destination_row_offset",
+        "v14": "neighbor_material_matches",
+        "v15": "released_x",
+        "v16": "released_y",
+        "v17": "destination_motion_class",
+        "v18": "saved_particle_flags",
+        "v19": "destination_particle_index",
+        "v20": "saved_low_pixel_coordinate",
+        "v21": "saved_high_pixel_coordinate",
+        "v22": "saved_hold_flag",
+        "v23": "saved_release_flag",
+        "v24": "saved_current_particle_index",
+        "v25": "saved_state_byte",
+        "v26": "destination_cell_x",
+        "v27": "destination_particle_value",
+        "v28": "destination_particle_index_value",
+        "v29": "collision_delta_x",
+        "v30": "collision_delta_y",
+        "v32": "destination_cell_y",
+        "v33": "saved_pixel_owner",
+        "v34": "saved_pixel_y",
+        "v35": "saved_pixel_x",
+        "v36": "saved_pixel_state",
+    }.items():
+        shift_line = re.sub(r"\b" + old_name + r"\b", semantic_name, shift_line)
+    generated = generated[:start] + shift_line + generated[end:]
+
+    start_marker = "//----- (000000000000C9B0)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    shift_drop = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "source_x",
+        "a2": "source_y",
+        "v2": "gravity_direction_vector",
+        "v3": "destination_x",
+        "v4": "destination_y",
+        "v5": "found_x",
+        "v6": "found_y",
+        "v7": "current_particle_record",
+        "v9": "saved_particle_state",
+        "v10": "destination_row_offset",
+        "v11": "interrupted_particle_index",
+        "v12": "gravity_direction_entry",
+        "v13": "candidate_x",
+        "v14": "candidate_y",
+        "v15": "candidate_motion_class",
+        "v16": "saved_hold_state",
+        "v17": "saved_release_state",
+        "v18": "packed_destination_coordinates",
+        "v19": "saved_current_pixel_x",
+        "v20": "saved_current_pixel_y",
+        "v21": "saved_current_particle_index",
+        "v22": "saved_particle_state_byte",
+        "v23": "saved_particle_flags",
+        "v24": "saved_pixel_owner",
+        "v25": "saved_pixel_y",
+        "v26": "saved_pixel_x",
+    }.items():
+        shift_drop = re.sub(r"\b" + old_name + r"\b", semantic_name, shift_drop)
+    generated = generated[:start] + shift_drop + generated[end:]
+
+    # Describe particle initialization in terms of grid coordinates, material
+    # properties, gravity-relative collision probes, and randomized state.
+    start_marker = "//----- (0000000000009D24)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    init_particle = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "particle_index",
+        "a2": "x",
+        "a3": "y",
+        "a4": "material_id",
+        "v4": "particle_index_value",
+        "v5": "material_properties_record",
+        "v6": "particle_x",
+        "v7": "particle_record",
+        "v9": "material_has_special_init",
+        "v10": "initial_packed_state",
+        "v12": "initialized_packed_state",
+        "v13": "material_motion_class",
+        "v14": "gravity_direction_vector",
+        "v15": "particle_density",
+        "v16": "gravity_delta_x",
+        "v17": "gravity_delta_y",
+        "v18": "forward_cell_x",
+        "v19": "grid_width",
+        "v20": "current_particle_record",
+        "v21": "existing_particle_flags",
+        "v22": "cell_grid_base",
+        "v23": "neighbor_existing_particle_record",
+        "v25": "neighbor_particle_record",
+        "v26": "neighbor_particle_flags",
+        "v27": "random_state_snapshot",
+        "v28": "initialized_particle_record",
+        "v29": "initialized_particle_flags",
+        "v30": "randomized_direction_step",
+        "v31": "random_state_value",
+        "v32": "next_random_state",
+        "v33": "search_step_direction",
+        "v34": "direction_random_state",
+        "v35": "direction_next_random_state",
+        "v36": "neighbor_delta_x",
+        "v37": "particle_state_record",
+        "v38": "source_particle_record",
+        "v39": "particle_state_byte",
+        "v40": "state_random_value",
+        "v41": "final_particle_record",
+        "v42": "found_delta_x",
+        "v43": "neighbor_cell_offset",
+        "v44": "occupied_particle_record",
+        "v45": "occupied_particle_flags",
+        "v46": "neighbor_state_byte",
+        "v47": "neighbor_packed_state",
+        "v48": "neighbor_delta_y",
+        "v49": "neighbor_material_class",
+        "v50": "initialization_flags",
+        "v51": "initialization_grid_base",
+        "v52": "particle_cell_offset",
+        "v53": "existing_particle_class",
+        "v54": "secondary_found_delta_x",
+        "v55": "found_delta_y",
+    }.items():
+        init_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, init_particle)
+    generated = generated[:start] + init_particle + generated[end:]
+
+    # Name the allocator's free-list/recycle decisions and the four dirty-pixel
+    # ring-buffer cursors used when a particle slot is reclaimed.
+    start_marker = "//----- (000000000000D5D0)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    new_particle = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "allow_recycle",
+        "v1": "particle_index_result",
+        "v3": "recycled_particle_index",
+        "v4": "next_particle_link",
+        "v5": "free_particle_record",
+        "v6": "free_particle_state",
+        "v7": "particle_list_head",
+        "v8": "particle_list_next",
+        "v9": "particle_list_record",
+        "v10": "particle_list_state",
+        "v11": "reclaimed_particle_index",
+        "v12": "reclaimed_particle_index_value",
+        "v13": "reclaimed_particle_record",
+        "v14": "reclaimed_particle_state",
+        "v15": "framebuffer_bank_count",
+        "v16": "reclaimed_particle_x",
+        "v17": "reclaimed_particle_y",
+        "v18": "dirty_ring_end",
+        "v19": "dirty_ring_next",
+        "v20": "dirty_ring_entry",
+        "v21": "secondary_dirty_ring_end",
+        "v22": "secondary_dirty_ring_next",
+        "v23": "secondary_dirty_ring_entry",
+        "v24": "tertiary_dirty_ring_end",
+        "v25": "tertiary_dirty_ring_next",
+        "v26": "tertiary_dirty_ring_entry",
+        "v27": "quaternary_dirty_ring_end",
+        "v28": "quaternary_dirty_ring_next",
+        "v29": "quaternary_dirty_ring_entry",
+    }.items():
+        new_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, new_particle)
+    generated = generated[:start] + new_particle + generated[end:]
+
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(generated)
     print(f"Wrote {OUTPUT.relative_to(ROOT)} ({OUTPUT.stat().st_size} bytes; BSS {BSS_SIZE:#x})")

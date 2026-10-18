@@ -4116,335 +4116,335 @@ LABEL_7:
 // E50A32: using guessed type char g_search_step;
 
 //----- (0000000000009D24) ----------------------------------------------------
-__int64 __fastcall init_particle(int a1, __int16 a2, __int16 a3, unsigned __int8 a4)
+__int64 __fastcall init_particle(int particle_index, __int16 x, __int16 y, unsigned __int8 material_id)
 {
-  __int64 v4; // x19
-  _BYTE *v5; // x8
-  unsigned int v6; // w25
-  __int16 *v7; // x4
-  bool v9; // zf
-  char v10; // w0
-  char v12; // w0
-  int v13; // w0
-  _WORD *v14; // x0
-  unsigned int v15; // w4
-  __int16 v16; // w1
-  __int16 v17; // w0
-  int v18; // w25
-  int v19; // w1
-  __int16 *v20; // x0
-  char v21; // w4
-  __int64 v22; // x3
-  __int16 *v23; // x0
+  __int64 particle_index_value; // x19
+  _BYTE *material_properties_record; // x8
+  unsigned int particle_x; // w25
+  __int16 *particle_record; // x4
+  bool material_has_special_init; // zf
+  char initial_packed_state; // w0
+  char initialized_packed_state; // w0
+  int material_motion_class; // w0
+  _WORD *gravity_direction_vector; // x0
+  unsigned int particle_density; // w4
+  __int16 gravity_delta_x; // w1
+  __int16 gravity_delta_y; // w0
+  int forward_cell_x; // w25
+  int grid_width; // w1
+  __int16 *current_particle_record; // x0
+  char existing_particle_flags; // w4
+  __int64 cell_grid_base; // x3
+  __int16 *neighbor_existing_particle_record; // x0
   __int64 result; // x0
-  __int16 *v25; // x0
-  char v26; // w2
-  unsigned __int64 v27; // x5
-  __int16 *v28; // x7
-  char v29; // w8
-  char v30; // w9
-  unsigned __int64 v31; // x5
-  unsigned __int64 v32; // x5
-  char v33; // w7
-  __int64 v34; // x2
-  unsigned __int64 v35; // x0
-  int v36; // w4
-  __int16 *v37; // x2
-  __int16 *v38; // x1
-  char v39; // w6
-  unsigned __int64 v40; // x0
-  __int16 *v41; // x0
-  int v42; // w27
-  __int64 v43; // x27
-  __int16 *v44; // x0
-  char v45; // w4
-  char v46; // w2
-  char v47; // w2
-  int v48; // w0
-  unsigned int v49; // w1
-  char v50; // w6
-  __int64 v51; // x9
-  int v52; // w2
-  int v53; // w2
-  int v54; // w25
-  int v55; // w27
+  __int16 *neighbor_particle_record; // x0
+  char neighbor_particle_flags; // w2
+  unsigned __int64 random_state_snapshot; // x5
+  __int16 *initialized_particle_record; // x7
+  char initialized_particle_flags; // w8
+  char randomized_direction_step; // w9
+  unsigned __int64 random_state_value; // x5
+  unsigned __int64 next_random_state; // x5
+  char search_step_direction; // w7
+  __int64 direction_random_state; // x2
+  unsigned __int64 direction_next_random_state; // x0
+  int neighbor_delta_x; // w4
+  __int16 *particle_state_record; // x2
+  __int16 *source_particle_record; // x1
+  char particle_state_byte; // w6
+  unsigned __int64 state_random_value; // x0
+  __int16 *final_particle_record; // x0
+  int found_delta_x; // w27
+  __int64 neighbor_cell_offset; // x27
+  __int16 *occupied_particle_record; // x0
+  char occupied_particle_flags; // w4
+  char neighbor_state_byte; // w2
+  char neighbor_packed_state; // w2
+  int neighbor_delta_y; // w0
+  unsigned int neighbor_material_class; // w1
+  char initialization_flags; // w6
+  __int64 initialization_grid_base; // x9
+  int particle_cell_offset; // w2
+  int existing_particle_class; // w2
+  int secondary_found_delta_x; // w25
+  int found_delta_y; // w27
 
-  v4 = a1;
-  v5 = &g_material_properties[12 * a4];
-  v6 = a2;
-  v7 = &g_particle_records[10 * a1];
-  v9 = v5[5] == 12;
-  *v7 = a2;
-  v10 = *((_BYTE *)v7 + 12);
-  *((_BYTE *)v7 + 8) = a4;
-  v12 = v10 & 0xF8 | 3;
-  v7[1] = a3;
-  *((_BYTE *)v7 + 12) = v12;
-  *((_BYTE *)v7 + 9) = 4;
-  if ( v9 )
+  particle_index_value = particle_index;
+  material_properties_record = &g_material_properties[12 * material_id];
+  particle_x = x;
+  particle_record = &g_particle_records[10 * particle_index];
+  material_has_special_init = material_properties_record[5] == 12;
+  *particle_record = x;
+  initial_packed_state = *((_BYTE *)particle_record + 12);
+  *((_BYTE *)particle_record + 8) = material_id;
+  initialized_packed_state = initial_packed_state & 0xF8 | 3;
+  particle_record[1] = y;
+  *((_BYTE *)particle_record + 12) = initialized_packed_state;
+  *((_BYTE *)particle_record + 9) = 4;
+  if ( material_has_special_init )
   {
-    v50 = *((_BYTE *)v7 + 10);
-    v51 = g_cell_state_grid;
-    v52 = a2 + a3 * g_view_width[0];
-    *((_BYTE *)v7 + 11) = *((_BYTE *)v7 + 11) & 0xFE | byte_E50A93 & 1;
-    *((_BYTE *)v7 + 10) = v50 & 0xFE | (*(_BYTE *)(v51 + 8LL * v52) != 0);
-    if ( hx_cast<_DWORD>(v4) != -2 )
+    initialization_flags = *((_BYTE *)particle_record + 10);
+    initialization_grid_base = g_cell_state_grid;
+    particle_cell_offset = x + y * g_view_width[0];
+    *((_BYTE *)particle_record + 11) = *((_BYTE *)particle_record + 11) & 0xFE | byte_E50A93 & 1;
+    *((_BYTE *)particle_record + 10) = initialization_flags & 0xFE | (*(_BYTE *)(initialization_grid_base + 8LL * particle_cell_offset) != 0);
+    if ( hx_cast<_DWORD>(particle_index_value) != -2 )
     {
-      v53 = hx_cast<unsigned __int8>(v5[4]);
-      *((_BYTE *)v7 + 9) = 5;
-      *((_BYTE *)v7 + 12) = v12 & 0xC7 | 0x18;
-      if ( v53 != 5 )
+      existing_particle_class = hx_cast<unsigned __int8>(material_properties_record[4]);
+      *((_BYTE *)particle_record + 9) = 5;
+      *((_BYTE *)particle_record + 12) = initialized_packed_state & 0xC7 | 0x18;
+      if ( existing_particle_class != 5 )
       {
-        if ( v53 != 6 )
+        if ( existing_particle_class != 6 )
         {
-          if ( v53 == 2 )
+          if ( existing_particle_class == 2 )
             goto LABEL_11;
           goto LABEL_5;
         }
 LABEL_17:
-        v25 = &g_particle_records[10 * v4];
-        if ( (*((_BYTE *)v25 + 9) & 1) == 0 )
+        neighbor_particle_record = &g_particle_records[10 * particle_index_value];
+        if ( (*((_BYTE *)neighbor_particle_record + 9) & 1) == 0 )
         {
-          v26 = *((_BYTE *)v25 + 12);
-          *((_BYTE *)v25 + 9) &= ~2u;
-          *((_BYTE *)v25 + 12) = v26 & 0xC7;
+          neighbor_particle_flags = *((_BYTE *)neighbor_particle_record + 12);
+          *((_BYTE *)neighbor_particle_record + 9) &= ~2u;
+          *((_BYTE *)neighbor_particle_record + 12) = neighbor_particle_flags & 0xC7;
         }
         goto LABEL_19;
       }
       goto LABEL_34;
     }
   }
-  v13 = (unsigned __int8)g_shared_engine_data[12 * a4 + 20];
-  if ( v13 == 5 )
+  material_motion_class = (unsigned __int8)g_shared_engine_data[12 * material_id + 20];
+  if ( material_motion_class == 5 )
   {
-    if ( hx_cast<_DWORD>(v4) == -2 )
+    if ( hx_cast<_DWORD>(particle_index_value) == -2 )
     {
 LABEL_36:
-      v19 = g_view_width[0];
-      v22 = g_cell_state_grid;
-      HIBYTE(g_particle_records[10 * v4 + 4]) |= 1u;
+      grid_width = g_view_width[0];
+      cell_grid_base = g_cell_state_grid;
+      HIBYTE(g_particle_records[10 * particle_index_value + 4]) |= 1u;
       goto LABEL_37;
     }
 LABEL_34:
-    v41 = &g_particle_records[10 * v4];
-    if ( (*((_BYTE *)v41 + 9) & 1) == 0 )
+    final_particle_record = &g_particle_records[10 * particle_index_value];
+    if ( (*((_BYTE *)final_particle_record + 9) & 1) == 0 )
     {
-      v47 = *((_BYTE *)v41 + 12);
-      *((_BYTE *)v41 + 9) &= ~2u;
-      *((_BYTE *)v41 + 12) = v47 & 0xC7 | 8;
+      neighbor_packed_state = *((_BYTE *)final_particle_record + 12);
+      *((_BYTE *)final_particle_record + 9) &= ~2u;
+      *((_BYTE *)final_particle_record + 12) = neighbor_packed_state & 0xC7 | 8;
     }
     goto LABEL_36;
   }
-  if ( v13 != 6 )
+  if ( material_motion_class != 6 )
   {
-    if ( v13 == 2 )
+    if ( material_motion_class == 2 )
     {
-      if ( hx_cast<_DWORD>(v4) == -2 )
+      if ( hx_cast<_DWORD>(particle_index_value) == -2 )
       {
 LABEL_13:
-        v19 = g_view_width[0];
-        v22 = g_cell_state_grid;
-        HIBYTE(g_particle_records[10 * v4 + 4]) &= ~4u;
+        grid_width = g_view_width[0];
+        cell_grid_base = g_cell_state_grid;
+        HIBYTE(g_particle_records[10 * particle_index_value + 4]) &= ~4u;
 LABEL_14:
-        particle_counter(v4) = byte_E50A94;
+        particle_counter(particle_index_value) = byte_E50A94;
         goto LABEL_15;
       }
 LABEL_11:
-      v23 = &g_particle_records[10 * v4];
-      if ( (*((_BYTE *)v23 + 9) & 1) == 0 )
+      neighbor_existing_particle_record = &g_particle_records[10 * particle_index_value];
+      if ( (*((_BYTE *)neighbor_existing_particle_record + 9) & 1) == 0 )
       {
-        v46 = *((_BYTE *)v23 + 12);
-        *((_BYTE *)v23 + 9) &= ~2u;
-        *((_BYTE *)v23 + 12) = v46 & 0xC7 | 8;
+        neighbor_state_byte = *((_BYTE *)neighbor_existing_particle_record + 12);
+        *((_BYTE *)neighbor_existing_particle_record + 9) &= ~2u;
+        *((_BYTE *)neighbor_existing_particle_record + 12) = neighbor_state_byte & 0xC7 | 8;
       }
       goto LABEL_13;
     }
 LABEL_5:
-    v14 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-    v15 = (unsigned __int8)g_material_properties[12 * a4 + 1];
-    v16 = v14[4];
-    v17 = v14[5];
-    v18 = (__int16)(v6 + v16);
-    if ( v18 <= 1 || (v42 = (__int16)(a3 + v17)) <= 1 || v42 >= g_view_height - 2 )
+    gravity_direction_vector = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+    particle_density = (unsigned __int8)g_material_properties[12 * material_id + 1];
+    gravity_delta_x = gravity_direction_vector[4];
+    gravity_delta_y = gravity_direction_vector[5];
+    forward_cell_x = (__int16)(particle_x + gravity_delta_x);
+    if ( forward_cell_x <= 1 || (found_delta_x = (__int16)(y + gravity_delta_y)) <= 1 || found_delta_x >= g_view_height - 2 )
     {
-      v19 = g_view_width[0];
+      grid_width = g_view_width[0];
     }
     else
     {
-      v19 = g_view_width[0];
-      if ( v18 < g_view_width[0] - 2 )
+      grid_width = g_view_width[0];
+      if ( forward_cell_x < g_view_width[0] - 2 )
       {
-        v22 = g_cell_state_grid;
-        v43 = 8LL * (v18 + v42 * g_view_width[0]);
-        if ( *(_BYTE *)(g_cell_state_grid + v43) == 0
-          || (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + v43) + 1] <= v15 )
+        cell_grid_base = g_cell_state_grid;
+        neighbor_cell_offset = 8LL * (forward_cell_x + found_delta_x * g_view_width[0]);
+        if ( *(_BYTE *)(g_cell_state_grid + neighbor_cell_offset) == 0
+          || (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + neighbor_cell_offset) + 1] <= particle_density )
         {
-          if ( hx_cast<_DWORD>(v4) != -2 )
+          if ( hx_cast<_DWORD>(particle_index_value) != -2 )
           {
-            v44 = &g_particle_records[10 * v4];
-            if ( (*((_BYTE *)v44 + 9) & 1) == 0 )
+            occupied_particle_record = &g_particle_records[10 * particle_index_value];
+            if ( (*((_BYTE *)occupied_particle_record + 9) & 1) == 0 )
             {
-              v45 = *((_BYTE *)v44 + 12);
-              *((_BYTE *)v44 + 9) |= 2u;
-              *((_BYTE *)v44 + 12) = v45 & 0xC7 | 8;
+              occupied_particle_flags = *((_BYTE *)occupied_particle_record + 12);
+              *((_BYTE *)occupied_particle_record + 9) |= 2u;
+              *((_BYTE *)occupied_particle_record + 12) = occupied_particle_flags & 0xC7 | 8;
             }
           }
 LABEL_37:
-          if ( (particle_flags(v4) & 4) == 0 )
+          if ( (particle_flags(particle_index_value) & 4) == 0 )
             goto LABEL_14;
 LABEL_38:
-          particle_counter(v4) = 0;
+          particle_counter(particle_index_value) = 0;
           goto LABEL_15;
         }
       }
     }
-    if ( hx_cast<_DWORD>(v4) == -2 || (*((_BYTE *)(v20 = &g_particle_records[10 * v4]) + 9) & 1) != 0 )
+    if ( hx_cast<_DWORD>(particle_index_value) == -2 || (*((_BYTE *)(current_particle_record = &g_particle_records[10 * particle_index_value]) + 9) & 1) != 0 )
     {
-      v22 = g_cell_state_grid;
+      cell_grid_base = g_cell_state_grid;
     }
     else
     {
-      v21 = *((_BYTE *)v20 + 12);
-      *((_BYTE *)v20 + 9) &= ~2u;
-      *((_BYTE *)v20 + 12) = v21 & 0xC7;
-      v22 = g_cell_state_grid;
+      existing_particle_flags = *((_BYTE *)current_particle_record + 12);
+      *((_BYTE *)current_particle_record + 9) &= ~2u;
+      *((_BYTE *)current_particle_record + 12) = existing_particle_flags & 0xC7;
+      cell_grid_base = g_cell_state_grid;
     }
     goto LABEL_37;
   }
-  if ( hx_cast<_DWORD>(v4) != -2 )
+  if ( hx_cast<_DWORD>(particle_index_value) != -2 )
     goto LABEL_17;
 LABEL_19:
-  v27 = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-  v28 = &g_particle_records[10 * v4];
-  v29 = *((_BYTE *)v28 + 9);
-  g_random_state = (v27 - 0x61C8864680B583EBLL) ^ ((v27 - 0x61C8864680B583EBLL) >> 27);
+  random_state_snapshot = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
+  initialized_particle_record = &g_particle_records[10 * particle_index_value];
+  initialized_particle_flags = *((_BYTE *)initialized_particle_record + 9);
+  g_random_state = (random_state_snapshot - 0x61C8864680B583EBLL) ^ ((random_state_snapshot - 0x61C8864680B583EBLL) >> 27);
   if ( (g_random_state & 1) != 0 )
-    v30 = -1;
+    randomized_direction_step = -1;
   else
-    v30 = 1;
-  *((_BYTE *)v28 + 9) = v29 & 0xFA | 1;
+    randomized_direction_step = 1;
+  *((_BYTE *)initialized_particle_record + 9) = initialized_particle_flags & 0xFA | 1;
   g_search_remaining = 8;
-  g_search_step = v30;
-  g_search_direction = (v27 - v30) & 7;
-  if ( (unsigned __int8)near_point(hx_cast<unsigned int>(a2), a3, 0, 9, 3) == 0 )
+  g_search_step = randomized_direction_step;
+  g_search_direction = (random_state_snapshot - randomized_direction_step) & 7;
+  if ( (unsigned __int8)near_point(hx_cast<unsigned int>(x), y, 0, 9, 3) == 0 )
     goto LABEL_23;
-  v48 = (__int16)(g_found_x - v6);
-  v49 = (__int16)(g_found_y - a3);
-  if ( g_found_x == hx_cast<_WORD>(v6) )
+  neighbor_delta_y = (__int16)(g_found_x - particle_x);
+  neighbor_material_class = (__int16)(g_found_y - y);
+  if ( g_found_x == hx_cast<_WORD>(particle_x) )
   {
-    if ( v49 == -1 )
+    if ( neighbor_material_class == -1 )
       goto LABEL_23;
     goto LABEL_69;
   }
-  if ( v48 == -1 )
+  if ( neighbor_delta_y == -1 )
   {
-    if ( v49 != -1 && g_found_y != a3 )
+    if ( neighbor_material_class != -1 && g_found_y != y )
     {
 LABEL_69:
-      if ( v49 != 1 )
+      if ( neighbor_material_class != 1 )
         goto LABEL_51;
     }
 LABEL_23:
-    v31 = g_random_state;
+    random_state_value = g_random_state;
     goto LABEL_24;
   }
-  if ( g_found_x == hx_cast<_WORD>(v6) )
+  if ( g_found_x == hx_cast<_WORD>(particle_x) )
     goto LABEL_69;
-  if ( v48 == 1 && (v49 < 2 || v49 == -1) )
+  if ( neighbor_delta_y == 1 && (neighbor_material_class < 2 || neighbor_material_class == -1) )
     goto LABEL_23;
 LABEL_51:
-  v31 = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
+  random_state_value = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
 LABEL_24:
-  v32 = (v31 - 0x61C8864680B583EBLL) ^ ((v31 - 0x61C8864680B583EBLL) >> 27);
+  next_random_state = (random_state_value - 0x61C8864680B583EBLL) ^ ((random_state_value - 0x61C8864680B583EBLL) >> 27);
   g_search_remaining = 8;
-  if ( (((v32 - 0x61C8864680B583EBLL) ^ ((v32 - 0x61C8864680B583EBLL) >> 27)) & 1) != 0 )
-    v33 = -1;
+  if ( (((next_random_state - 0x61C8864680B583EBLL) ^ ((next_random_state - 0x61C8864680B583EBLL) >> 27)) & 1) != 0 )
+    search_step_direction = -1;
   else
-    v33 = 1;
-  g_random_state = (v32 - 0x61C8864680B583EBLL) ^ ((v32 - 0x61C8864680B583EBLL) >> 27);
-  g_search_step = v33;
-  g_search_direction = (v32 - v33) & 7;
-  if ( (unsigned __int8)near_point(v6, a3, 6u, 1, 3) == 0 )
+    search_step_direction = 1;
+  g_random_state = (next_random_state - 0x61C8864680B583EBLL) ^ ((next_random_state - 0x61C8864680B583EBLL) >> 27);
+  g_search_step = search_step_direction;
+  g_search_direction = (next_random_state - search_step_direction) & 7;
+  if ( (unsigned __int8)near_point(particle_x, y, 6u, 1, 3) == 0 )
     goto LABEL_28;
-  v54 = (__int16)(g_found_x - v6);
-  v55 = (__int16)(g_found_y - a3);
-  if ( v54 == 0 )
+  secondary_found_delta_x = (__int16)(g_found_x - particle_x);
+  found_delta_y = (__int16)(g_found_y - y);
+  if ( secondary_found_delta_x == 0 )
   {
-    if ( v55 == -1 )
+    if ( found_delta_y == -1 )
     {
-      LOBYTE(v36) = 0;
+      LOBYTE(neighbor_delta_x) = 0;
       goto LABEL_65;
     }
-    if ( v55 == 1 )
+    if ( found_delta_y == 1 )
     {
-      LOBYTE(v36) = 4;
+      LOBYTE(neighbor_delta_x) = 4;
       goto LABEL_65;
     }
     goto LABEL_28;
   }
-  if ( v54 == -1 )
+  if ( secondary_found_delta_x == -1 )
   {
-    switch ( v55 )
+    switch ( found_delta_y )
     {
       case -1:
-        LOBYTE(v36) = 1;
+        LOBYTE(neighbor_delta_x) = 1;
         goto LABEL_65;
       case 0:
-        LOBYTE(v36) = 2;
+        LOBYTE(neighbor_delta_x) = 2;
         goto LABEL_65;
       case 1:
-        LOBYTE(v36) = 3;
+        LOBYTE(neighbor_delta_x) = 3;
         goto LABEL_65;
       default:
         break;
     }
     goto LABEL_28;
   }
-  if ( v54 != 1 )
+  if ( secondary_found_delta_x != 1 )
     goto LABEL_28;
-  if ( v55 == 1 )
+  if ( found_delta_y == 1 )
   {
-    LOBYTE(v36) = 5;
+    LOBYTE(neighbor_delta_x) = 5;
     goto LABEL_65;
   }
-  LOBYTE(v36) = 6;
-  if ( v55 != 0 )
+  LOBYTE(neighbor_delta_x) = 6;
+  if ( found_delta_y != 0 )
   {
-    if ( v55 == -1 )
+    if ( found_delta_y == -1 )
     {
-      LOBYTE(v36) = 7;
+      LOBYTE(neighbor_delta_x) = 7;
       goto LABEL_65;
     }
 LABEL_28:
-    v34 = g_random_state;
-    v35 = (v34 - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(v34 - 0x61C8864680B583EBLL) >> 27);
-    g_random_state = v35;
-    v36 = ((v34 + 2135587861) ^ ((unsigned __int64)(v34 - 0x61C8864680B583EBLL) >> 27)) & 7;
+    direction_random_state = g_random_state;
+    direction_next_random_state = (direction_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(direction_random_state - 0x61C8864680B583EBLL) >> 27);
+    g_random_state = direction_next_random_state;
+    neighbor_delta_x = ((direction_random_state + 2135587861) ^ ((unsigned __int64)(direction_random_state - 0x61C8864680B583EBLL) >> 27)) & 7;
     goto LABEL_29;
   }
 LABEL_65:
-  v35 = g_random_state;
+  direction_next_random_state = g_random_state;
 LABEL_29:
-  v37 = &g_particle_records[10 * v4];
-  v38 = &g_particle_records[10 * g_current_particle_index];
-  v39 = v37[6] & 0xF8 | v36 & 7;
-  *((_BYTE *)v37 + 9) &= ~4u;
-  *((_BYTE *)v37 + 12) = v39;
-  v9 = g_shared_engine_data[12 * *((unsigned __int8 *)v38 + 8) + 26] == 5;
-  v40 = (v35 - 0x61C8864680B583EBLL) ^ ((v35 - 0x61C8864680B583EBLL) >> 27);
-  g_random_state = v40;
-  if ( v9 )
-    *((_BYTE *)v37 + 16) = (v40 & 1) << 7;
+  particle_state_record = &g_particle_records[10 * particle_index_value];
+  source_particle_record = &g_particle_records[10 * g_current_particle_index];
+  particle_state_byte = particle_state_record[6] & 0xF8 | neighbor_delta_x & 7;
+  *((_BYTE *)particle_state_record + 9) &= ~4u;
+  *((_BYTE *)particle_state_record + 12) = particle_state_byte;
+  material_has_special_init = g_shared_engine_data[12 * *((unsigned __int8 *)source_particle_record + 8) + 26] == 5;
+  state_random_value = (direction_next_random_state - 0x61C8864680B583EBLL) ^ ((direction_next_random_state - 0x61C8864680B583EBLL) >> 27);
+  g_random_state = state_random_value;
+  if ( material_has_special_init )
+    *((_BYTE *)particle_state_record + 16) = (state_random_value & 1) << 7;
   else
-    *((_BYTE *)v37 + 16) = hx_cast<unsigned __int8>(v40) % 0xFFu;
-  v19 = g_view_width[0];
-  v22 = g_cell_state_grid;
-  if ( (particle_flags(v4) & 4) != 0 )
+    *((_BYTE *)particle_state_record + 16) = hx_cast<unsigned __int8>(state_random_value) % 0xFFu;
+  grid_width = g_view_width[0];
+  cell_grid_base = g_cell_state_grid;
+  if ( (particle_flags(particle_index_value) & 4) != 0 )
     goto LABEL_38;
 LABEL_15:
-  result = v22 + 8LL * (g_particle_records[10 * v4] + g_particle_records[10 * v4 + 1] * v19);
-  *(_BYTE *)result = a4;
-  *(_DWORD *)(result + 4) = v4;
+  result = cell_grid_base + 8LL * (g_particle_records[10 * particle_index_value] + g_particle_records[10 * particle_index_value + 1] * grid_width);
+  *(_BYTE *)result = material_id;
+  *(_DWORD *)(result + 4) = particle_index_value;
   return result;
 }
 // A3A0: conditional instruction was optimized away because w25.4 is in (1..7FFF|FFFF8000..FFFFFFFE)
@@ -5461,170 +5461,170 @@ __int64 __fastcall displace_make_gap(__int16 a1, __int16 a2)
 // E50A29: using guessed type char byte_E50A29;
 
 //----- (000000000000BF48) ----------------------------------------------------
-__int64 __fastcall shift_line(__int16 a1, __int16 a2, __int16 a3, __int16 a4)
+__int64 __fastcall shift_line(__int16 source_x, __int16 source_y, __int16 line_delta_x, __int16 line_delta_y)
 {
-  int v6; // w19
-  int v7; // w21
-  __int16 v8; // w28
-  __int16 v9; // w27
-  int v10; // w4
-  __int16 *v11; // x4
-  int v12; // w1
-  int v13; // w1
-  bool v14; // w0
-  unsigned __int16 v15; // w26
-  int v16; // w28
-  unsigned int v17; // w0
-  char v18; // w27
-  int v19; // w0
-  __int16 v20; // w24
-  int v21; // w22
-  char v22; // w21
-  char v23; // w19
-  __int16 v24; // w25
-  char v25; // w1
-  int v26; // w2
-  __int64 v27; // x0
-  __int64 v28; // x26
-  int v29; // w22
-  int v30; // w24
-  int v32; // w1
-  int v33; // [xsp+60h] [xbp-20h]
-  __int16 v34; // [xsp+68h] [xbp-18h]
-  __int16 v35; // [xsp+70h] [xbp-10h]
-  char v36; // [xsp+78h] [xbp-8h]
+  int destination_x; // w19
+  int destination_y; // w21
+  __int16 found_x; // w28
+  __int16 found_y; // w27
+  int current_particle_index; // w4
+  __int16 *current_particle_record; // x4
+  int grid_width; // w1
+  int destination_row_offset; // w1
+  bool neighbor_material_matches; // w0
+  unsigned __int16 released_x; // w26
+  int released_y; // w28
+  unsigned int destination_motion_class; // w0
+  char saved_particle_flags; // w27
+  int destination_particle_index; // w0
+  __int16 saved_low_pixel_coordinate; // w24
+  int saved_high_pixel_coordinate; // w22
+  char saved_hold_flag; // w21
+  char saved_release_flag; // w19
+  __int16 saved_current_particle_index; // w25
+  char saved_state_byte; // w1
+  int destination_cell_x; // w2
+  __int64 destination_particle_value; // x0
+  __int64 destination_particle_index_value; // x26
+  int collision_delta_x; // w22
+  int collision_delta_y; // w24
+  int destination_cell_y; // w1
+  int saved_pixel_owner; // [xsp+60h] [xbp-20h]
+  __int16 saved_pixel_y; // [xsp+68h] [xbp-18h]
+  __int16 saved_pixel_x; // [xsp+70h] [xbp-10h]
+  char saved_pixel_state; // [xsp+78h] [xbp-8h]
 
-  v6 = (__int16)(a3 + a1);
-  v7 = (__int16)(a4 + a2);
-  if ( (unsigned __int16)scan_line(a1, a2, -a3, -a4, 1u, 2u) != 0 )
+  destination_x = (__int16)(line_delta_x + source_x);
+  destination_y = (__int16)(line_delta_y + source_y);
+  if ( (unsigned __int16)scan_line(source_x, source_y, -line_delta_x, -line_delta_y, 1u, 2u) != 0 )
   {
-    v26 = (__int16)(a3 + g_found_x);
-    if ( v26 <= 1 || (v32 = (__int16)(a4 + g_found_y)) <= 1 )
+    destination_cell_x = (__int16)(line_delta_x + g_found_x);
+    if ( destination_cell_x <= 1 || (destination_cell_y = (__int16)(line_delta_y + g_found_y)) <= 1 )
     {
-      v27 = 0xFFFFFFFFLL;
+      destination_particle_value = 0xFFFFFFFFLL;
     }
     else
     {
-      v27 = 0xFFFFFFFFLL;
-      if ( v32 < g_view_height - 2 && v26 < g_view_width[0] - 2 )
+      destination_particle_value = 0xFFFFFFFFLL;
+      if ( destination_cell_y < g_view_height - 2 && destination_cell_x < g_view_width[0] - 2 )
       {
-        v27 = *(unsigned int *)(g_cell_state_grid + 8LL * (v26 + v32 * g_view_width[0]) + 4);
-        v28 = hx_cast<int>(v27);
-        if ( (particle_flags(hx_cast<int>(v27)) & 2) == 0 )
+        destination_particle_value = *(unsigned int *)(g_cell_state_grid + 8LL * (destination_cell_x + destination_cell_y * g_view_width[0]) + 4);
+        destination_particle_index_value = hx_cast<int>(destination_particle_value);
+        if ( (particle_flags(hx_cast<int>(destination_particle_value)) & 2) == 0 )
           goto LABEL_35;
         goto LABEL_24;
       }
     }
-    v28 = -1;
+    destination_particle_index_value = -1;
     if ( (byte_4C7375 & 2) == 0 )
 LABEL_35:
-      set_state((__int16 *)v27, 1);
+      set_state((__int16 *)destination_particle_value, 1);
 LABEL_24:
-    wake_around(g_particle_records[10 * v28], g_particle_records[10 * v28 + 1]);
+    wake_around(g_particle_records[10 * destination_particle_index_value], g_particle_records[10 * destination_particle_index_value + 1]);
   }
-  v8 = g_found_x;
-  v9 = g_found_y;
+  found_x = g_found_x;
+  found_y = g_found_y;
   hold_pixel(g_found_x, g_found_y);
-  v10 = dword_E50A24;
+  current_particle_index = dword_E50A24;
   if ( (particle_flags(dword_E50A24) & 2) != 0 )
   {
-    drop_interupted(v8, v9);
-    v10 = dword_E50A24;
+    drop_interupted(found_x, found_y);
+    current_particle_index = dword_E50A24;
   }
-  if ( v10 != -2 )
+  if ( current_particle_index != -2 )
   {
-    v11 = &g_particle_records[10 * v10];
-    if ( (*((_BYTE *)v11 + 9) & 1) == 0 )
+    current_particle_record = &g_particle_records[10 * current_particle_index];
+    if ( (*((_BYTE *)current_particle_record + 9) & 1) == 0 )
     {
-      v25 = *((_BYTE *)v11 + 12);
-      *((_BYTE *)v11 + 9) &= ~2u;
-      *((_BYTE *)v11 + 12) = v25 & 0xC7;
+      saved_state_byte = *((_BYTE *)current_particle_record + 12);
+      *((_BYTE *)current_particle_record + 9) &= ~2u;
+      *((_BYTE *)current_particle_record + 12) = saved_state_byte & 0xC7;
     }
   }
-  if ( v6 <= 1 || v7 <= 1 )
+  if ( destination_x <= 1 || destination_y <= 1 )
   {
-    v12 = g_view_width[0];
+    grid_width = g_view_width[0];
 LABEL_10:
-    v13 = v7 * v12;
+    destination_row_offset = destination_y * grid_width;
     goto LABEL_11;
   }
-  v12 = g_view_width[0];
-  if ( v7 >= g_view_height - 2 )
+  grid_width = g_view_width[0];
+  if ( destination_y >= g_view_height - 2 )
     goto LABEL_10;
-  v13 = v7 * g_view_width[0];
-  if ( v6 < g_view_width[0] - 2 && *(_BYTE *)(g_cell_state_grid + 8LL * (v6 + v13)) == 0 )
-    return release_pixel(hx_cast<unsigned __int16>(v6) | (unsigned int)(v7 << 16));
+  destination_row_offset = destination_y * g_view_width[0];
+  if ( destination_x < g_view_width[0] - 2 && *(_BYTE *)(g_cell_state_grid + 8LL * (destination_x + destination_row_offset)) == 0 )
+    return release_pixel(hx_cast<unsigned __int16>(destination_x) | (unsigned int)(destination_y << 16));
 LABEL_11:
-  v14 = around_matches(
+  neighbor_material_matches = around_matches(
           g_found_x,
           g_found_y,
-          g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v6 + v13)) + 17]);
-  v15 = g_found_x;
-  v16 = g_found_y;
-  if ( !v14 )
+          g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (destination_x + destination_row_offset)) + 17]);
+  released_x = g_found_x;
+  released_y = g_found_y;
+  if ( !neighbor_material_matches )
   {
-    v29 = (__int16)(g_found_x - a3);
-    if ( v29 > 1 )
+    collision_delta_x = (__int16)(g_found_x - line_delta_x);
+    if ( collision_delta_x > 1 )
     {
-      v30 = (__int16)(g_found_y - a4);
-      if ( v30 > 1 && v30 < g_view_height - 2 && v29 < g_view_width[0] - 2 )
+      collision_delta_y = (__int16)(g_found_y - line_delta_y);
+      if ( collision_delta_y > 1 && collision_delta_y < g_view_height - 2 && collision_delta_x < g_view_width[0] - 2 )
       {
-        if ( (unsigned __int8)displace_make_gap(v6, v7) == 0 )
+        if ( (unsigned __int8)displace_make_gap(destination_x, destination_y) == 0 )
           return release_pixel(dword_E50A20);
-        return release_pixel(hx_cast<unsigned __int16>(v6) | (unsigned int)(v7 << 16));
+        return release_pixel(hx_cast<unsigned __int16>(destination_x) | (unsigned int)(destination_y << 16));
       }
     }
   }
-  if ( v7 > 1 && v6 > 1 )
+  if ( destination_y > 1 && destination_x > 1 )
   {
-    if ( g_view_height - 2 <= v7 || v6 >= g_view_width[0] - 2 )
+    if ( g_view_height - 2 <= destination_y || destination_x >= g_view_width[0] - 2 )
     {
-      if ( v7 < g_view_height - 2 )
+      if ( destination_y < g_view_height - 2 )
         goto LABEL_17;
     }
     else
     {
-      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (v6 + g_view_width[0] * v7)) != 0 )
+      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (destination_x + g_view_width[0] * destination_y)) != 0 )
       {
 LABEL_17:
-        if ( v6 < g_view_width[0] - 2 )
+        if ( destination_x < g_view_width[0] - 2 )
         {
-          v17 = (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v6 + v7 * g_view_width[0]))
+          destination_motion_class = (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (destination_x + destination_y * g_view_width[0]))
                                           + 20];
-          if ( v17 > 2 && v17 != 6 )
+          if ( destination_motion_class > 2 && destination_motion_class != 6 )
           {
-            v36 = byte_E50A28;
-            v35 = dword_E50A20;
-            v34 = HIWORD(dword_E50A20);
-            v33 = dword_E50A24;
-            v18 = byte_E50A29;
+            saved_pixel_state = byte_E50A28;
+            saved_pixel_x = dword_E50A20;
+            saved_pixel_y = HIWORD(dword_E50A20);
+            saved_pixel_owner = dword_E50A24;
+            saved_particle_flags = byte_E50A29;
             byte_E50A28 = 0;
-            hold_pixel(v6, v7);
-            v19 = hx_cast<unsigned __int16>(v6) | (v7 << 16);
-            v20 = HIWORD(dword_E50A20);
-            v21 = dword_E50A24;
-            v22 = byte_E50A28;
-            v23 = byte_E50A29;
-            HIWORD(dword_E50A20) = v34;
-            dword_E50A24 = v33;
-            byte_E50A28 = v36;
-            byte_E50A29 = v18;
-            v24 = dword_E50A20;
-            LOWORD(dword_E50A20) = v35;
-            release_pixel(v19);
-            LOWORD(dword_E50A20) = v24;
-            HIWORD(dword_E50A20) = v20;
-            dword_E50A24 = v21;
-            byte_E50A28 = v22;
-            byte_E50A29 = v23;
+            hold_pixel(destination_x, destination_y);
+            destination_particle_index = hx_cast<unsigned __int16>(destination_x) | (destination_y << 16);
+            saved_low_pixel_coordinate = HIWORD(dword_E50A20);
+            saved_high_pixel_coordinate = dword_E50A24;
+            saved_hold_flag = byte_E50A28;
+            saved_release_flag = byte_E50A29;
+            HIWORD(dword_E50A20) = saved_pixel_y;
+            dword_E50A24 = saved_pixel_owner;
+            byte_E50A28 = saved_pixel_state;
+            byte_E50A29 = saved_particle_flags;
+            saved_current_particle_index = dword_E50A20;
+            LOWORD(dword_E50A20) = saved_pixel_x;
+            release_pixel(destination_particle_index);
+            LOWORD(dword_E50A20) = saved_current_particle_index;
+            HIWORD(dword_E50A20) = saved_low_pixel_coordinate;
+            dword_E50A24 = saved_high_pixel_coordinate;
+            byte_E50A28 = saved_hold_flag;
+            byte_E50A29 = saved_release_flag;
           }
         }
-        return release_pixel(v15 | (unsigned int)(v16 << 16));
+        return release_pixel(released_x | (unsigned int)(released_y << 16));
       }
-      release_pixel(hx_cast<unsigned __int16>(v6) | (v7 << 16));
+      release_pixel(hx_cast<unsigned __int16>(destination_x) | (destination_y << 16));
     }
   }
-  return release_pixel(v15 | (unsigned int)(v16 << 16));
+  return release_pixel(released_x | (unsigned int)(released_y << 16));
 }
 // 0: using guessed type int dword_0;
 // CF0: using guessed type Elf64_Sym;
@@ -5904,148 +5904,148 @@ LABEL_12:
 // E50A18: using guessed type char g_direction_index;
 
 //----- (000000000000C9B0) ----------------------------------------------------
-__int64 __fastcall shift_drop(__int16 a1, __int16 a2)
+__int64 __fastcall shift_drop(__int16 source_x, __int16 source_y)
 {
-  __int16 *v2; // x3
-  int v3; // w19
-  int v4; // w20
-  __int16 v5; // w25
-  __int16 v6; // w24
-  __int16 *v7; // x2
-  char v9; // w0
-  int v10; // w2
-  int v11; // w0
-  _WORD *v12; // x21
-  int v13; // w3
-  int v14; // w1
-  unsigned int v15; // w0
-  char v16; // w28
-  char v17; // w27
-  int v18; // w0
-  __int16 v19; // w26
-  __int16 v20; // w25
-  int v21; // w24
-  char v22; // w20
-  char v23; // w19
-  int v24; // [xsp+68h] [xbp-18h]
-  __int16 v25; // [xsp+70h] [xbp-10h]
-  __int16 v26; // [xsp+78h] [xbp-8h]
+  __int16 *gravity_direction_vector; // x3
+  int destination_x; // w19
+  int destination_y; // w20
+  __int16 found_x; // w25
+  __int16 found_y; // w24
+  __int16 *current_particle_record; // x2
+  char saved_particle_state; // w0
+  int destination_row_offset; // w2
+  int interrupted_particle_index; // w0
+  _WORD *gravity_direction_entry; // x21
+  int candidate_x; // w3
+  int candidate_y; // w1
+  unsigned int candidate_motion_class; // w0
+  char saved_hold_state; // w28
+  char saved_release_state; // w27
+  int packed_destination_coordinates; // w0
+  __int16 saved_current_pixel_x; // w26
+  __int16 saved_current_pixel_y; // w25
+  int saved_current_particle_index; // w24
+  char saved_particle_state_byte; // w20
+  char saved_particle_flags; // w19
+  int saved_pixel_owner; // [xsp+68h] [xbp-18h]
+  __int16 saved_pixel_y; // [xsp+70h] [xbp-10h]
+  __int16 saved_pixel_x; // [xsp+78h] [xbp-8h]
 
-  v2 = reinterpret_cast<__int16 *>(g_direction_lut + (16 * (unsigned __int8)g_direction_index));
-  v3 = (__int16)(a1 + v2[4]);
-  v4 = (__int16)(a2 + v2[5]);
-  if ( (unsigned __int16)scan_line(a1, a2, *v2, v2[1], 1u, 3u) != 0 )
+  gravity_direction_vector = reinterpret_cast<__int16 *>(g_direction_lut + (16 * (unsigned __int8)g_direction_index));
+  destination_x = (__int16)(source_x + gravity_direction_vector[4]);
+  destination_y = (__int16)(source_y + gravity_direction_vector[5]);
+  if ( (unsigned __int16)scan_line(source_x, source_y, *gravity_direction_vector, gravity_direction_vector[1], 1u, 3u) != 0 )
   {
-    v11 = -1;
-    v12 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-    v13 = (__int16)(v12[4] + g_found_x);
-    if ( v13 > 1 )
+    interrupted_particle_index = -1;
+    gravity_direction_entry = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+    candidate_x = (__int16)(gravity_direction_entry[4] + g_found_x);
+    if ( candidate_x > 1 )
     {
-      v14 = (__int16)(g_found_y + v12[5]);
-      if ( v14 > 1 && v14 < g_view_height - 2 && v13 < g_view_width[0] - 2 )
-        v11 = *(_DWORD *)(g_cell_state_grid + 8LL * (v13 + v14 * g_view_width[0]) + 4);
+      candidate_y = (__int16)(g_found_y + gravity_direction_entry[5]);
+      if ( candidate_y > 1 && candidate_y < g_view_height - 2 && candidate_x < g_view_width[0] - 2 )
+        interrupted_particle_index = *(_DWORD *)(g_cell_state_grid + 8LL * (candidate_x + candidate_y * g_view_width[0]) + 4);
     }
-    wake_around(g_particle_records[10 * v11], g_particle_records[10 * v11 + 1]);
+    wake_around(g_particle_records[10 * interrupted_particle_index], g_particle_records[10 * interrupted_particle_index + 1]);
   }
-  v5 = g_found_x;
-  v6 = g_found_y;
+  found_x = g_found_x;
+  found_y = g_found_y;
   hold_pixel(g_found_x, g_found_y);
-  if ( dword_E50A24 == -2 || (*((_BYTE *)(v7 = &g_particle_records[10 * dword_E50A24]) + 9) & 1) != 0 )
+  if ( dword_E50A24 == -2 || (*((_BYTE *)(current_particle_record = &g_particle_records[10 * dword_E50A24]) + 9) & 1) != 0 )
   {
-    if ( v3 > 1 )
+    if ( destination_x > 1 )
       goto LABEL_5;
 LABEL_14:
     if ( around_matches(
-           v5,
-           v6,
-           g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + v4 * g_view_width[0])) + 17]) )
+           found_x,
+           found_y,
+           g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (destination_x + destination_y * g_view_width[0])) + 17]) )
     {
       return release_pixel((unsigned __int16)g_found_x | (unsigned int)(g_found_y << 16));
     }
     goto LABEL_15;
   }
-  v9 = *((_BYTE *)v7 + 12);
-  *((_BYTE *)v7 + 9) |= 2u;
-  *((_BYTE *)v7 + 12) = v9 & 0xC7;
-  if ( v3 <= 1 )
+  saved_particle_state = *((_BYTE *)current_particle_record + 12);
+  *((_BYTE *)current_particle_record + 9) |= 2u;
+  *((_BYTE *)current_particle_record + 12) = saved_particle_state & 0xC7;
+  if ( destination_x <= 1 )
     goto LABEL_14;
 LABEL_5:
-  if ( v4 > 1 )
+  if ( destination_y > 1 )
   {
-    if ( v4 >= g_view_height - 2 )
+    if ( destination_y >= g_view_height - 2 )
     {
-      v10 = v4 * g_view_width[0];
+      destination_row_offset = destination_y * g_view_width[0];
     }
     else
     {
-      v10 = v4 * g_view_width[0];
-      if ( v3 < g_view_width[0] - 2 && *(_BYTE *)(g_cell_state_grid + 8LL * (v3 + v10)) == 0 )
-        return release_pixel(hx_cast<unsigned __int16>(v3) | (unsigned int)(v4 << 16));
+      destination_row_offset = destination_y * g_view_width[0];
+      if ( destination_x < g_view_width[0] - 2 && *(_BYTE *)(g_cell_state_grid + 8LL * (destination_x + destination_row_offset)) == 0 )
+        return release_pixel(hx_cast<unsigned __int16>(destination_x) | (unsigned int)(destination_y << 16));
     }
-    if ( around_matches(v5, v6, g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + v10)) + 17]) )
+    if ( around_matches(found_x, found_y, g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (destination_x + destination_row_offset)) + 17]) )
       goto LABEL_8;
   }
   else if ( around_matches(
-              v5,
-              v6,
-              g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + v4 * g_view_width[0])) + 17]) )
+              found_x,
+              found_y,
+              g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (destination_x + destination_y * g_view_width[0])) + 17]) )
   {
 LABEL_7:
-    if ( v4 > 1 )
+    if ( destination_y > 1 )
     {
 LABEL_8:
-      if ( v4 >= g_view_height - 2
-        || v3 >= g_view_width[0] - 2
-        || *(_BYTE *)(g_cell_state_grid + 8LL * (v3 + v4 * g_view_width[0])) != 0 )
+      if ( destination_y >= g_view_height - 2
+        || destination_x >= g_view_width[0] - 2
+        || *(_BYTE *)(g_cell_state_grid + 8LL * (destination_x + destination_y * g_view_width[0])) != 0 )
       {
-        if ( v4 < g_view_height - 2 && v3 < g_view_width[0] - 2 )
+        if ( destination_y < g_view_height - 2 && destination_x < g_view_width[0] - 2 )
         {
-          v15 = (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + v4 * g_view_width[0]))
+          candidate_motion_class = (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (destination_x + destination_y * g_view_width[0]))
                                           + 20];
-          if ( v15 > 2 && v15 != 6 )
+          if ( candidate_motion_class > 2 && candidate_motion_class != 6 )
           {
-            v16 = byte_E50A28;
-            v26 = dword_E50A20;
-            v25 = HIWORD(dword_E50A20);
-            v24 = dword_E50A24;
-            v17 = byte_E50A29;
+            saved_hold_state = byte_E50A28;
+            saved_pixel_x = dword_E50A20;
+            saved_pixel_y = HIWORD(dword_E50A20);
+            saved_pixel_owner = dword_E50A24;
+            saved_release_state = byte_E50A29;
             byte_E50A28 = 0;
-            hold_pixel(v3, v4);
-            v18 = hx_cast<unsigned __int16>(v3) | (v4 << 16);
-            v19 = dword_E50A20;
-            v20 = HIWORD(dword_E50A20);
-            v21 = dword_E50A24;
-            v22 = byte_E50A28;
-            v23 = byte_E50A29;
-            LOWORD(dword_E50A20) = v26;
-            HIWORD(dword_E50A20) = v25;
-            dword_E50A24 = v24;
-            byte_E50A28 = v16;
-            byte_E50A29 = v17;
-            release_pixel(v18);
-            LOWORD(dword_E50A20) = v19;
-            HIWORD(dword_E50A20) = v20;
-            dword_E50A24 = v21;
-            byte_E50A28 = v22;
-            byte_E50A29 = v23;
+            hold_pixel(destination_x, destination_y);
+            packed_destination_coordinates = hx_cast<unsigned __int16>(destination_x) | (destination_y << 16);
+            saved_current_pixel_x = dword_E50A20;
+            saved_current_pixel_y = HIWORD(dword_E50A20);
+            saved_current_particle_index = dword_E50A24;
+            saved_particle_state_byte = byte_E50A28;
+            saved_particle_flags = byte_E50A29;
+            LOWORD(dword_E50A20) = saved_pixel_x;
+            HIWORD(dword_E50A20) = saved_pixel_y;
+            dword_E50A24 = saved_pixel_owner;
+            byte_E50A28 = saved_hold_state;
+            byte_E50A29 = saved_release_state;
+            release_pixel(packed_destination_coordinates);
+            LOWORD(dword_E50A20) = saved_current_pixel_x;
+            HIWORD(dword_E50A20) = saved_current_pixel_y;
+            dword_E50A24 = saved_current_particle_index;
+            byte_E50A28 = saved_particle_state_byte;
+            byte_E50A29 = saved_particle_flags;
           }
         }
       }
       else
       {
-        release_pixel(hx_cast<unsigned __int16>(v3) | (v4 << 16));
+        release_pixel(hx_cast<unsigned __int16>(destination_x) | (destination_y << 16));
       }
     }
     return release_pixel((unsigned __int16)g_found_x | (unsigned int)(g_found_y << 16));
   }
 LABEL_15:
-  if ( (unsigned __int8)displace_make_gap(v3, v4) == 0 )
+  if ( (unsigned __int8)displace_make_gap(destination_x, destination_y) == 0 )
   {
-    if ( v3 <= 1 )
+    if ( destination_x <= 1 )
       return release_pixel((unsigned __int16)g_found_x | (unsigned int)(g_found_y << 16));
     goto LABEL_7;
   }
-  return release_pixel(hx_cast<unsigned __int16>(v3) | (unsigned int)(v4 << 16));
+  return release_pixel(hx_cast<unsigned __int16>(destination_x) | (unsigned int)(destination_y << 16));
 }
 // 0: using guessed type int dword_0;
 // CF0: using guessed type Elf64_Sym;
@@ -6402,190 +6402,190 @@ LABEL_53:
 // E50A97: using guessed type char byte_E50A97;
 
 //----- (000000000000D5D0) ----------------------------------------------------
-__int64 __fastcall new_particle(char a1)
+__int64 __fastcall new_particle(char allow_recycle)
 {
-  unsigned int v1; // w1
-  __int64 v3; // x0
-  int v4; // w5
-  __int16 *v5; // x0
-  char v6; // w2
-  unsigned int v7; // w20
-  __int64 v8; // x4
-  __int16 *v9; // x4
-  char v10; // w2
-  unsigned int v11; // w19
-  __int64 v12; // x0
-  __int16 *v13; // x4
-  char v14; // w5
-  unsigned int v15; // w9
-  __int16 v16; // w8
-  __int16 v17; // w7
-  int v18; // w11
-  int v19; // w6
-  char *v20; // x4
-  int v21; // w12
-  int v22; // w6
-  char *v23; // x4
-  int v24; // w12
-  int v25; // w6
-  char *v26; // x4
-  int v27; // w11
-  int v28; // w6
-  char *v29; // x4
+  unsigned int particle_index_result; // w1
+  __int64 recycled_particle_index; // x0
+  int next_particle_link; // w5
+  __int16 *free_particle_record; // x0
+  char free_particle_state; // w2
+  unsigned int particle_list_head; // w20
+  __int64 particle_list_next; // x4
+  __int16 *particle_list_record; // x4
+  char particle_list_state; // w2
+  unsigned int reclaimed_particle_index; // w19
+  __int64 reclaimed_particle_index_value; // x0
+  __int16 *reclaimed_particle_record; // x4
+  char reclaimed_particle_state; // w5
+  unsigned int framebuffer_bank_count; // w9
+  __int16 reclaimed_particle_x; // w8
+  __int16 reclaimed_particle_y; // w7
+  int dirty_ring_end; // w11
+  int dirty_ring_next; // w6
+  char *dirty_ring_entry; // x4
+  int secondary_dirty_ring_end; // w12
+  int secondary_dirty_ring_next; // w6
+  char *secondary_dirty_ring_entry; // x4
+  int tertiary_dirty_ring_end; // w12
+  int tertiary_dirty_ring_next; // w6
+  char *tertiary_dirty_ring_entry; // x4
+  int quaternary_dirty_ring_end; // w11
+  int quaternary_dirty_ring_next; // w6
+  char *quaternary_dirty_ring_entry; // x4
 
-  v1 = dword_E50A98;
+  particle_index_result = dword_E50A98;
   if ( dword_E50A98 <= 499999 )
   {
     ++dword_E50A98;
-    LOBYTE(g_particle_records[10 * v1 + 6]) &= 0x3Fu;
-    return v1;
+    LOBYTE(g_particle_records[10 * particle_index_result + 6]) &= 0x3Fu;
+    return particle_index_result;
   }
-  v1 = DWORD1(xmmword_E50A60);
+  particle_index_result = DWORD1(xmmword_E50A60);
   if ( DWORD1(xmmword_E50A60) == -1 )
   {
-    v7 = DWORD2(xmmword_E50A50);
+    particle_list_head = DWORD2(xmmword_E50A50);
     if ( DWORD2(xmmword_E50A50) == -1 )
     {
-      if ( a1 != 0 )
+      if ( allow_recycle != 0 )
       {
-        v11 = HIDWORD(xmmword_E50A40);
+        reclaimed_particle_index = HIDWORD(xmmword_E50A40);
         if ( HIDWORD(xmmword_E50A40) == -1 )
         {
-          v12 = -1;
+          reclaimed_particle_index_value = -1;
         }
         else
         {
           if ( HIDWORD(xmmword_E50A40) == (_DWORD)xmmword_E50A50 )
           {
             LODWORD(xmmword_E50A50) = -1;
-            v12 = SHIDWORD(xmmword_E50A40);
+            reclaimed_particle_index_value = SHIDWORD(xmmword_E50A40);
           }
           else
           {
-            v12 = SHIDWORD(xmmword_E50A40);
-            v7 = particle_next_link(SHIDWORD(xmmword_E50A40));
+            reclaimed_particle_index_value = SHIDWORD(xmmword_E50A40);
+            particle_list_head = particle_next_link(SHIDWORD(xmmword_E50A40));
           }
-          v13 = &g_particle_records[10 * v12];
-          v14 = *((_BYTE *)v13 + 12);
-          HIDWORD(xmmword_E50A40) = v7;
+          reclaimed_particle_record = &g_particle_records[10 * reclaimed_particle_index_value];
+          reclaimed_particle_state = *((_BYTE *)reclaimed_particle_record + 12);
+          HIDWORD(xmmword_E50A40) = particle_list_head;
           --DWORD1(xmmword_E50A50);
-          *((_BYTE *)v13 + 12) = v14 & 0x3F;
+          *((_BYTE *)reclaimed_particle_record + 12) = reclaimed_particle_state & 0x3F;
         }
-        v15 = (unsigned __int8)g_shared_engine_data[0];
-        *(_BYTE *)(g_cell_state_grid + 8LL * (g_particle_records[10 * v12] + g_particle_records[10 * v12 + 1] * g_view_width[0])) = 0;
-        v16 = g_particle_records[10 * v12];
-        v17 = g_particle_records[10 * v12 + 1];
-        if ( v15 != 0 )
+        framebuffer_bank_count = (unsigned __int8)g_shared_engine_data[0];
+        *(_BYTE *)(g_cell_state_grid + 8LL * (g_particle_records[10 * reclaimed_particle_index_value] + g_particle_records[10 * reclaimed_particle_index_value + 1] * g_view_width[0])) = 0;
+        reclaimed_particle_x = g_particle_records[10 * reclaimed_particle_index_value];
+        reclaimed_particle_y = g_particle_records[10 * reclaimed_particle_index_value + 1];
+        if ( framebuffer_bank_count != 0 )
         {
-          v18 = dword_33524;
-          v19 = dword_33528 + 1;
+          dirty_ring_end = dword_33524;
+          dirty_ring_next = dword_33528 + 1;
           if ( dword_33528 == 299999 )
-            v19 = 0;
-          v20 = (char *)&g_framebuffer_state_banks[2] + 4 * dword_33528;
-          *((_WORD *)v20 + 2) = v16;
-          *((_WORD *)v20 + 3) = v17;
-          if ( v18 == v19 )
+            dirty_ring_next = 0;
+          dirty_ring_entry = (char *)&g_framebuffer_state_banks[2] + 4 * dword_33528;
+          *((_WORD *)dirty_ring_entry + 2) = reclaimed_particle_x;
+          *((_WORD *)dirty_ring_entry + 3) = reclaimed_particle_y;
+          if ( dirty_ring_end == dirty_ring_next )
           {
-            v19 = dword_33520;
+            dirty_ring_next = dword_33520;
             byte_1584AC = 0;
           }
-          dword_33528 = v19;
-          if ( v15 > 1 )
+          dword_33528 = dirty_ring_next;
+          if ( framebuffer_bank_count > 1 )
           {
-            v21 = dword_1584BC;
-            v22 = dword_1584C0 + 1;
+            secondary_dirty_ring_end = dword_1584BC;
+            secondary_dirty_ring_next = dword_1584C0 + 1;
             if ( dword_1584C0 == 299999 )
-              v22 = 0;
-            v23 = (char *)&g_framebuffer_state_banks[150005] + 4 * dword_1584C0;
-            *((_WORD *)v23 + 2) = v16;
-            *((_WORD *)v23 + 3) = v17;
-            if ( v21 == v22 )
+              secondary_dirty_ring_next = 0;
+            secondary_dirty_ring_entry = (char *)&g_framebuffer_state_banks[150005] + 4 * dword_1584C0;
+            *((_WORD *)secondary_dirty_ring_entry + 2) = reclaimed_particle_x;
+            *((_WORD *)secondary_dirty_ring_entry + 3) = reclaimed_particle_y;
+            if ( secondary_dirty_ring_end == secondary_dirty_ring_next )
             {
-              v22 = dword_1584B8;
+              secondary_dirty_ring_next = dword_1584B8;
               byte_27D444 = 0;
             }
-            dword_1584C0 = v22;
-            if ( v15 != 2 )
+            dword_1584C0 = secondary_dirty_ring_next;
+            if ( framebuffer_bank_count != 2 )
             {
-              v24 = dword_27D454;
-              v25 = dword_27D458 + 1;
+              tertiary_dirty_ring_end = dword_27D454;
+              tertiary_dirty_ring_next = dword_27D458 + 1;
               if ( dword_27D458 == 299999 )
-                v25 = 0;
-              v26 = (char *)&g_framebuffer_state_banks[300008] + 4 * dword_27D458;
-              *((_WORD *)v26 + 2) = v16;
-              *((_WORD *)v26 + 3) = v17;
-              if ( v24 == v25 )
+                tertiary_dirty_ring_next = 0;
+              tertiary_dirty_ring_entry = (char *)&g_framebuffer_state_banks[300008] + 4 * dword_27D458;
+              *((_WORD *)tertiary_dirty_ring_entry + 2) = reclaimed_particle_x;
+              *((_WORD *)tertiary_dirty_ring_entry + 3) = reclaimed_particle_y;
+              if ( tertiary_dirty_ring_end == tertiary_dirty_ring_next )
               {
-                v25 = dword_27D450;
+                tertiary_dirty_ring_next = dword_27D450;
                 byte_3A23DC = 0;
               }
-              dword_27D458 = v25;
-              if ( v15 != 3 )
+              dword_27D458 = tertiary_dirty_ring_next;
+              if ( framebuffer_bank_count != 3 )
               {
-                v27 = dword_3A23EC;
-                v28 = dword_3A23F0 + 1;
+                quaternary_dirty_ring_end = dword_3A23EC;
+                quaternary_dirty_ring_next = dword_3A23F0 + 1;
                 if ( dword_3A23F0 == 299999 )
-                  v28 = 0;
-                v29 = (char *)&g_framebuffer_state_banks[450011] + 4 * dword_3A23F0;
-                *((_WORD *)v29 + 2) = v16;
-                *((_WORD *)v29 + 3) = v17;
-                if ( v27 == v28 )
+                  quaternary_dirty_ring_next = 0;
+                quaternary_dirty_ring_entry = (char *)&g_framebuffer_state_banks[450011] + 4 * dword_3A23F0;
+                *((_WORD *)quaternary_dirty_ring_entry + 2) = reclaimed_particle_x;
+                *((_WORD *)quaternary_dirty_ring_entry + 3) = reclaimed_particle_y;
+                if ( quaternary_dirty_ring_end == quaternary_dirty_ring_next )
                 {
-                  v28 = dword_3A23E8;
+                  quaternary_dirty_ring_next = dword_3A23E8;
                   byte_4C7374 = 0;
                 }
-                dword_3A23F0 = v28;
+                dword_3A23F0 = quaternary_dirty_ring_next;
               }
             }
           }
         }
         wake_particle(
           (unsigned __int16)g_direction_lut[16 * (unsigned __int8)g_direction_index]
-        + (unsigned int)(unsigned __int16)g_particle_records[10 * v12],
-          g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + g_particle_records[10 * v12 + 1]);
-        return v11;
+        + (unsigned int)(unsigned __int16)g_particle_records[10 * reclaimed_particle_index_value],
+          g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + g_particle_records[10 * reclaimed_particle_index_value + 1]);
+        return reclaimed_particle_index;
       }
-      return v1;
+      return particle_index_result;
     }
     if ( DWORD2(xmmword_E50A50) == HIDWORD(xmmword_E50A50) )
     {
       HIDWORD(xmmword_E50A50) = -1;
-      v8 = SDWORD2(xmmword_E50A50);
+      particle_list_next = SDWORD2(xmmword_E50A50);
     }
     else
     {
-      v8 = SDWORD2(xmmword_E50A50);
-      v1 = particle_next_link(SDWORD2(xmmword_E50A50));
+      particle_list_next = SDWORD2(xmmword_E50A50);
+      particle_index_result = particle_next_link(SDWORD2(xmmword_E50A50));
     }
-    v9 = &g_particle_records[10 * v8];
-    v10 = *((_BYTE *)v9 + 12);
-    DWORD2(xmmword_E50A50) = v1;
+    particle_list_record = &g_particle_records[10 * particle_list_next];
+    particle_list_state = *((_BYTE *)particle_list_record + 12);
+    DWORD2(xmmword_E50A50) = particle_index_result;
     LODWORD(xmmword_E50A60) = xmmword_E50A60 - 1;
-    *((_BYTE *)v9 + 12) = v10 & 0x3F;
-    suspend_particle(v7);
-    return v7;
+    *((_BYTE *)particle_list_record + 12) = particle_list_state & 0x3F;
+    suspend_particle(particle_list_head);
+    return particle_list_head;
   }
   else
   {
-    if ( a1 == 0 && SHIDWORD(xmmword_E50A60) <= 999 )
+    if ( allow_recycle == 0 && SHIDWORD(xmmword_E50A60) <= 999 )
       return (unsigned int)-1;
     if ( DWORD1(xmmword_E50A60) == DWORD2(xmmword_E50A60) )
     {
-      v4 = -1;
+      next_particle_link = -1;
       DWORD2(xmmword_E50A60) = -1;
-      v3 = SDWORD1(xmmword_E50A60);
+      recycled_particle_index = SDWORD1(xmmword_E50A60);
     }
     else
     {
-      v3 = SDWORD1(xmmword_E50A60);
-      v4 = particle_next_link(SDWORD1(xmmword_E50A60));
+      recycled_particle_index = SDWORD1(xmmword_E50A60);
+      next_particle_link = particle_next_link(SDWORD1(xmmword_E50A60));
     }
-    v5 = &g_particle_records[10 * v3];
-    DWORD1(xmmword_E50A60) = v4;
-    v6 = *((_BYTE *)v5 + 12);
+    free_particle_record = &g_particle_records[10 * recycled_particle_index];
+    DWORD1(xmmword_E50A60) = next_particle_link;
+    free_particle_state = *((_BYTE *)free_particle_record + 12);
     --HIDWORD(xmmword_E50A60);
-    *((_BYTE *)v5 + 12) = v6 & 0x3F;
-    return v1;
+    *((_BYTE *)free_particle_record + 12) = free_particle_state & 0x3F;
+    return particle_index_result;
   }
 }
 // 18: using guessed type void (__fastcall __noreturn *)();
@@ -6630,147 +6630,147 @@ __int64 __fastcall new_particle(char a1)
 // E50A98: using guessed type int dword_E50A98;
 
 //----- (000000000000DA28) ----------------------------------------------------
-__int64 __fastcall add_type(__int16 a1, __int16 a2, unsigned __int8 a3, char a4)
+__int64 __fastcall add_type(__int16 x, __int16 y, unsigned __int8 material_id, char force_place)
 {
-  int v4; // w20
-  int v5; // w22
-  int v6; // w21
-  int v7; // w4
-  __int64 v8; // x0
-  __int64 v9; // x1
-  __int64 v11; // x19
-  int v12; // w25
-  __int16 *v13; // x2
-  unsigned __int64 v14; // x3
-  unsigned int v15; // w3
-  __int64 v16; // x0
-  __int16 v17; // w2
-  __int64 v18; // x3
-  int v19; // w6
-  __int16 *v20; // x1
-  char v21; // w4
-  unsigned int v22; // w1
-  __int16 v23; // w2
-  __int64 v24; // x21
+  int requested_material_id; // w20
+  int target_x; // w22
+  int target_y; // w21
+  int target_row_offset; // w4
+  __int64 existing_material_id; // x0
+  __int64 requested_material_properties_offset; // x1
+  __int64 replacement_material_id; // x19
+  int existing_particle_index; // w25
+  __int16 *new_particle_record; // x2
+  unsigned __int64 new_particle_packed_state; // x3
+  unsigned int framebuffer_bank_count; // w3
+  __int64 framebuffer_pixel_offset; // x0
+  __int16 background_pixel; // w2
+  __int64 particle_state_group; // x3
+  int state_group_tail_index; // w6
+  __int16 *state_group_particle_record; // x1
+  char state_group_packed_state; // w4
+  unsigned int material_render_bank_count; // w1
+  __int16 material_pixel; // w2
+  __int64 material_pixel_offset; // x21
 
-  v4 = a3;
-  v5 = a1;
-  v6 = a2;
-  if ( a3 == 0 )
+  requested_material_id = material_id;
+  target_x = x;
+  target_y = y;
+  if ( material_id == 0 )
   {
-    delete_pixel(a1, a2);
+    delete_pixel(x, y);
     return 1;
   }
-  if ( a1 <= 1 || a2 <= 1 || a2 >= g_view_height - 2 )
+  if ( x <= 1 || y <= 1 || y >= g_view_height - 2 )
   {
-    v7 = a2 * g_view_width[0];
+    target_row_offset = y * g_view_width[0];
   }
-  else if ( a1 >= g_view_width[0] - 2 )
+  else if ( x >= g_view_width[0] - 2 )
   {
-    v7 = a2 * g_view_width[0];
+    target_row_offset = y * g_view_width[0];
   }
   else
   {
-    v7 = a2 * g_view_width[0];
-    if ( *(_BYTE *)(g_cell_state_grid + 8LL * (a1 + v7)) == 0 )
+    target_row_offset = y * g_view_width[0];
+    if ( *(_BYTE *)(g_cell_state_grid + 8LL * (x + target_row_offset)) == 0 )
       goto LABEL_13;
   }
-  v8 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v7 + a1));
-  if ( a4 == 0 )
+  existing_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (target_row_offset + x));
+  if ( force_place == 0 )
   {
-    v9 = 12LL * a3;
-    if ( g_material_properties[12 * v8] == g_material_properties[v9]
-      || (unsigned __int8)g_material_properties[v9 + 1] < (unsigned int)(unsigned __int8)g_material_properties[12 * v8 + 1] )
+    requested_material_properties_offset = 12LL * material_id;
+    if ( g_material_properties[12 * existing_material_id] == g_material_properties[requested_material_properties_offset]
+      || (unsigned __int8)g_material_properties[requested_material_properties_offset + 1] < (unsigned int)(unsigned __int8)g_material_properties[12 * existing_material_id + 1] )
     {
       return 0;
     }
   }
-  if ( (*(_WORD *)&g_material_properties[12 * v8 + 8] & 0x400) != 0 )
+  if ( (*(_WORD *)&g_material_properties[12 * existing_material_id + 8] & 0x400) != 0 )
     return 0;
-  if ( !return_particle(v5, v6, 0, 0) )
+  if ( !return_particle(target_x, target_y, 0, 0) )
   {
-    v15 = (unsigned __int8)g_shared_engine_data[0];
+    framebuffer_bank_count = (unsigned __int8)g_shared_engine_data[0];
     if ( g_shared_engine_data[0] != 0 )
     {
-      v16 = 2LL * (v5 + v6 * g_framebuffer_stride);
-      v17 = g_background_color;
-      *(_WORD *)(g_framebuffer_state_banks[0] + v16) = g_background_color;
-      if ( v15 > 1 )
+      framebuffer_pixel_offset = 2LL * (target_x + target_y * g_framebuffer_stride);
+      background_pixel = g_background_color;
+      *(_WORD *)(g_framebuffer_state_banks[0] + framebuffer_pixel_offset) = g_background_color;
+      if ( framebuffer_bank_count > 1 )
       {
-        *(_WORD *)(qword_1584B0 + v16) = v17;
-        if ( v15 != 2 )
+        *(_WORD *)(qword_1584B0 + framebuffer_pixel_offset) = background_pixel;
+        if ( framebuffer_bank_count != 2 )
         {
-          *(_WORD *)(qword_27D448 + v16) = v17;
-          if ( v15 != 3 )
-            *(_WORD *)(qword_3A23E0 + v16) = v17;
+          *(_WORD *)(qword_27D448 + framebuffer_pixel_offset) = background_pixel;
+          if ( framebuffer_bank_count != 3 )
+            *(_WORD *)(qword_3A23E0 + framebuffer_pixel_offset) = background_pixel;
         }
       }
     }
 LABEL_13:
-    v11 = v4;
-    if ( g_shared_engine_data[12 * v4 + 20] != 1 )
+    replacement_material_id = requested_material_id;
+    if ( g_shared_engine_data[12 * requested_material_id + 20] != 1 )
       goto LABEL_14;
 LABEL_33:
-    v22 = (unsigned __int8)g_shared_engine_data[0];
-    v23 = *(_WORD *)&g_shared_engine_data[12 * v11 + 18];
-    *(_BYTE *)(g_cell_state_grid + 8LL * (v5 + g_view_width[0] * v6)) = v4;
-    if ( v22 == 0 )
+    material_render_bank_count = (unsigned __int8)g_shared_engine_data[0];
+    material_pixel = *(_WORD *)&g_shared_engine_data[12 * replacement_material_id + 18];
+    *(_BYTE *)(g_cell_state_grid + 8LL * (target_x + g_view_width[0] * target_y)) = requested_material_id;
+    if ( material_render_bank_count == 0 )
       return 1;
-    v24 = 2LL * (v5 + v6 * g_framebuffer_stride);
-    *(_WORD *)(g_framebuffer_state_banks[0] + v24) = v23;
-    if ( v22 <= 1 )
+    material_pixel_offset = 2LL * (target_x + target_y * g_framebuffer_stride);
+    *(_WORD *)(g_framebuffer_state_banks[0] + material_pixel_offset) = material_pixel;
+    if ( material_render_bank_count <= 1 )
       return 1;
-    *(_WORD *)(qword_1584B0 + v24) = v23;
-    if ( v22 == 2 )
+    *(_WORD *)(qword_1584B0 + material_pixel_offset) = material_pixel;
+    if ( material_render_bank_count == 2 )
       return 1;
-    *(_WORD *)(qword_27D448 + v24) = v23;
-    if ( v22 == 3 )
+    *(_WORD *)(qword_27D448 + material_pixel_offset) = material_pixel;
+    if ( material_render_bank_count == 3 )
       return 1;
-    *(_WORD *)(qword_3A23E0 + v24) = v23;
+    *(_WORD *)(qword_3A23E0 + material_pixel_offset) = material_pixel;
     return 1;
   }
-  v11 = v4;
-  v12 = dword_E50A00;
-  if ( g_material_properties[12 * v4 + 4] == 1 )
+  replacement_material_id = requested_material_id;
+  existing_particle_index = dword_E50A00;
+  if ( g_material_properties[12 * requested_material_id + 4] == 1 )
   {
     if ( (dword_E50A00 & 0x80000000) == 0 )
     {
       set_state((__int16 *)(unsigned int)dword_E50A00, 8);
-      particle_material_id(v12) = v4;
+      particle_material_id(existing_particle_index) = requested_material_id;
     }
     goto LABEL_33;
   }
   if ( dword_E50A00 < 0 )
   {
 LABEL_14:
-    v12 = new_particle(0);
-    if ( v12 < 0 )
+    existing_particle_index = new_particle(0);
+    if ( existing_particle_index < 0 )
       return 0;
   }
-  init_particle(v12, v5, v6, v4);
-  v13 = &g_particle_records[10 * v12];
-  v14 = *((unsigned __int8 *)v13 + 12);
-  if ( hx_cast<unsigned __int8>(v14) >> 6 != 0 )
+  init_particle(existing_particle_index, target_x, target_y, requested_material_id);
+  new_particle_record = &g_particle_records[10 * existing_particle_index];
+  new_particle_packed_state = *((unsigned __int8 *)new_particle_record + 12);
+  if ( hx_cast<unsigned __int8>(new_particle_packed_state) >> 6 != 0 )
     return 1;
-  v18 = g_particle_state_lut[(v14 >> 3) & 7];
-  v19 = *((_DWORD *)&xmmword_E50A40 + 3 * v18);
-  if ( v19 == -1 )
+  particle_state_group = g_particle_state_lut[(new_particle_packed_state >> 3) & 7];
+  state_group_tail_index = *((_DWORD *)&xmmword_E50A40 + 3 * particle_state_group);
+  if ( state_group_tail_index == -1 )
   {
-    *((_DWORD *)v13 + 1) = -1;
-    *((_DWORD *)&xmmword_E50A40 + 3 * v18) = v12;
-    *((_DWORD *)&xmmword_E50A40 + 3 * v18 + 1) = v12;
+    *((_DWORD *)new_particle_record + 1) = -1;
+    *((_DWORD *)&xmmword_E50A40 + 3 * particle_state_group) = existing_particle_index;
+    *((_DWORD *)&xmmword_E50A40 + 3 * particle_state_group + 1) = existing_particle_index;
   }
   else
   {
-    *((_DWORD *)v13 + 1) = v19;
-    *((_DWORD *)&xmmword_E50A40 + 3 * v18) = v12;
-    if ( v19 == g_current_particle_index )
-      dword_334E0 = v12;
+    *((_DWORD *)new_particle_record + 1) = state_group_tail_index;
+    *((_DWORD *)&xmmword_E50A40 + 3 * particle_state_group) = existing_particle_index;
+    if ( state_group_tail_index == g_current_particle_index )
+      dword_334E0 = existing_particle_index;
   }
-  v20 = &g_particle_records[10 * v12];
-  v21 = *((_BYTE *)v20 + 12);
-  ++*((_DWORD *)&xmmword_E50A40 + 3 * v18 + 2);
-  *((_BYTE *)v20 + 12) = v21 & 0x3F | ((v18 & 3) << 6);
+  state_group_particle_record = &g_particle_records[10 * existing_particle_index];
+  state_group_packed_state = *((_BYTE *)state_group_particle_record + 12);
+  ++*((_DWORD *)&xmmword_E50A40 + 3 * particle_state_group + 2);
+  *((_BYTE *)state_group_particle_record + 12) = state_group_packed_state & 0x3F | ((particle_state_group & 3) << 6);
   return 1;
 }
 // 198: using guessed type int elf_hash_bucket[263];
@@ -6796,83 +6796,83 @@ LABEL_14:
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
 //----- (000000000000DE24) ----------------------------------------------------
-__int64 __fastcall trans_particle(int a1, int a2, char a3)
+__int64 __fastcall trans_particle(int particle_index, int target_material_or_tool_id, char select_random_variant)
 {
-  unsigned __int8 *v3; // x3
-  unsigned __int8 v4; // w2
-  int v5; // w1
-  char v6; // w1
-  int v7; // w3
-  __int64 v8; // x7
-  bool v9; // zf
-  __int16 *v10; // x4
-  int v11; // w11
+  unsigned __int8 *material_group_entry; // x3
+  unsigned __int8 base_material_id; // w2
+  int variant_count; // w1
+  char variant_offset; // w1
+  int target_motion_class; // w3
+  __int64 particle_index_value; // x7
+  bool is_new_particle; // zf
+  __int16 *particle_record; // x4
+  int grid_width; // w11
   __int64 result; // x0
-  char v13; // w1
-  __int16 *v14; // x7
-  char v15; // w3
-  char v16; // w2
-  __int64 v17; // x0
-  __int64 v18; // x1
-  unsigned __int64 v19; // x0
+  char particle_flags; // w1
+  __int16 *particle_transition_record; // x7
+  char particle_packed_state; // w3
+  char particle_flags_byte; // w2
+  __int64 transition_random_state; // x0
+  __int64 transition_source_material_id; // x1
+  unsigned __int64 next_transition_random_state; // x0
 
-  a2 = hx_cast<unsigned __int8>(a2);
-  if ( a3 != 0 )
+  target_material_or_tool_id = hx_cast<unsigned __int8>(target_material_or_tool_id);
+  if ( select_random_variant != 0 )
   {
-    v3 = &g_material_properties_lut[4 * hx_cast<unsigned __int8>(a2) + 224];
-    v4 = *v3;
-    v5 = v3[1];
-    if ( v5 == 1 )
+    material_group_entry = &g_material_properties_lut[4 * hx_cast<unsigned __int8>(target_material_or_tool_id) + 224];
+    base_material_id = *material_group_entry;
+    variant_count = material_group_entry[1];
+    if ( variant_count == 1 )
     {
-      v6 = 0;
+      variant_offset = 0;
     }
     else
     {
       g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                   ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-      v6 = (unsigned __int16)g_random_state % hx_cast<unsigned __int8>(v5);
+      variant_offset = (unsigned __int16)g_random_state % hx_cast<unsigned __int8>(variant_count);
     }
-    a2 = (unsigned __int8)(v6 + v4);
+    target_material_or_tool_id = (unsigned __int8)(variant_offset + base_material_id);
   }
-  v7 = (unsigned __int8)g_shared_engine_data[12 * a2 + 20];
-  if ( v7 == 1 )
-    return add_type(g_particle_records[10 * a1], g_particle_records[10 * a1 + 1], a2, 1);
-  v8 = a1;
-  v9 = a1 == -2;
-  v10 = &g_particle_records[10 * a1];
-  v11 = g_view_width[0];
-  *((_BYTE *)v10 + 8) = a2;
-  result = 8LL * (*v10 + v10[1] * v11);
-  *(_BYTE *)(g_cell_state_grid + result) = a2;
-  if ( !v9 )
+  target_motion_class = (unsigned __int8)g_shared_engine_data[12 * target_material_or_tool_id + 20];
+  if ( target_motion_class == 1 )
+    return add_type(g_particle_records[10 * particle_index], g_particle_records[10 * particle_index + 1], target_material_or_tool_id, 1);
+  particle_index_value = particle_index;
+  is_new_particle = particle_index == -2;
+  particle_record = &g_particle_records[10 * particle_index];
+  grid_width = g_view_width[0];
+  *((_BYTE *)particle_record + 8) = target_material_or_tool_id;
+  result = 8LL * (*particle_record + particle_record[1] * grid_width);
+  *(_BYTE *)(g_cell_state_grid + result) = target_material_or_tool_id;
+  if ( !is_new_particle )
   {
-    result = *((unsigned __int8 *)v10 + 9);
+    result = *((unsigned __int8 *)particle_record + 9);
     if ( (result & 1) == 0 )
     {
-      v13 = *((_BYTE *)v10 + 12);
+      particle_flags = *((_BYTE *)particle_record + 12);
       result = hx_cast<unsigned int>(result) & 0xFFFFFFFD;
-      *((_BYTE *)v10 + 9) = result;
-      *((_BYTE *)v10 + 12) = v13 & 0xC7;
+      *((_BYTE *)particle_record + 9) = result;
+      *((_BYTE *)particle_record + 12) = particle_flags & 0xC7;
     }
   }
-  if ( v7 == 6 )
+  if ( target_motion_class == 6 )
   {
-    v14 = &g_particle_records[10 * v8];
-    v15 = *((_BYTE *)v14 + 12);
-    v16 = *((_BYTE *)v14 + 9);
+    particle_transition_record = &g_particle_records[10 * particle_index_value];
+    particle_packed_state = *((_BYTE *)particle_transition_record + 12);
+    particle_flags_byte = *((_BYTE *)particle_transition_record + 9);
     g_random_state = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-    v17 = g_random_state;
-    v18 = LOBYTE(g_particle_records[10 * g_current_particle_index + 4]);
-    *((_BYTE *)v14 + 9) = v16 & 0xFB;
-    *((_BYTE *)v14 + 12) = v15 & 0xF8 | v17 & 7;
-    v9 = g_shared_engine_data[12 * v18 + 26] == 5;
-    v19 = (v17 - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(v17 - 0x61C8864680B583EBLL) >> 27);
-    g_random_state = v19;
-    if ( v9 )
-      result = (unsigned __int8)(v19 & 1) << 7;
+    transition_random_state = g_random_state;
+    transition_source_material_id = LOBYTE(g_particle_records[10 * g_current_particle_index + 4]);
+    *((_BYTE *)particle_transition_record + 9) = particle_flags_byte & 0xFB;
+    *((_BYTE *)particle_transition_record + 12) = particle_packed_state & 0xF8 | transition_random_state & 7;
+    is_new_particle = g_shared_engine_data[12 * transition_source_material_id + 26] == 5;
+    next_transition_random_state = (transition_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(transition_random_state - 0x61C8864680B583EBLL) >> 27);
+    g_random_state = next_transition_random_state;
+    if ( is_new_particle )
+      result = (unsigned __int8)(next_transition_random_state & 1) << 7;
     else
-      result = hx_cast<unsigned __int8>(v19) % 0xFFuLL;
-    *((_BYTE *)v14 + 16) = result;
+      result = hx_cast<unsigned __int8>(next_transition_random_state) % 0xFFuLL;
+    *((_BYTE *)particle_transition_record + 16) = result;
   }
   return result;
 }
@@ -6977,51 +6977,51 @@ LABEL_8:
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (000000000000E2E4) ----------------------------------------------------
-__int64 __fastcall add_grouptype(__int16 a1, __int16 a2, unsigned __int8 a3, char a4)
+__int64 __fastcall add_grouptype(__int16 x, __int16 y, unsigned __int8 tool_id, char force_place)
 {
-  int v4; // w4
-  int v5; // w5
-  int v6; // w0
-  int v7; // w1
-  int v8; // w19
-  int v9; // w20
-  unsigned __int8 *v11; // x6
-  unsigned __int8 v12; // w10
-  unsigned __int8 v13; // w0
-  int v14; // w7
-  __int64 v15; // x1
-  char v16; // w7
-  int v17; // w2
-  __int64 v18; // x1
-  int v19; // w0
-  unsigned __int64 v20; // x1
-  bool v21; // w1
-  signed int v22; // w1
-  bool v23; // w6
+  int x_position; // w4
+  int y_position; // w5
+  int bottom_boundary; // w0
+  int right_boundary; // w1
+  int paired_material_x; // w19
+  int paired_material_y; // w20
+  unsigned __int8 *material_group_entry; // x6
+  unsigned __int8 base_material_id; // w10
+  unsigned __int8 placement_pattern; // w0
+  int variant_count; // w7
+  __int64 random_state_snapshot; // x1
+  char variant_offset; // w7
+  int material_id; // w2
+  __int64 existing_material_id; // x1
+  int existing_material_flags; // w0
+  unsigned __int64 random_state_value; // x1
+  bool diagonal_pattern_match; // w1
+  signed int diagonal_distance; // w1
+  bool grid_pattern_match; // w6
 
-  v4 = a1;
-  v5 = a2;
-  if ( a3 != 38 )
+  x_position = x;
+  y_position = y;
+  if ( tool_id != 38 )
   {
-    if ( a3 == 49 )
+    if ( tool_id == 49 )
     {
-      if ( a1 > 1 && a2 > 1 )
+      if ( x > 1 && y > 1 )
       {
-        v6 = g_view_height - 2;
-        if ( a2 < v6 )
+        bottom_boundary = g_view_height - 2;
+        if ( y < bottom_boundary )
         {
-          v7 = g_view_width[0] - 2;
-          if ( v4 < v7 )
+          right_boundary = g_view_width[0] - 2;
+          if ( x_position < right_boundary )
           {
-            v8 = (__int16)(v4 + word_E50AA0);
-            if ( v8 > 1 )
+            paired_material_x = (__int16)(x_position + word_E50AA0);
+            if ( paired_material_x > 1 )
             {
-              v9 = (__int16)(v5 + word_E50AA2);
-              if ( v9 > 1 && v6 > v9 && v7 > v8 )
+              paired_material_y = (__int16)(y_position + word_E50AA2);
+              if ( paired_material_y > 1 && bottom_boundary > paired_material_y && right_boundary > paired_material_x )
               {
-                add_type(v4, v5, 0x59u, 0);
-                add_type(v8, v9, 0x59u, 0);
-                if ( return_particle(v8, v9, 0, 1) )
+                add_type(x_position, y_position, 0x59u, 0);
+                add_type(paired_material_x, paired_material_y, 0x59u, 0);
+                if ( return_particle(paired_material_x, paired_material_y, 0, 1) )
                   HIBYTE(g_particle_records[10 * dword_E50A00 + 5]) |= 1u;
               }
             }
@@ -7030,104 +7030,104 @@ __int64 __fastcall add_grouptype(__int16 a1, __int16 a2, unsigned __int8 a3, cha
       }
       return 1;
     }
-    v11 = &g_material_properties_lut[4 * a3 + 224];
-    v12 = *v11;
-    v13 = v11[2];
-    switch ( v11[2] )
+    material_group_entry = &g_material_properties_lut[4 * tool_id + 224];
+    base_material_id = *material_group_entry;
+    placement_pattern = material_group_entry[2];
+    switch ( material_group_entry[2] )
     {
       case 1u:
-        if ( a2 % 10 > 4 )
+        if ( y % 10 > 4 )
         {
-          if ( (__int16)(v4 % 10) == 5 )
+          if ( (__int16)(x_position % 10) == 5 )
           {
 LABEL_35:
-            v17 = (unsigned __int8)(v13 + v12);
+            material_id = (unsigned __int8)(placement_pattern + base_material_id);
 LABEL_40:
-            if ( v17 != 255 )
-              return add_type(v4, v5, v17, a4);
+            if ( material_id != 255 )
+              return add_type(x_position, y_position, material_id, force_place);
             return 1;
           }
         }
-        else if ( (unsigned __int16)(v4 % 10) == 0 )
+        else if ( (unsigned __int16)(x_position % 10) == 0 )
         {
           goto LABEL_35;
         }
-        v13 = a2 % 5 == 0;
+        placement_pattern = y % 5 == 0;
         goto LABEL_35;
       case 2u:
-        v23 = true;
-        if ( (unsigned __int16)(v4 % 10) != 0 )
-          v23 = (__int16)(a2 % 10) == 0;
-        v17 = (unsigned __int8)(v23 + v12);
+        grid_pattern_match = true;
+        if ( (unsigned __int16)(x_position % 10) != 0 )
+          grid_pattern_match = (__int16)(y % 10) == 0;
+        material_id = (unsigned __int8)(grid_pattern_match + base_material_id);
         goto LABEL_40;
       case 3u:
-        v21 = true;
-        if ( v4 + v5 != 3 * ((v4 + v5) / 3) )
+        diagonal_pattern_match = true;
+        if ( x_position + y_position != 3 * ((x_position + y_position) / 3) )
         {
-          v22 = abs32(v4 - v5);
-          v21 = 3 * (v22 / 3) == v22;
+          diagonal_distance = abs32(x_position - y_position);
+          diagonal_pattern_match = 3 * (diagonal_distance / 3) == diagonal_distance;
         }
-        v17 = (unsigned __int8)(v21 + v12);
+        material_id = (unsigned __int8)(diagonal_pattern_match + base_material_id);
         goto LABEL_40;
       case 4u:
         g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                     ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
         if ( (g_random_state & 7) != 0 )
-          LOBYTE(v17) = v12 + 1;
+          LOBYTE(material_id) = base_material_id + 1;
         else
-          LOBYTE(v17) = v12;
-        v17 = hx_cast<unsigned __int8>(v17);
+          LOBYTE(material_id) = base_material_id;
+        material_id = hx_cast<unsigned __int8>(material_id);
         goto LABEL_40;
       default:
-        if ( (unsigned __int8)(g_shared_engine_data[12 * *v11 + 20] - 3) <= 1u )
+        if ( (unsigned __int8)(g_shared_engine_data[12 * *material_group_entry + 20] - 3) <= 1u )
         {
           g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                       ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
           if ( (g_random_state & 7) != 0 )
             return 1;
         }
-        v14 = g_material_properties_lut[4 * a3 + 225];
-        if ( v14 == 1 )
+        variant_count = g_material_properties_lut[4 * tool_id + 225];
+        if ( variant_count == 1 )
         {
-          v16 = 0;
+          variant_offset = 0;
         }
         else
         {
-          v15 = g_random_state;
+          random_state_snapshot = g_random_state;
           g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                       ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-          v16 = (unsigned __int8)((v15 + 21) ^ ((unsigned __int64)(v15 - 0x61C8864680B583EBLL) >> 27))
-              % hx_cast<unsigned __int8>(v14);
+          variant_offset = (unsigned __int8)((random_state_snapshot + 21) ^ ((unsigned __int64)(random_state_snapshot - 0x61C8864680B583EBLL) >> 27))
+              % hx_cast<unsigned __int8>(variant_count);
         }
-        v17 = (unsigned __int8)(v16 + v12);
+        material_id = (unsigned __int8)(variant_offset + base_material_id);
         goto LABEL_40;
     }
   }
-  v18 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (a1 + a2 * g_view_width[0]));
-  v19 = *(unsigned __int16 *)&g_material_properties[12 * v18 + 8];
-  if ( ((v19 >> 4) & 1 | ((v19 & 0x40) != 0)) != 0 )
+  existing_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (x + y * g_view_width[0]));
+  existing_material_flags = *(unsigned __int16 *)&g_material_properties[12 * existing_material_id + 8];
+  if ( ((existing_material_flags >> 4) & 1 | ((existing_material_flags & 0x40) != 0)) != 0 )
   {
-    g_found_x = v4;
-    g_found_y = v5;
-    set_fire(v4, v5);
+    g_found_x = x_position;
+    g_found_y = y_position;
+    set_fire(x_position, y_position);
     return 1;
   }
-  if ( hx_cast<_DWORD>(v18) != 0 )
+  if ( hx_cast<_DWORD>(existing_material_id) != 0 )
     return 1;
   if ( (unsigned __int8)(byte_332E0 - 3) <= 1u )
   {
-    v20 = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-    g_random_state = v20;
-    if ( (v20 & 7) != 0 )
+    random_state_value = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
+    g_random_state = random_state_value;
+    if ( (random_state_value & 7) != 0 )
       return 1;
   }
   else
   {
-    v20 = g_random_state;
+    random_state_value = g_random_state;
   }
-  g_random_state = (v20 - 0x61C8864680B583EBLL) ^ ((v20 - 0x61C8864680B583EBLL) >> 27);
-  LOBYTE(v17) = (unsigned __int8)((v20 + 21) ^ ((v20 - 0x61C8864680B583EBLL) >> 27)) % 3u + 59;
-  return add_type(v4, v5, v17, a4);
+  g_random_state = (random_state_value - 0x61C8864680B583EBLL) ^ ((random_state_value - 0x61C8864680B583EBLL) >> 27);
+  LOBYTE(material_id) = (unsigned __int8)((random_state_value + 21) ^ ((random_state_value - 0x61C8864680B583EBLL) >> 27)) % 3u + 59;
+  return add_type(x_position, y_position, material_id, force_place);
 }
 // 198: using guessed type int elf_hash_bucket[263];
 // D20: using guessed type Elf64_Sym;
@@ -10930,316 +10930,316 @@ LABEL_69:
 // E50A50: using guessed type __int128 xmmword_E50A50;
 
 //----- (0000000000014768) ----------------------------------------------------
-__int64 __fastcall draw_square(__int16 a1, __int16 a2, __int16 a3, __int16 a4, unsigned __int8 a5)
+__int64 __fastcall draw_square(__int16 left_x, __int16 top_y, __int16 right_x, __int16 bottom_y, unsigned __int8 tool_id)
 {
-  int v5; // w23
-  int v7; // w22
-  int v8; // s9
-  int v9; // w25
-  int v10; // w21
-  unsigned __int8 *v11; // x28
-  int v12; // w19
-  int v13; // w3
-  int v14; // w0
-  __int16 v15; // w20
-  int v16; // w27
-  int v17; // w24
+  int first_row_y; // w23
+  int last_row_y; // w22
+  int right_column_x; // s9
+  int selected_tool_id; // w25
+  int column_x; // w21
+  unsigned __int8 *material_group_entry; // x28
+  int paint_y; // w19
+  int bottom_inner_bound; // w3
+  int right_inner_bound; // w0
+  __int16 saved_paint_y; // w20
+  int paired_material_x; // w27
+  int paired_material_y; // w24
   __int64 result; // x0
-  int v19; // w20
-  int v20; // w27
-  int v21; // w21
-  int v22; // w24
-  unsigned int v23; // w19
-  unsigned __int8 v24; // w1
-  int v25; // w2
-  int v26; // w4
-  __int64 v27; // x3
-  char v28; // w4
-  bool v29; // w3
-  signed int v30; // w1
-  bool v31; // w0
-  unsigned int v32; // w19
-  int v33; // w23
-  int v34; // w1
-  int v35; // w19
+  int left_wake_bound_x; // w20
+  int right_wake_bound_x; // w27
+  int bottom_wake_bound_y; // w21
+  int wake_scan_start_x; // w24
+  unsigned int wake_scan_x; // w19
+  unsigned __int8 placement_pattern; // w1
+  int material_id; // w2
+  int variant_count; // w4
+  __int64 random_state_snapshot; // x3
+  char variant_offset; // w4
+  bool diagonal_pattern_match; // w3
+  signed int diagonal_distance; // w1
+  bool row_pattern_match; // w0
+  unsigned int wake_row_x; // w19
+  int next_paint_y; // w23
+  int wake_column_x; // w1
+  int wake_column_cursor_x; // w19
 
-  v5 = a2;
-  v7 = a4;
-  v8 = a3;
-  v9 = a5;
-  v10 = a1;
-  if ( a1 <= a3 )
+  first_row_y = top_y;
+  last_row_y = bottom_y;
+  right_column_x = right_x;
+  selected_tool_id = tool_id;
+  column_x = left_x;
+  if ( left_x <= right_x )
   {
-    v11 = &g_material_properties_lut[4 * a5 + 224];
-    while ( v5 > v7 )
+    material_group_entry = &g_material_properties_lut[4 * tool_id + 224];
+    while ( first_row_y > last_row_y )
     {
 LABEL_18:
-      v10 = (__int16)(v10 + 1);
-      if ( v8 < v10 )
+      column_x = (__int16)(column_x + 1);
+      if ( right_column_x < column_x )
         goto LABEL_19;
     }
-    v12 = v5;
+    paint_y = first_row_y;
     while ( 1 )
     {
-      if ( v10 <= 1 )
+      if ( column_x <= 1 )
         goto LABEL_41;
-      if ( v12 <= 1 )
+      if ( paint_y <= 1 )
         goto LABEL_41;
-      v13 = g_view_height - 2;
-      if ( v12 >= v13 )
+      bottom_inner_bound = g_view_height - 2;
+      if ( paint_y >= bottom_inner_bound )
         goto LABEL_41;
-      v14 = g_view_width[0] - 2;
-      if ( v14 <= v10 )
+      right_inner_bound = g_view_width[0] - 2;
+      if ( right_inner_bound <= column_x )
         goto LABEL_41;
-      if ( v9 != 38 )
+      if ( selected_tool_id != 38 )
       {
-        if ( v9 == 49 )
+        if ( selected_tool_id == 49 )
         {
-          v15 = v12;
-          v16 = (__int16)(v10 + word_E50AA0);
-          if ( v16 > 1 )
+          saved_paint_y = paint_y;
+          paired_material_x = (__int16)(column_x + word_E50AA0);
+          if ( paired_material_x > 1 )
           {
-            v17 = (__int16)(v12 + word_E50AA2);
-            if ( v17 > 1 && v13 > v17 && v14 > v16 )
+            paired_material_y = (__int16)(paint_y + word_E50AA2);
+            if ( paired_material_y > 1 && bottom_inner_bound > paired_material_y && right_inner_bound > paired_material_x )
             {
-              add_type(v10, v12, 0x59u, 0);
-              add_type(v16, v17, 0x59u, 0);
-              if ( return_particle(v16, v17, 0, 1) )
+              add_type(column_x, paint_y, 0x59u, 0);
+              add_type(paired_material_x, paired_material_y, 0x59u, 0);
+              if ( return_particle(paired_material_x, paired_material_y, 0, 1) )
                 HIBYTE(g_particle_records[10 * dword_E50A00 + 5]) |= 1u;
             }
           }
           goto LABEL_17;
         }
-        v24 = v11[2];
-        LOBYTE(v25) = *v11;
-        switch ( v11[2] )
+        placement_pattern = material_group_entry[2];
+        LOBYTE(material_id) = *material_group_entry;
+        switch ( material_group_entry[2] )
         {
           case 1u:
-            if ( v12 % 10 > 4 )
+            if ( paint_y % 10 > 4 )
             {
-              if ( (__int16)(v10 % 10) == 5 )
+              if ( (__int16)(column_x % 10) == 5 )
                 goto LABEL_64;
 LABEL_63:
-              v24 = (unsigned __int16)(v12 % 5) == 0;
+              placement_pattern = (unsigned __int16)(paint_y % 5) == 0;
               goto LABEL_64;
             }
-            if ( (unsigned __int16)(v10 % 10) != 0 )
+            if ( (unsigned __int16)(column_x % 10) != 0 )
               goto LABEL_63;
 LABEL_64:
-            v25 = (unsigned __int8)(v24 + v25);
+            material_id = (unsigned __int8)(placement_pattern + material_id);
             break;
           case 2u:
-            v31 = true;
-            if ( (unsigned __int16)(v10 % 10) != 0 )
-              v31 = (unsigned __int16)(v12 % 10) == 0;
-            v25 = (unsigned __int8)(v31 + v25);
+            row_pattern_match = true;
+            if ( (unsigned __int16)(column_x % 10) != 0 )
+              row_pattern_match = (unsigned __int16)(paint_y % 10) == 0;
+            material_id = (unsigned __int8)(row_pattern_match + material_id);
             goto LABEL_48;
           case 3u:
-            v29 = true;
-            if ( v12 + v10 != 3 * ((v12 + v10) / 3) )
+            diagonal_pattern_match = true;
+            if ( paint_y + column_x != 3 * ((paint_y + column_x) / 3) )
             {
-              v30 = abs32(v10 - v12);
-              v29 = 3 * (v30 / 3) == v30;
+              diagonal_distance = abs32(column_x - paint_y);
+              diagonal_pattern_match = 3 * (diagonal_distance / 3) == diagonal_distance;
             }
-            v25 = (unsigned __int8)(v29 + v25);
+            material_id = (unsigned __int8)(diagonal_pattern_match + material_id);
             goto LABEL_48;
           case 4u:
             g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                         ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
             if ( (g_random_state & 7) != 0 )
-              LOBYTE(v25) = v25 + 1;
-            v25 = hx_cast<unsigned __int8>(v25);
+              LOBYTE(material_id) = material_id + 1;
+            material_id = hx_cast<unsigned __int8>(material_id);
             goto LABEL_48;
           default:
-            if ( (unsigned __int8)(g_shared_engine_data[12 * *v11 + 20] - 3) <= 1u )
+            if ( (unsigned __int8)(g_shared_engine_data[12 * *material_group_entry + 20] - 3) <= 1u )
             {
               g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                           ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
               if ( (g_random_state & 7) != 0 )
                 goto LABEL_41;
             }
-            v26 = v11[1];
-            if ( v26 == 1 )
+            variant_count = material_group_entry[1];
+            if ( variant_count == 1 )
             {
-              v28 = 0;
+              variant_offset = 0;
             }
             else
             {
-              v27 = g_random_state;
+              random_state_snapshot = g_random_state;
               g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                           ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-              v28 = (unsigned __int8)((v27 + 21) ^ ((unsigned __int64)(v27 - 0x61C8864680B583EBLL) >> 27))
-                  % hx_cast<unsigned __int8>(v26);
+              variant_offset = (unsigned __int8)((random_state_snapshot + 21) ^ ((unsigned __int64)(random_state_snapshot - 0x61C8864680B583EBLL) >> 27))
+                  % hx_cast<unsigned __int8>(variant_count);
             }
-            v25 = (unsigned __int8)(v28 + v25);
+            material_id = (unsigned __int8)(variant_offset + material_id);
             goto LABEL_48;
         }
         goto LABEL_48;
       }
-      if ( (unsigned __int8)pixel_custom_test(v10, v12, 7) != 0 )
+      if ( (unsigned __int8)pixel_custom_test(column_x, paint_y, 7) != 0 )
         break;
-      v15 = v12;
-      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (v10 + v12 * g_view_width[0])) != 0 )
+      saved_paint_y = paint_y;
+      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (column_x + paint_y * g_view_width[0])) != 0 )
       {
 LABEL_17:
-        v12 = (__int16)(v15 + 1);
-        if ( v7 < v12 )
+        paint_y = (__int16)(saved_paint_y + 1);
+        if ( last_row_y < paint_y )
           goto LABEL_18;
       }
       else
       {
-        v25 = (unsigned __int8)texture(v10, v12, 0x26u, 1);
+        material_id = (unsigned __int8)texture(column_x, paint_y, 0x26u, 1);
 LABEL_48:
-        if ( v25 == 255 )
+        if ( material_id == 255 )
         {
 LABEL_41:
-          v12 = (__int16)(v12 + 1);
-          if ( v7 < v12 )
+          paint_y = (__int16)(paint_y + 1);
+          if ( last_row_y < paint_y )
             goto LABEL_18;
         }
         else
         {
-          add_type(v10, v12, v25, 0);
-          v12 = (__int16)(v12 + 1);
-          if ( v7 < hx_cast<__int16>(v12) )
+          add_type(column_x, paint_y, material_id, 0);
+          paint_y = (__int16)(paint_y + 1);
+          if ( last_row_y < hx_cast<__int16>(paint_y) )
             goto LABEL_18;
         }
       }
     }
-    v15 = v12;
-    set_fire(v10, v12);
+    saved_paint_y = paint_y;
+    set_fire(column_x, paint_y);
     goto LABEL_17;
   }
 LABEL_19:
-  result = hx_cast<unsigned int>(v8);
-  v19 = (__int16)(a1 - 1);
-  v20 = v8 + 1;
-  if ( v19 > v8 + 1 )
+  result = hx_cast<unsigned int>(right_column_x);
+  left_wake_bound_x = (__int16)(left_x - 1);
+  right_wake_bound_x = right_column_x + 1;
+  if ( left_wake_bound_x > right_column_x + 1 )
   {
-    LOWORD(v5) = v5 - 1;
+    LOWORD(first_row_y) = first_row_y - 1;
   }
   else
   {
-    LOWORD(v5) = v5 - 1;
-    v21 = (__int16)(v7 + 1);
-    if ( v21 <= 1 )
+    LOWORD(first_row_y) = first_row_y - 1;
+    bottom_wake_bound_y = (__int16)(last_row_y + 1);
+    if ( bottom_wake_bound_y <= 1 )
     {
-      LODWORD(result) = (__int16)(a1 - 1);
-      if ( hx_cast<__int16>(v5) <= 1 )
+      LODWORD(result) = (__int16)(left_x - 1);
+      if ( hx_cast<__int16>(first_row_y) <= 1 )
       {
         do
         {
           result = (unsigned int)(__int16)(result + 1);
-          if ( hx_cast<int>(result) > v20 )
+          if ( hx_cast<int>(result) > right_wake_bound_x )
             break;
           result = (unsigned int)(__int16)(result + 1);
         }
-        while ( hx_cast<int>(result) <= v20 );
+        while ( hx_cast<int>(result) <= right_wake_bound_x );
       }
       else
       {
-        v32 = (__int16)(a1 - 1);
+        wake_row_x = (__int16)(left_x - 1);
         do
         {
-          while ( hx_cast<int>(result) <= 1 || hx_cast<__int16>(v5) >= g_view_height - 2 || hx_cast<int>(result) >= g_view_width[0] - 2 )
+          while ( hx_cast<int>(result) <= 1 || hx_cast<__int16>(first_row_y) >= g_view_height - 2 || hx_cast<int>(result) >= g_view_width[0] - 2 )
           {
-            v32 = (__int16)(v32 + 1);
-            result = v32;
-            if ( hx_cast<int>(v32) > v20 )
+            wake_row_x = (__int16)(wake_row_x + 1);
+            result = wake_row_x;
+            if ( hx_cast<int>(wake_row_x) > right_wake_bound_x )
               goto LABEL_30;
           }
-          wake_particle(v32, v5);
-          v32 = (__int16)(v32 + 1);
-          result = (unsigned int)hx_cast<__int16>(v32);
+          wake_particle(wake_row_x, first_row_y);
+          wake_row_x = (__int16)(wake_row_x + 1);
+          result = (unsigned int)hx_cast<__int16>(wake_row_x);
         }
-        while ( hx_cast<__int16>(v32) <= v20 );
+        while ( hx_cast<__int16>(wake_row_x) <= right_wake_bound_x );
       }
     }
     else
     {
-      if ( hx_cast<__int16>(v5) > 1 )
+      if ( hx_cast<__int16>(first_row_y) > 1 )
       {
-        v22 = (__int16)(a1 - 1);
-        v23 = v22;
+        wake_scan_start_x = (__int16)(left_x - 1);
+        wake_scan_x = wake_scan_start_x;
         while ( 1 )
         {
-          if ( v22 <= 1 )
+          if ( wake_scan_start_x <= 1 )
             goto LABEL_29;
-          if ( hx_cast<__int16>(v5) >= g_view_height - 2 )
+          if ( hx_cast<__int16>(first_row_y) >= g_view_height - 2 )
           {
 LABEL_27:
             result = (unsigned int)(g_view_height - 2);
-            if ( hx_cast<int>(result) <= v21 )
+            if ( hx_cast<int>(result) <= bottom_wake_bound_y )
               goto LABEL_29;
             result = (unsigned int)(g_view_width[0] - 2);
-            if ( v22 >= hx_cast<int>(result) )
+            if ( wake_scan_start_x >= hx_cast<int>(result) )
               goto LABEL_29;
-            result = wake_particle(v23, v21);
-            v23 = (__int16)(v23 + 1);
-            v22 = v23;
-            if ( hx_cast<__int16>(v23) > v20 )
+            result = wake_particle(wake_scan_x, bottom_wake_bound_y);
+            wake_scan_x = (__int16)(wake_scan_x + 1);
+            wake_scan_start_x = wake_scan_x;
+            if ( hx_cast<__int16>(wake_scan_x) > right_wake_bound_x )
               goto LABEL_30;
           }
           else
           {
             result = (unsigned int)(g_view_width[0] - 2);
-            if ( v22 < hx_cast<int>(result) )
+            if ( wake_scan_start_x < hx_cast<int>(result) )
             {
-              wake_particle(v23, v5);
+              wake_particle(wake_scan_x, first_row_y);
               goto LABEL_27;
             }
 LABEL_29:
-            v23 = (__int16)(v23 + 1);
-            v22 = v23;
-            if ( hx_cast<int>(v23) > v20 )
+            wake_scan_x = (__int16)(wake_scan_x + 1);
+            wake_scan_start_x = wake_scan_x;
+            if ( hx_cast<int>(wake_scan_x) > right_wake_bound_x )
               goto LABEL_30;
           }
         }
       }
-      v34 = (__int16)(a1 - 1);
-      v35 = v34;
+      wake_column_x = (__int16)(left_x - 1);
+      wake_column_cursor_x = wake_column_x;
       do
       {
         while ( 1 )
         {
-          if ( v34 > 1 )
+          if ( wake_column_x > 1 )
           {
             result = (unsigned int)(g_view_height - 2);
-            if ( hx_cast<int>(result) > v21 )
+            if ( hx_cast<int>(result) > bottom_wake_bound_y )
             {
               result = (unsigned int)(g_view_width[0] - 2);
-              if ( hx_cast<int>(result) > v34 )
+              if ( hx_cast<int>(result) > wake_column_x )
                 break;
             }
           }
-          v35 = (__int16)(v35 + 1);
-          v34 = v35;
-          if ( v35 > v20 )
+          wake_column_cursor_x = (__int16)(wake_column_cursor_x + 1);
+          wake_column_x = wake_column_cursor_x;
+          if ( wake_column_cursor_x > right_wake_bound_x )
             goto LABEL_30;
         }
-        result = wake_particle(hx_cast<unsigned int>(v35), v21);
-        v35 = (__int16)(v35 + 1);
-        v34 = v35;
+        result = wake_particle(hx_cast<unsigned int>(wake_column_cursor_x), bottom_wake_bound_y);
+        wake_column_cursor_x = (__int16)(wake_column_cursor_x + 1);
+        wake_column_x = wake_column_cursor_x;
       }
-      while ( hx_cast<__int16>(v35) <= v20 );
+      while ( hx_cast<__int16>(wake_column_cursor_x) <= right_wake_bound_x );
     }
   }
 LABEL_30:
-  v5 = hx_cast<__int16>(v5);
-  if ( v7 >= hx_cast<__int16>(v5) )
+  first_row_y = hx_cast<__int16>(first_row_y);
+  if ( last_row_y >= hx_cast<__int16>(first_row_y) )
   {
-    if ( v19 <= 1 )
+    if ( left_wake_bound_x <= 1 )
     {
-      if ( hx_cast<__int16>(v20) <= 1 )
+      if ( hx_cast<__int16>(right_wake_bound_x) <= 1 )
       {
         do
         {
-          v33 = (__int16)(v5 + 1);
-          if ( v7 < v33 )
+          next_paint_y = (__int16)(first_row_y + 1);
+          if ( last_row_y < next_paint_y )
             break;
-          v5 = (__int16)(v33 + 1);
+          first_row_y = (__int16)(next_paint_y + 1);
         }
-        while ( v7 >= v5 );
+        while ( last_row_y >= first_row_y );
       }
       else
       {
@@ -11247,50 +11247,50 @@ LABEL_30:
         {
           while ( 1 )
           {
-            if ( v5 > 1 )
+            if ( first_row_y > 1 )
             {
               result = (unsigned int)(g_view_height - 2);
-              if ( hx_cast<int>(result) > v5 )
+              if ( hx_cast<int>(result) > first_row_y )
               {
                 result = (unsigned int)(g_view_width[0] - 2);
-                if ( hx_cast<__int16>(v20) < hx_cast<int>(result) )
+                if ( hx_cast<__int16>(right_wake_bound_x) < hx_cast<int>(result) )
                   break;
               }
             }
-            v5 = (__int16)(v5 + 1);
-            if ( v7 < v5 )
+            first_row_y = (__int16)(first_row_y + 1);
+            if ( last_row_y < first_row_y )
               return result;
           }
-          result = wake_particle((unsigned int)hx_cast<__int16>(v20), v5);
-          v5 = (__int16)(v5 + 1);
+          result = wake_particle((unsigned int)hx_cast<__int16>(right_wake_bound_x), first_row_y);
+          first_row_y = (__int16)(first_row_y + 1);
         }
-        while ( v7 >= hx_cast<__int16>(v5) );
+        while ( last_row_y >= hx_cast<__int16>(first_row_y) );
       }
     }
-    else if ( hx_cast<__int16>(v20) <= 1 )
+    else if ( hx_cast<__int16>(right_wake_bound_x) <= 1 )
     {
       do
       {
         while ( 1 )
         {
-          if ( v5 > 1 )
+          if ( first_row_y > 1 )
           {
             result = (unsigned int)(g_view_height - 2);
-            if ( v5 < hx_cast<int>(result) )
+            if ( first_row_y < hx_cast<int>(result) )
             {
               result = (unsigned int)(g_view_width[0] - 2);
-              if ( v19 < hx_cast<int>(result) )
+              if ( left_wake_bound_x < hx_cast<int>(result) )
                 break;
             }
           }
-          v5 = (__int16)(v5 + 1);
-          if ( v7 < v5 )
+          first_row_y = (__int16)(first_row_y + 1);
+          if ( last_row_y < first_row_y )
             return result;
         }
-        result = wake_particle(hx_cast<unsigned int>(v19), v5);
-        v5 = (__int16)(v5 + 1);
+        result = wake_particle(hx_cast<unsigned int>(left_wake_bound_x), first_row_y);
+        first_row_y = (__int16)(first_row_y + 1);
       }
-      while ( v7 >= hx_cast<__int16>(v5) );
+      while ( last_row_y >= hx_cast<__int16>(first_row_y) );
     }
     else
     {
@@ -11298,28 +11298,28 @@ LABEL_30:
       {
         while ( 1 )
         {
-          if ( v5 > 1 )
+          if ( first_row_y > 1 )
           {
             result = (unsigned int)(g_view_height - 2);
-            if ( v5 < hx_cast<int>(result) )
+            if ( first_row_y < hx_cast<int>(result) )
             {
-              if ( v19 >= g_view_width[0] - 2
-                || (wake_particle(hx_cast<unsigned int>(v19), v5), result = (unsigned int)(g_view_height - 2), v5 < hx_cast<int>(result)) )
+              if ( left_wake_bound_x >= g_view_width[0] - 2
+                || (wake_particle(hx_cast<unsigned int>(left_wake_bound_x), first_row_y), result = (unsigned int)(g_view_height - 2), first_row_y < hx_cast<int>(result)) )
               {
                 result = (unsigned int)(g_view_width[0] - 2);
-                if ( hx_cast<__int16>(v20) < hx_cast<int>(result) )
+                if ( hx_cast<__int16>(right_wake_bound_x) < hx_cast<int>(result) )
                   break;
               }
             }
           }
-          v5 = (__int16)(v5 + 1);
-          if ( v7 < v5 )
+          first_row_y = (__int16)(first_row_y + 1);
+          if ( last_row_y < first_row_y )
             return result;
         }
-        result = wake_particle((unsigned int)hx_cast<__int16>(v20), v5);
-        v5 = (__int16)(v5 + 1);
+        result = wake_particle((unsigned int)hx_cast<__int16>(right_wake_bound_x), first_row_y);
+        first_row_y = (__int16)(first_row_y + 1);
       }
-      while ( v7 >= hx_cast<__int16>(v5) );
+      while ( last_row_y >= hx_cast<__int16>(first_row_y) );
     }
   }
   return result;
@@ -11338,185 +11338,185 @@ LABEL_30:
 // E50AA2: using guessed type __int16 word_E50AA2;
 
 //----- (0000000000014F68) ----------------------------------------------------
-__int64 __fastcall draw_square(__int16 a1, __int16 a2, __int16 a3, __int16 a4)
+__int64 __fastcall draw_square(__int16 left_x, __int16 top_y, __int16 right_x, __int16 bottom_y)
 {
-  return draw_square(a1, a2, a3, a4, g_selected_material);
+  return draw_square(left_x, top_y, right_x, bottom_y, g_selected_material);
 }
 // 334E5: using guessed type char g_selected_material;
 
 //----- (0000000000014F74) ----------------------------------------------------
-__int64 __fastcall draw_point(__int16 a1, __int16 a2)
+__int64 __fastcall draw_point(__int16 center_x, __int16 center_y)
 {
   return draw_square(
-           a1 - (unsigned __int8)byte_E50AF2,
-           a2 - (unsigned __int8)byte_E50AF2,
-           a1 + (unsigned __int8)byte_E50AF2,
-           a2 + (unsigned __int8)byte_E50AF2);
+           center_x - (unsigned __int8)byte_E50AF2,
+           center_y - (unsigned __int8)byte_E50AF2,
+           center_x + (unsigned __int8)byte_E50AF2,
+           center_y + (unsigned __int8)byte_E50AF2);
 }
 // E50AF2: using guessed type char byte_E50AF2;
 
 //----- (0000000000014F98) ----------------------------------------------------
-__int64 __fastcall draw_to(__int16 a1, __int16 a2)
+__int64 __fastcall draw_to(__int16 target_x, __int16 target_y)
 {
-  int v5; // w1
-  __int64 result; // x0
-  signed int v7; // w4
-  int v8; // w2
-  float v9; // s11
-  __int16 v10; // w2
-  __int16 v11; // w25
-  __int16 v12; // w22
-  float v13; // s9
-  float v14; // s10
-  float v15; // s8
-  __int16 v16; // w19
-  int v17; // w20
-  __int16 v18; // h15
-  __int16 v19; // w22
-  int v20; // w26
-  int v21; // w24
-  int v22; // w0
-  unsigned __int16 v23; // w2
-  int v24; // w23
-  unsigned __int16 *v25; // x4
-  unsigned __int16 *v26; // x3
-  float v27; // s1
-  float v28; // s0
-  int v29; // w4
-  __int16 v30; // w21
-  int v31; // w1
-  int v32; // w2
-  int v33; // w0
-  __int16 v34; // w23
-  int v35; // w1
-  int v36; // w0
-  __int16 v37; // w21
-  int v38; // w2
-  __int16 v39; // [xsp+A8h] [xbp-8h]
-  __int16 v40; // [xsp+ACh] [xbp-4h]
+  int x_delta; // w1
+  __int64 x_step_offset; // x0
+  signed int abs_x_delta; // w4
+  int line_step_count; // w2
+  float line_step_count_float; // s11
+  __int16 brush_radius; // w2
+  __int16 brush_edge_x; // w25
+  __int16 brush_edge_y; // w22
+  float x_increment_per_step; // s9
+  float y_increment_per_step; // s10
+  float interpolation_step; // s8
+  __int16 y_step_offset; // w19
+  int step_index; // w20
+  __int16 brush_far_y; // h15
+  __int16 x_offset; // w22
+  int brush_column_x; // w26
+  int brush_row_y; // w24
+  int brush_step; // w0
+  unsigned __int16 brush_radius_unsigned; // w2
+  int wake_x; // w23
+  unsigned __int16 *gravity_direction_entry; // x4
+  unsigned __int16 *gravity_direction_for_wake; // x3
+  float interpolated_x; // s1
+  float interpolated_y; // s0
+  int top_brush_step_index; // w4
+  __int16 brush_edge_offset; // w21
+  int candidate_y; // w1
+  int candidate_x; // w2
+  int interior_brush_step_index; // w0
+  __int16 side_candidate_y; // w23
+  int candidate_y_limit; // w1
+  int left_brush_step_index; // w0
+  __int16 left_brush_offset; // w21
+  int left_brush_x; // w2
+  __int16 brush_top_y; // [xsp+A8h] [xbp-8h]
+  __int16 brush_left_x; // [xsp+ACh] [xbp-4h]
 
-  v5 = (__int16)(word_E50AF8 - a1);
-  result = (unsigned int)(__int16)(word_E50AFA - a2);
-  if ( (v5 | hx_cast<unsigned int>(result)) == 0 )
-    return result;
-  v7 = abs32(v5);
-  v8 = abs32(result);
-  if ( v8 <= v7 )
-    v8 = v7;
-  v9 = (float)v8;
-  if ( v5 < 0 )
+  x_delta = (__int16)(word_E50AF8 - target_x);
+  x_step_offset = (unsigned int)(__int16)(word_E50AFA - target_y);
+  if ( (x_delta | hx_cast<unsigned int>(x_step_offset)) == 0 )
+    return x_step_offset;
+  abs_x_delta = abs32(x_delta);
+  line_step_count = abs32(x_step_offset);
+  if ( line_step_count <= abs_x_delta )
+    line_step_count = abs_x_delta;
+  line_step_count_float = (float)line_step_count;
+  if ( x_delta < 0 )
   {
-    v10 = (unsigned __int8)byte_E50AF2;
-    v39 = a2 - (unsigned __int8)byte_E50AF2;
-    v40 = a1 - (unsigned __int8)byte_E50AF2;
-    v11 = v40;
-    if ( (result & 0x80000000) == 0 )
+    brush_radius = (unsigned __int8)byte_E50AF2;
+    brush_top_y = target_y - (unsigned __int8)byte_E50AF2;
+    brush_left_x = target_x - (unsigned __int8)byte_E50AF2;
+    brush_edge_x = brush_left_x;
+    if ( (x_step_offset & 0x80000000) == 0 )
       goto LABEL_6;
   }
   else
   {
-    v10 = (unsigned __int8)byte_E50AF2;
-    v39 = a2 - (unsigned __int8)byte_E50AF2;
-    v40 = a1 - (unsigned __int8)byte_E50AF2;
-    v11 = a1 + (unsigned __int8)byte_E50AF2;
-    if ( (result & 0x80000000) == 0 )
+    brush_radius = (unsigned __int8)byte_E50AF2;
+    brush_top_y = target_y - (unsigned __int8)byte_E50AF2;
+    brush_left_x = target_x - (unsigned __int8)byte_E50AF2;
+    brush_edge_x = target_x + (unsigned __int8)byte_E50AF2;
+    if ( (x_step_offset & 0x80000000) == 0 )
     {
 LABEL_6:
-      v12 = v10 + a2;
+      brush_edge_y = brush_radius + target_y;
       goto LABEL_7;
     }
   }
-  v12 = v39;
+  brush_edge_y = brush_top_y;
 LABEL_7:
-  v13 = (float)v5 / v9;
-  v14 = (float)hx_cast<int>(result) / v9;
-  if ( v9 >= 0.0 )
+  x_increment_per_step = (float)x_delta / line_step_count_float;
+  y_increment_per_step = (float)hx_cast<int>(x_step_offset) / line_step_count_float;
+  if ( line_step_count_float >= 0.0 )
   {
-    v15 = 0.0;
-    v16 = 0;
-    LOWORD(v17) = 0;
-    v18 = v12;
-    LOWORD(result) = 0;
+    interpolation_step = 0.0;
+    y_step_offset = 0;
+    LOWORD(step_index) = 0;
+    brush_far_y = brush_edge_y;
+    LOWORD(x_step_offset) = 0;
     do
     {
-      v19 = result;
-      v20 = (__int16)(result + v11);
-      v21 = (__int16)(v16 + v18);
-      if ( v20 > 1 )
+      x_offset = x_step_offset;
+      brush_column_x = (__int16)(x_step_offset + brush_edge_x);
+      brush_row_y = (__int16)(y_step_offset + brush_far_y);
+      if ( brush_column_x > 1 )
       {
-        if ( v21 <= 1 )
+        if ( brush_row_y <= 1 )
         {
-          LOWORD(v33) = 0;
+          LOWORD(interior_brush_step_index) = 0;
           do
           {
-            v34 = v33;
-            v35 = (__int16)(v33 + v16 + v39);
-            if ( v35 > 1 && v35 < g_view_height - 2 && g_view_width[0] - 2 > v20 )
-              add_grouptype(v20, v35, g_selected_material, 0);
-            v33 = (__int16)(v34 + 1);
-            v23 = (unsigned __int8)byte_E50AF2;
+            side_candidate_y = interior_brush_step_index;
+            candidate_y_limit = (__int16)(interior_brush_step_index + y_step_offset + brush_top_y);
+            if ( candidate_y_limit > 1 && candidate_y_limit < g_view_height - 2 && g_view_width[0] - 2 > brush_column_x )
+              add_grouptype(brush_column_x, candidate_y_limit, g_selected_material, 0);
+            interior_brush_step_index = (__int16)(side_candidate_y + 1);
+            brush_radius_unsigned = (unsigned __int8)byte_E50AF2;
           }
-          while ( v33 <= 2 * (unsigned __int8)byte_E50AF2 );
+          while ( interior_brush_step_index <= 2 * (unsigned __int8)byte_E50AF2 );
         }
         else
         {
-          LOWORD(v29) = 0;
+          LOWORD(top_brush_step_index) = 0;
           do
           {
-            v30 = v29;
-            v31 = (__int16)(v29 + v16 + v39);
-            if ( v31 > 1 && g_view_height - 2 > v31 && g_view_width[0] - 2 > v20 )
-              add_grouptype(v20, v31, g_selected_material, 0);
-            v32 = (__int16)(v30 + v40 + v19);
-            if ( v32 > 1 && v21 < g_view_height - 2 && g_view_width[0] - 2 > v32 )
-              add_grouptype(v32, v21, g_selected_material, 0);
-            v29 = (__int16)(v30 + 1);
-            v23 = (unsigned __int8)byte_E50AF2;
+            brush_edge_offset = top_brush_step_index;
+            candidate_y = (__int16)(top_brush_step_index + y_step_offset + brush_top_y);
+            if ( candidate_y > 1 && g_view_height - 2 > candidate_y && g_view_width[0] - 2 > brush_column_x )
+              add_grouptype(brush_column_x, candidate_y, g_selected_material, 0);
+            candidate_x = (__int16)(brush_edge_offset + brush_left_x + x_offset);
+            if ( candidate_x > 1 && brush_row_y < g_view_height - 2 && g_view_width[0] - 2 > candidate_x )
+              add_grouptype(candidate_x, brush_row_y, g_selected_material, 0);
+            top_brush_step_index = (__int16)(brush_edge_offset + 1);
+            brush_radius_unsigned = (unsigned __int8)byte_E50AF2;
           }
-          while ( v29 <= 2 * (unsigned __int8)byte_E50AF2 );
+          while ( top_brush_step_index <= 2 * (unsigned __int8)byte_E50AF2 );
         }
       }
-      else if ( v21 > 1 )
+      else if ( brush_row_y > 1 )
       {
-        LOWORD(v36) = 0;
+        LOWORD(left_brush_step_index) = 0;
         do
         {
-          v37 = v36;
-          v38 = (__int16)(v36 + v40 + v19);
-          if ( v38 > 1 && v21 < g_view_height - 2 && v38 < g_view_width[0] - 2 )
-            add_grouptype(v38, v21, g_selected_material, 0);
-          v36 = (__int16)(v37 + 1);
-          v23 = (unsigned __int8)byte_E50AF2;
+          left_brush_offset = left_brush_step_index;
+          left_brush_x = (__int16)(left_brush_step_index + brush_left_x + x_offset);
+          if ( left_brush_x > 1 && brush_row_y < g_view_height - 2 && left_brush_x < g_view_width[0] - 2 )
+            add_grouptype(left_brush_x, brush_row_y, g_selected_material, 0);
+          left_brush_step_index = (__int16)(left_brush_offset + 1);
+          brush_radius_unsigned = (unsigned __int8)byte_E50AF2;
         }
-        while ( v36 <= 2 * (unsigned __int8)byte_E50AF2 );
+        while ( left_brush_step_index <= 2 * (unsigned __int8)byte_E50AF2 );
       }
       else
       {
-        LOWORD(v22) = 0;
-        v23 = (unsigned __int8)byte_E50AF2;
+        LOWORD(brush_step) = 0;
+        brush_radius_unsigned = (unsigned __int8)byte_E50AF2;
         do
-          v22 = (__int16)(v22 + 1);
-        while ( v22 <= 2 * (unsigned __int8)byte_E50AF2 );
+          brush_step = (__int16)(brush_step + 1);
+        while ( brush_step <= 2 * (unsigned __int8)byte_E50AF2 );
       }
-      v24 = (unsigned __int16)(v19 + a1);
-      v17 = (__int16)(v17 + 1);
-      v25 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+      wake_x = (unsigned __int16)(x_offset + target_x);
+      step_index = (__int16)(step_index + 1);
+      gravity_direction_entry = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
       wake_particle(
-        v24 + (v23 ^ 0xFFFF) * v25[4] + (unsigned __int16)-v23 * hx_cast<unsigned int>(v25[6]),
-        v16 + a2 + ~v23 * v25[5] + -v23 * v25[7]);
-      v26 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+        wake_x + (brush_radius_unsigned ^ 0xFFFF) * gravity_direction_entry[4] + (unsigned __int16)-brush_radius_unsigned * hx_cast<unsigned int>(gravity_direction_entry[6]),
+        y_step_offset + target_y + ~brush_radius_unsigned * gravity_direction_entry[5] + -brush_radius_unsigned * gravity_direction_entry[7]);
+      gravity_direction_for_wake = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
       wake_particle(
-        v24 + (unsigned __int8)byte_E50AF2 * v26[6] + ((unsigned __int8)byte_E50AF2 ^ 0xFFFF) * hx_cast<unsigned int>(v26[4]),
-        v16 + a2 + (unsigned __int8)byte_E50AF2 * v26[7] + ~(unsigned __int8)byte_E50AF2 * v26[5]);
-      v27 = v13 * v15;
-      v28 = v14 * v15;
-      v15 = (float)v17;
-      result = (unsigned int)(__int16)hx_cast<int>(v27);
-      v16 = hx_cast<int>(v28);
+        wake_x + (unsigned __int8)byte_E50AF2 * gravity_direction_for_wake[6] + ((unsigned __int8)byte_E50AF2 ^ 0xFFFF) * hx_cast<unsigned int>(gravity_direction_for_wake[4]),
+        y_step_offset + target_y + (unsigned __int8)byte_E50AF2 * gravity_direction_for_wake[7] + ~(unsigned __int8)byte_E50AF2 * gravity_direction_for_wake[5]);
+      interpolated_x = x_increment_per_step * interpolation_step;
+      interpolated_y = y_increment_per_step * interpolation_step;
+      interpolation_step = (float)step_index;
+      x_step_offset = (unsigned int)(__int16)hx_cast<int>(interpolated_x);
+      y_step_offset = hx_cast<int>(interpolated_y);
     }
-    while ( v9 >= (float)v17 );
+    while ( line_step_count_float >= (float)step_index );
   }
-  return result;
+  return x_step_offset;
 }
 // 0: using guessed type int dword_0;
 // 198: using guessed type int elf_hash_bucket[263];
@@ -11636,51 +11636,51 @@ __int64 __fastcall init_all(char a1)
 // E50AFF: using guessed type char byte_E50AFF;
 
 //----- (00000000000155A0) ----------------------------------------------------
-__int64 __fastcall run_command(__int64 a1)
+__int64 __fastcall run_command(__int64 packed_command)
 {
-  int v1; // w1
-  int v2; // w2
-  int v3; // w3
+  int command_case_index; // w1
+  int command_parameter_1; // w2
+  int command_parameter_2; // w3
   __int64 result; // x0
   _BYTE *i; // x0
   _BYTE *v7; // x0
-  int v8; // w2
-  int v9; // w21
-  int v10; // w20
-  unsigned __int8 *v11; // x4
-  unsigned __int8 v12; // w3
-  int v13; // w5
-  char v14; // w0
-  int v15; // w0
-  _BYTE *v16; // x1
-  __int64 v17; // x0
-  int v18; // w0
+  int scaled_touch_x; // w2
+  int touch_x; // w21
+  int touch_y; // w20
+  unsigned __int8 *material_group_entry; // x4
+  unsigned __int8 base_material_id; // w3
+  int material_variant_count; // w5
+  char material_variant_offset; // w0
+  int cell_count; // w0
+  _BYTE *cell_cursor; // x1
+  __int64 cell_grid_end; // x0
+  int eraser_toggle_state; // w0
 
-  v1 = hx_cast<unsigned __int8>(a1) - 1;
-  v2 = hx_cast<int>(a1) >> 16;
-  v3 = SWORD2(a1);
-  result = (__int64)&loc_155E4 + 4 * jpt_155E0[v1];
-  switch ( v1 )
+  command_case_index = hx_cast<unsigned __int8>(packed_command) - 1;
+  command_parameter_1 = hx_cast<int>(packed_command) >> 16;
+  command_parameter_2 = SWORD2(packed_command);
+  result = (__int64)&loc_155E4 + 4 * jpt_155E0[command_case_index];
+  switch ( command_case_index )
   {
     case 0:
       goto LABEL_13;
     case 1:
-      v8 = v2 / (unsigned __int8)g_zoom_factor;
-      result = (unsigned int)(v3 / (unsigned __int8)g_zoom_factor);
-      LOWORD(v9) = v8;
-      word_E50AF8 = v8;
-      LOWORD(v10) = v3 / (unsigned __int8)g_zoom_factor;
-      word_E50AFA = v10;
+      scaled_touch_x = command_parameter_1 / (unsigned __int8)g_zoom_factor;
+      result = (unsigned int)(command_parameter_2 / (unsigned __int8)g_zoom_factor);
+      LOWORD(touch_x) = scaled_touch_x;
+      word_E50AF8 = scaled_touch_x;
+      LOWORD(touch_y) = command_parameter_2 / (unsigned __int8)g_zoom_factor;
+      word_E50AFA = touch_y;
       if ( g_selected_material != 49 )
       {
         byte_E50AFE = 1;
 LABEL_16:
-        result = draw_to(v9, v10);
+        result = draw_to(touch_x, touch_y);
         goto LABEL_17;
       }
       if ( byte_E50AFF != 0 )
       {
-        word_E50AA0 -= v8;
+        word_E50AA0 -= scaled_touch_x;
         word_E50AA2 -= result;
 LABEL_19:
         result = (unsigned __int8)byte_E50AFF;
@@ -11688,38 +11688,38 @@ LABEL_19:
           goto LABEL_16;
       }
 LABEL_17:
-      word_E50AF8 = v9;
-      word_E50AFA = v10;
+      word_E50AF8 = touch_x;
+      word_E50AFA = touch_y;
       return result;
     case 2:
-      v9 = v2 / (unsigned __int8)g_zoom_factor;
-      v10 = v3 / (unsigned __int8)g_zoom_factor;
+      touch_x = command_parameter_1 / (unsigned __int8)g_zoom_factor;
+      touch_y = command_parameter_2 / (unsigned __int8)g_zoom_factor;
       if ( g_selected_material == 49 )
         goto LABEL_19;
       goto LABEL_16;
     case 3:
       if ( g_selected_material == 49 )
       {
-        v18 = (unsigned __int8)byte_E50AFF;
-        word_E50AA0 = v2 / (unsigned __int8)g_zoom_factor;
-        word_E50AA2 = v3 / (unsigned __int8)g_zoom_factor;
+        eraser_toggle_state = (unsigned __int8)byte_E50AFF;
+        word_E50AA0 = command_parameter_1 / (unsigned __int8)g_zoom_factor;
+        word_E50AA2 = command_parameter_2 / (unsigned __int8)g_zoom_factor;
         if ( byte_E50AFF == 0 )
         {
           draw_square(word_E50AF8 - 1, word_E50AFA - 1, word_E50AF8 + 1, word_E50AFA + 1, 0x32u);
-          v18 = (unsigned __int8)byte_E50AFF;
+          eraser_toggle_state = (unsigned __int8)byte_E50AFF;
         }
-        result = v18 ^ 1u;
+        result = eraser_toggle_state ^ 1u;
         byte_E50AFF = result;
       }
       else
       {
-        result = draw_point(v2 / (unsigned __int8)g_zoom_factor, v3 / (unsigned __int8)g_zoom_factor);
+        result = draw_point(command_parameter_1 / (unsigned __int8)g_zoom_factor, command_parameter_2 / (unsigned __int8)g_zoom_factor);
       }
       byte_E50AFE = 0;
       return result;
     case 4:
-      result = g_material_properties_lut[4 * v2 + 227];
-      g_selected_material = v2;
+      result = g_material_properties_lut[4 * command_parameter_1 + 227];
+      g_selected_material = command_parameter_1;
       byte_E50A94 = 0;
       if ( hx_cast<_DWORD>(result) == 0 )
         result = (unsigned __int8)g_selected_material_state;
@@ -11728,7 +11728,7 @@ LABEL_17:
       return result;
     case 5:
       result = (__int64)&unk_E50000;
-      byte_E50AF0 = v2;
+      byte_E50AF0 = command_parameter_1;
       return result;
     case 6:
       result = (__int64)g_shared_engine_data;
@@ -11744,9 +11744,9 @@ LABEL_17:
         return wake_border();
       return result;
     case 8:
-      return (__int64)change_zoom(v2, 1);
+      return (__int64)change_zoom(command_parameter_1, 1);
     case 9:
-      return (__int64)change_zoom(v2, 0);
+      return (__int64)change_zoom(command_parameter_1, 0);
     case 10:
       return init_all(0);
     case 11:
@@ -11758,17 +11758,17 @@ LABEL_17:
       xmmword_E50A60 = xmmword_15BA0;
       if ( g_cell_state_allocated != 0 )
       {
-        v15 = g_view_width[0] * g_view_height;
-        if ( v15 > 0 )
+        cell_count = g_view_width[0] * g_view_height;
+        if ( cell_count > 0 )
         {
-          v16 = (_BYTE *)g_cell_state_grid;
-          v17 = g_cell_state_grid + 8 * ((unsigned int)(v15 - 1) + 1LL);
+          cell_cursor = (_BYTE *)g_cell_state_grid;
+          cell_grid_end = g_cell_state_grid + 8 * ((unsigned int)(cell_count - 1) + 1LL);
           do
           {
-            *v16 = 0;
-            v16 += 8;
+            *cell_cursor = 0;
+            cell_cursor += 8;
           }
-          while ( v16 != (_BYTE *)v17 );
+          while ( cell_cursor != (_BYTE *)cell_grid_end );
         }
       }
       clear_eraser();
@@ -11806,50 +11806,50 @@ LABEL_9:
       return result;
     case 12:
       result = (__int64)&unk_E50000;
-      byte_E50AFC = v2 != 0;
+      byte_E50AFC = command_parameter_1 != 0;
       return result;
     case 13:
       result = (__int64)&unk_E4FD10;
       byte_E50AFE = 0;
-      word_E50AF8 = v2 / (unsigned __int8)g_zoom_factor;
-      word_E50AFA = v3 / (unsigned __int8)g_zoom_factor;
+      word_E50AF8 = command_parameter_1 / (unsigned __int8)g_zoom_factor;
+      word_E50AFA = command_parameter_2 / (unsigned __int8)g_zoom_factor;
       return result;
     case 14:
-      return draw_square(word_E50AF8, word_E50AFA, v2 / (unsigned __int8)g_zoom_factor, v3 / (unsigned __int8)g_zoom_factor);
+      return draw_square(word_E50AF8, word_E50AFA, command_parameter_1 / (unsigned __int8)g_zoom_factor, command_parameter_2 / (unsigned __int8)g_zoom_factor);
     case 15:
-      g_background_color = v2;
+      g_background_color = command_parameter_1;
       return clear_screen(1);
     case 16:
-      v11 = &g_material_properties_lut[4 * hx_cast<unsigned __int8>(v2) + 224];
-      v12 = *v11;
-      v13 = v11[1];
-      if ( v13 == 1 )
+      material_group_entry = &g_material_properties_lut[4 * hx_cast<unsigned __int8>(command_parameter_1) + 224];
+      base_material_id = *material_group_entry;
+      material_variant_count = material_group_entry[1];
+      if ( material_variant_count == 1 )
       {
-        v14 = 0;
+        material_variant_offset = 0;
       }
       else
       {
         g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                     ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-        v14 = (unsigned __int16)g_random_state % hx_cast<unsigned __int8>(v13);
+        material_variant_offset = (unsigned __int16)g_random_state % hx_cast<unsigned __int8>(material_variant_count);
       }
-      if ( (unsigned __int8)g_shared_engine_data[12 * (unsigned __int8)(v14 + v12) + 20] <= 2u )
+      if ( (unsigned __int8)g_shared_engine_data[12 * (unsigned __int8)(material_variant_offset + base_material_id) + 20] <= 2u )
       {
-        g_selected_material = v2;
+        g_selected_material = command_parameter_1;
         byte_E50A94 = 0;
         return (__int64)&unk_E50000;
       }
       else
       {
         g_selected_material = 37;
-        byte_E50A94 = v2;
+        byte_E50A94 = command_parameter_1;
         byte_E50AF2 = 3;
         return (__int64)&unk_E4FD10;
       }
     case 17:
-      if ( v2 != 0 )
+      if ( command_parameter_1 != 0 )
       {
-        if ( v2 == 1 )
+        if ( command_parameter_1 == 1 )
         {
           g_engine_mode = 0;
           return (__int64)&unk_33000;
@@ -11864,13 +11864,13 @@ LABEL_13:
       return result;
     case 18:
       result = (__int64)&unk_4C7000;
-      byte_4C7378 = v2;
+      byte_4C7378 = command_parameter_1;
       return result;
     case 19:
-      g_selected_material_state = v2;
+      g_selected_material_state = command_parameter_1;
       if ( g_material_properties_lut[4 * (unsigned __int8)g_selected_material + 227] != 0 )
-        LOBYTE(v2) = g_material_properties_lut[4 * (unsigned __int8)g_selected_material + 227];
-      byte_E50AF2 = v2;
+        LOBYTE(command_parameter_1) = g_material_properties_lut[4 * (unsigned __int8)g_selected_material + 227];
+      byte_E50AF2 = command_parameter_1;
       return (__int64)&unk_E50000;
     case 20:
       return result;
@@ -11889,7 +11889,7 @@ LABEL_13:
         *v7 = 0;
       }
     default:
-      return a1;
+      return packed_command;
   }
 }
 // 198: using guessed type int elf_hash_bucket[263];
@@ -11959,85 +11959,85 @@ LABEL_13:
 //----- (0000000000015BB0) ----------------------------------------------------
 void *__fastcall main_loop()
 {
-  unsigned int v0; // w0
+  unsigned int engine_mode_snapshot; // w0
   void *result; // x0
-  unsigned int v2; // w20
-  int v3; // w26
-  __int64 v4; // x0
-  unsigned int v5; // w22
-  unsigned int v6; // w22
-  int v7; // w27
-  int v8; // w25
-  __int128 *v9; // d9
-  int v10; // w21
-  __int16 *v11; // x0
-  int v12; // w20
-  __int64 v13; // x20
-  __int16 *v14; // x20
-  __int64 v15; // x7
-  int v16; // w1
-  __int64 v17; // x0
-  int v18; // w1
-  int v19; // w2
-  char *v20; // x0
-  __int64 *v21; // x1
-  __int64 *v22; // x0
-  __int64 *v23; // x2
-  int v24; // w4
-  int v25; // w11
-  int v26; // w3
-  __int16 v27; // w10
-  int v28; // w12
-  __int64 v29; // x6
-  int v30; // w8
-  int v31; // w9
-  int v32; // w5
-  int v33; // w2
-  int v34; // w0
-  __int16 *v35; // x1
-  __int64 v36; // x4
-  unsigned int v37; // w0
-  int v38; // w21
-  int v39; // s11
-  __int16 v40; // w0
-  __int16 v41; // w1
-  __int16 v42; // w22
-  int v43; // w21
-  int v44; // s8
-  __int16 v45; // h9
-  __int16 v46; // w27
-  __int16 v47; // w22
-  __int16 v48; // w26
-  int v49; // w20
-  unsigned __int64 v50; // x6
-  __int16 v51; // w0
-  __int16 v52; // w0
-  __int16 v53; // w0
-  int v54; // w2
-  int v55; // w22
-  __int16 *v56; // x0
-  int v57; // w27
-  unsigned __int64 v58; // x0
-  __int64 v59; // x5
-  __int64 v60; // x4
-  __int64 v61; // x9
-  int v62; // w5
-  int v63; // w1
-  int v64; // w8
-  __int16 v65; // w6
-  char *v66; // x0
-  int v67; // w3
-  __int16 *v68; // x0
-  __int16 v69; // w1
-  unsigned int v70; // w0
-  char v71; // [xsp+80h] [xbp-10h] BYREF
-  unsigned __int64 v72; // [xsp+88h] [xbp-8h]
+  unsigned int command_read_cursor; // w20
+  int command_write_snapshot; // w26
+  __int64 command_slot_index; // x0
+  unsigned int mode_after_command_queue; // w22
+  unsigned int mode_phase; // w22
+  int particle_state_class; // w27
+  int processed_particle_count; // w25
+  __int128 *particle_state_list; // d9
+  int active_particle_index; // w21
+  __int16 *active_particle_record; // x0
+  int next_particle_index; // w20
+  __int64 render_particle_index; // x20
+  __int16 *render_particle_record; // x20
+  __int64 framebuffer_bank_index; // x7
+  int dirty_ring_read_index; // w1
+  __int64 dirty_ring_write_offset; // x0
+  int dirty_ring_next_index; // w1
+  int dirty_ring_end_index; // w2
+  char *dirty_ring_entry; // x0
+  __int64 *framebuffer_bank_entry; // x1
+  __int64 *framebuffer_bank_cursor; // x0
+  __int64 *framebuffer_bank_state; // x2
+  int grid_width; // w4
+  int grid_height; // w11
+  int grid_x; // w3
+  __int16 background_pixel; // w10
+  int right_grid_bound; // w12
+  __int64 cell_grid_base; // x6
+  int grid_y_cursor; // w8
+  int framebuffer_stride; // w9
+  int bottom_grid_bound; // w5
+  int grid_x_cursor; // w2
+  int grid_y; // w0
+  __int16 *transition_particle_record; // x1
+  __int64 transition_material_id; // x4
+  unsigned int transition_period; // w0
+  int simulation_substep; // w21
+  int simulation_substep_limit; // s11
+  __int16 field_center_x; // w0
+  __int16 field_sample_spacing; // w1
+  __int16 field_sample_width; // w22
+  int field_row_index; // w21
+  int field_column_count; // s8
+  __int16 field_left_edge_x; // h9
+  __int16 field_inner_left_x; // w27
+  __int16 field_inner_right_x; // w22
+  __int16 field_right_edge_x; // w26
+  int field_column_index; // w20
+  unsigned __int64 field_random_state; // x6
+  __int16 field_material_x_1; // w0
+  __int16 field_material_x_2; // w0
+  __int16 field_material_x_3; // w0
+  int simulation_particle_index; // w2
+  int particle_iteration_budget; // w22
+  __int16 *simulation_particle_record; // x0
+  int next_simulation_particle; // w27
+  unsigned __int64 simulation_particle_state; // x0
+  __int64 transition_random_state; // x5
+  __int64 dirty_clear_cell_grid; // x4
+  __int64 dirty_clear_framebuffer; // x9
+  int dirty_clear_grid_width; // w5
+  int dirty_clear_queue_index; // w1
+  int dirty_clear_stride; // w8
+  __int16 dirty_clear_color; // w6
+  char *dirty_clear_entry; // x0
+  int dirty_clear_x; // w3
+  __int16 *dirty_clear_particle_record; // x0
+  __int16 previous_frame_timestamp; // w1
+  unsigned int elapsed_frame_ticks; // w0
+  char frame_timestamp_storage; // [xsp+80h] [xbp-10h] BYREF
+  unsigned __int64 frame_timestamp_ticks; // [xsp+88h] [xbp-8h]
 
   init_all(1);
-  v0 = (unsigned __int8)g_engine_mode;
+  engine_mode_snapshot = (unsigned __int8)g_engine_mode;
   do
   {
-    switch ( v0 )
+    switch ( engine_mode_snapshot )
     {
       case 1u:
         before_first_lock();
@@ -12045,7 +12045,7 @@ void *__fastcall main_loop()
         break;
       case 0u:
         usleep(0x186A0u);
-        v0 = (unsigned __int8)g_engine_mode;
+        engine_mode_snapshot = (unsigned __int8)g_engine_mode;
         continue;
       case 0xAu:
         goto LABEL_5;
@@ -12063,31 +12063,31 @@ LABEL_5:
     set_frame();
     if ( (unsigned __int8)g_engine_mode <= 4u )
       goto LABEL_49;
-    v2 = (unsigned __int8)g_command_queue_read_index;
-    v3 = (unsigned __int8)g_command_queue_write_index;
+    command_read_cursor = (unsigned __int8)g_command_queue_read_index;
+    command_write_snapshot = (unsigned __int8)g_command_queue_write_index;
     if ( g_command_queue_read_index == g_command_queue_write_index )
     {
-      v6 = (unsigned __int8)(g_engine_mode - 7);
-      if ( v6 <= 1 )
+      mode_phase = (unsigned __int8)(g_engine_mode - 7);
+      if ( mode_phase <= 1 )
         goto LABEL_65;
     }
     else
     {
       do
       {
-        v4 = hx_cast<int>(v2);
-        v2 = (unsigned __int8)(v2 + 1);
-        run_command(*(_QWORD *)((char *)&unk_E50B08 + 6 * v4));
-        if ( v2 >= 0x32 )
-          v2 = 0;
+        command_slot_index = hx_cast<int>(command_read_cursor);
+        command_read_cursor = (unsigned __int8)(command_read_cursor + 1);
+        run_command(*(_QWORD *)((char *)&unk_E50B08 + 6 * command_slot_index));
+        if ( command_read_cursor >= 0x32 )
+          command_read_cursor = 0;
       }
-      while ( v3 != v2 );
-      v5 = (unsigned __int8)g_engine_mode;
-      g_command_queue_read_index = v3;
+      while ( command_write_snapshot != command_read_cursor );
+      mode_after_command_queue = (unsigned __int8)g_engine_mode;
+      g_command_queue_read_index = command_write_snapshot;
       if ( g_engine_mode == 2 )
       {
         ANativeWindow_unlockAndPost((ANativeWindow *)g_native_window);
-        v0 = (unsigned __int8)g_engine_mode;
+        engine_mode_snapshot = (unsigned __int8)g_engine_mode;
         continue;
       }
       if ( (unsigned __int8)(g_engine_mode - 7) <= 1u )
@@ -12095,18 +12095,18 @@ LABEL_5:
 LABEL_65:
         if ( (dword_E50C34 & 4) != 0 )
         {
-          clock_gettime(4, (struct timespec *)&v71);
-          v69 = word_E50C38;
-          word_E50C38 = v72 >> 20;
-          v70 = (unsigned __int16)(word_E50C38 - v69);
-          if ( v70 <= 0xFA0 && g_engine_mode != 8 && g_engine_mode != 5 )
+          clock_gettime(4, (struct timespec *)&frame_timestamp_storage);
+          previous_frame_timestamp = word_E50C38;
+          word_E50C38 = frame_timestamp_ticks >> 20;
+          elapsed_frame_ticks = (unsigned __int16)(word_E50C38 - previous_frame_timestamp);
+          if ( elapsed_frame_ticks <= 0xFA0 && g_engine_mode != 8 && g_engine_mode != 5 )
           {
-            if ( v70 > 0x12C )
+            if ( elapsed_frame_ticks > 0x12C )
             {
               byte_E50AFD = 0;
               byte_E50A97 = 1;
             }
-            else if ( v70 <= 0x63 && (unsigned __int8)++byte_E50AFD > 3u )
+            else if ( elapsed_frame_ticks <= 0x63 && (unsigned __int8)++byte_E50AFD > 3u )
             {
               byte_E50AFD = 0;
               if ( (unsigned __int8)byte_E50A97 <= 3u )
@@ -12120,36 +12120,36 @@ LABEL_65:
           if ( byte_E50AFC != 0 )
             goto LABEL_68;
 LABEL_111:
-          LOWORD(v38) = (unsigned __int8)byte_E50A97;
+          LOWORD(simulation_substep) = (unsigned __int8)byte_E50A97;
           goto LABEL_88;
         }
         draw_point(word_E50AF8, word_E50AFA);
         if ( byte_E50AFC == 0 )
           goto LABEL_111;
 LABEL_68:
-        LOWORD(v38) = (unsigned __int8)byte_E50A97;
-        v39 = (unsigned __int8)byte_E50A97 + 2;
-        v40 = (unsigned __int64)(g_view_width[0] + ((unsigned int)g_view_width[0] >> 31)) >> 1;
-        v41 = g_view_width[0] >> 5;
+        LOWORD(simulation_substep) = (unsigned __int8)byte_E50A97;
+        simulation_substep_limit = (unsigned __int8)byte_E50A97 + 2;
+        field_center_x = (unsigned __int64)(g_view_width[0] + ((unsigned int)g_view_width[0] >> 31)) >> 1;
+        field_sample_spacing = g_view_width[0] >> 5;
         if ( byte_E50A97 != 0 )
         {
-          v42 = 2 * (v41 & 0x7FFF);
-          LOWORD(v43) = 2;
-          v44 = (unsigned __int16)(g_view_width[0] >> 5);
-          v45 = v40 - 3 * v41;
-          v46 = v40 + 8 * ((v41 - v42) & 0x1FFF);
-          v47 = v40 + v42;
-          v48 = v40 + 7 * v41;
+          field_sample_width = 2 * (field_sample_spacing & 0x7FFF);
+          LOWORD(field_row_index) = 2;
+          field_column_count = (unsigned __int16)(g_view_width[0] >> 5);
+          field_left_edge_x = field_center_x - 3 * field_sample_spacing;
+          field_inner_left_x = field_center_x + 8 * ((field_sample_spacing - field_sample_width) & 0x1FFF);
+          field_inner_right_x = field_center_x + field_sample_width;
+          field_right_edge_x = field_center_x + 7 * field_sample_spacing;
           while ( 1 )
           {
-            LOWORD(v49) = 0;
-            if ( v44 != 0 )
+            LOWORD(field_column_index) = 0;
+            if ( field_column_count != 0 )
               break;
 LABEL_86:
-            v43 = (__int16)(v43 + 1);
-            if ( v43 == v39 )
+            field_row_index = (__int16)(field_row_index + 1);
+            if ( field_row_index == simulation_substep_limit )
             {
-              LOWORD(v38) = (unsigned __int8)byte_E50A97;
+              LOWORD(simulation_substep) = (unsigned __int8)byte_E50A97;
               goto LABEL_88;
             }
           }
@@ -12157,25 +12157,25 @@ LABEL_86:
           {
             if ( (unsigned __int8)(byte_33028 - 3) > 1u )
             {
-              v50 = g_random_state;
+              field_random_state = g_random_state;
             }
             else
             {
-              v50 = (g_random_state - 0x61C8864680B583EBLL)
+              field_random_state = (g_random_state - 0x61C8864680B583EBLL)
                   ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
               if ( (((unsigned __int8)(g_random_state + 21)
                    ^ (unsigned __int8)((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27))
                   & 7) != 0 )
               {
-                v51 = v49 + v45;
+                field_material_x_1 = field_column_index + field_left_edge_x;
                 if ( (unsigned __int8)(byte_33058 - 3) <= 1u )
                 {
 LABEL_80:
-                  v50 = (v50 - 0x61C8864680B583EBLL) ^ ((v50 - 0x61C8864680B583EBLL) >> 27);
-                  g_random_state = v50;
-                  if ( (v50 & 7) != 0 )
+                  field_random_state = (field_random_state - 0x61C8864680B583EBLL) ^ ((field_random_state - 0x61C8864680B583EBLL) >> 27);
+                  g_random_state = field_random_state;
+                  if ( (field_random_state & 7) != 0 )
                   {
-                    v52 = v49 + v47;
+                    field_material_x_2 = field_column_index + field_inner_right_x;
                     if ( (unsigned __int8)(byte_33070 - 3) <= 1u )
                     {
 LABEL_82:
@@ -12183,15 +12183,15 @@ LABEL_82:
                                   ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
                       if ( (g_random_state & 7) != 0 )
                       {
-                        v53 = v49 + v48;
+                        field_material_x_3 = field_column_index + field_right_edge_x;
                         if ( (unsigned __int8)(byte_33088 - 3) <= 1u )
                           goto LABEL_84;
                         goto LABEL_76;
                       }
                     }
 LABEL_75:
-                    add_type(v52, v43, 7u, 1);
-                    v53 = v49 + v48;
+                    add_type(field_material_x_2, field_row_index, 7u, 1);
+                    field_material_x_3 = field_column_index + field_right_edge_x;
                     if ( (unsigned __int8)(byte_33088 - 3) <= 1u )
                     {
 LABEL_84:
@@ -12199,24 +12199,24 @@ LABEL_84:
                                   ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
                       if ( (g_random_state & 7) != 0 )
                       {
-                        v49 = (__int16)(v49 + 1);
-                        if ( v49 == v44 )
+                        field_column_index = (__int16)(field_column_index + 1);
+                        if ( field_column_index == field_column_count )
                           goto LABEL_86;
                         continue;
                       }
                     }
 LABEL_76:
-                    add_type(v53, v43, 9u, 1);
-                    LOWORD(v49) = v49 + 1;
-                    if ( hx_cast<__int16>(v49) == v44 )
+                    add_type(field_material_x_3, field_row_index, 9u, 1);
+                    LOWORD(field_column_index) = field_column_index + 1;
+                    if ( hx_cast<__int16>(field_column_index) == field_column_count )
                       goto LABEL_86;
                     continue;
                   }
                 }
 LABEL_74:
-                g_random_state = (v50 - 0x61C8864680B583EBLL) ^ ((v50 - 0x61C8864680B583EBLL) >> 27);
-                add_type(v51, v43, (((v50 + 21) ^ ((v50 - 0x61C8864680B583EBLL) >> 27)) & 1) + 5, 1);
-                v52 = v49 + v47;
+                g_random_state = (field_random_state - 0x61C8864680B583EBLL) ^ ((field_random_state - 0x61C8864680B583EBLL) >> 27);
+                add_type(field_material_x_1, field_row_index, (((field_random_state + 21) ^ ((field_random_state - 0x61C8864680B583EBLL) >> 27)) & 1) + 5, 1);
+                field_material_x_2 = field_column_index + field_inner_right_x;
                 if ( (unsigned __int8)(byte_33070 - 3) <= 1u )
                   goto LABEL_82;
                 goto LABEL_75;
@@ -12224,289 +12224,289 @@ LABEL_74:
             }
             break;
           }
-          g_random_state = (v50 - 0x61C8864680B583EBLL) ^ ((v50 - 0x61C8864680B583EBLL) >> 27);
-          add_type(v49 + v46, v43, (((v50 + 21) ^ ((v50 - 0x61C8864680B583EBLL) >> 27)) & 3) + 1, 1);
-          v50 = g_random_state;
-          v51 = v49 + v45;
+          g_random_state = (field_random_state - 0x61C8864680B583EBLL) ^ ((field_random_state - 0x61C8864680B583EBLL) >> 27);
+          add_type(field_column_index + field_inner_left_x, field_row_index, (((field_random_state + 21) ^ ((field_random_state - 0x61C8864680B583EBLL) >> 27)) & 3) + 1, 1);
+          field_random_state = g_random_state;
+          field_material_x_1 = field_column_index + field_left_edge_x;
           if ( (unsigned __int8)(byte_33058 - 3) <= 1u )
             goto LABEL_80;
           goto LABEL_74;
         }
 LABEL_88:
-        v38 = hx_cast<__int16>(v38);
+        simulation_substep = hx_cast<__int16>(simulation_substep);
 LABEL_89:
-        v54 = -2;
-        v55 = 1000000;
+        simulation_particle_index = -2;
+        particle_iteration_budget = 1000000;
         g_current_particle_index = -2;
         ++dword_E50C34;
 LABEL_90:
-        if ( v54 != -2 )
+        if ( simulation_particle_index != -2 )
         {
           do
           {
 LABEL_91:
-            if ( v54 == -1 )
+            if ( simulation_particle_index == -1 )
               goto LABEL_97;
             while ( 1 )
             {
               while ( 1 )
               {
-                v56 = &g_particle_records[10 * v54];
-                v57 = *((_DWORD *)v56 + 1);
-                v58 = ((unsigned __int64)*((unsigned __int8 *)v56 + 12) >> 3) & 7;
-                if ( g_particle_state_lut[hx_cast<int>(v58)] == 1 )
+                simulation_particle_record = &g_particle_records[10 * simulation_particle_index];
+                next_simulation_particle = *((_DWORD *)simulation_particle_record + 1);
+                simulation_particle_state = ((unsigned __int64)*((unsigned __int8 *)simulation_particle_record + 12) >> 3) & 7;
+                if ( g_particle_state_lut[hx_cast<int>(simulation_particle_state)] == 1 )
                   break;
                 chain_update();
                 byte_E50C3A = 0;
-                v54 = v57;
-                g_current_particle_index = v57;
-                if ( v57 == -1 )
+                simulation_particle_index = next_simulation_particle;
+                g_current_particle_index = next_simulation_particle;
+                if ( next_simulation_particle == -1 )
                   goto LABEL_97;
               }
               if ( byte_E50C3A == 0 )
                 break;
               byte_E50C3A = 0;
-              dword_334E0 = v54;
-              v54 = v57;
-              g_current_particle_index = v57;
-              if ( v57 == -1 )
+              dword_334E0 = simulation_particle_index;
+              simulation_particle_index = next_simulation_particle;
+              g_current_particle_index = next_simulation_particle;
+              if ( next_simulation_particle == -1 )
                 goto LABEL_97;
             }
             byte_E50C3A = 1;
-            if ( --v55 == 0 )
+            if ( --particle_iteration_budget == 0 )
             {
 LABEL_97:
-              v38 = (__int16)(v38 - 1);
-              if ( v38 == -1 )
+              simulation_substep = (__int16)(simulation_substep - 1);
+              if ( simulation_substep == -1 )
               {
-                v5 = (unsigned __int8)g_engine_mode;
+                mode_after_command_queue = (unsigned __int8)g_engine_mode;
                 goto LABEL_20;
               }
               goto LABEL_89;
             }
-            if ( hx_cast<_DWORD>(v58) != 1 || v38 == 0 )
+            if ( hx_cast<_DWORD>(simulation_particle_state) != 1 || simulation_substep == 0 )
             {
-              v68 = &g_particle_records[10 * v54];
-              if ( (*((_BYTE *)v68 + 9) & 4) == 0
-                || *((unsigned __int8 *)v68 + 16) < (unsigned int)(unsigned __int8)byte_E50A95 )
+              dirty_clear_particle_record = &g_particle_records[10 * simulation_particle_index];
+              if ( (*((_BYTE *)dirty_clear_particle_record + 9) & 4) == 0
+                || *((unsigned __int8 *)dirty_clear_particle_record + 16) < (unsigned int)(unsigned __int8)byte_E50A95 )
               {
-                switch ( g_shared_engine_data[12 * LOBYTE(g_particle_records[10 * v54 + 4]) + 20] )
+                switch ( g_shared_engine_data[12 * LOBYTE(g_particle_records[10 * simulation_particle_index + 4]) + 20] )
                 {
                   case 2:
                     if ( (unsigned __int8)current_can_sleep() == 0 )
                       goto LABEL_115;
-                    v54 = g_current_particle_index;
+                    simulation_particle_index = g_current_particle_index;
                     LOBYTE(g_particle_records[10 * g_current_particle_index + 6]) = g_particle_records[10 * g_current_particle_index + 6] & 0xC7 | 0x18;
                     break;
                   case 3:
                   case 4:
                     seek_particle();
-                    v54 = g_current_particle_index;
+                    simulation_particle_index = g_current_particle_index;
                     goto LABEL_90;
                   case 5:
                     seek_gas();
-                    v54 = g_current_particle_index;
+                    simulation_particle_index = g_current_particle_index;
                     goto LABEL_90;
                   case 6:
                     seek_boom();
-                    v54 = g_current_particle_index;
+                    simulation_particle_index = g_current_particle_index;
                     goto LABEL_90;
                   case 7:
                     seek_ray();
                     goto LABEL_115;
                   default:
-                    v54 = g_current_particle_index;
+                    simulation_particle_index = g_current_particle_index;
                     goto LABEL_90;
                 }
                 goto LABEL_90;
               }
             }
 LABEL_115:
-            v54 = g_current_particle_index;
+            simulation_particle_index = g_current_particle_index;
           }
           while ( g_current_particle_index != -2 );
         }
-        v54 = HIDWORD(xmmword_E50A40);
+        simulation_particle_index = HIDWORD(xmmword_E50A40);
         byte_E50C3A = 0;
         g_current_particle_index = HIDWORD(xmmword_E50A40);
         dword_334E0 = -1;
         goto LABEL_91;
       }
 LABEL_20:
-      if ( v5 <= 4 )
+      if ( mode_after_command_queue <= 4 )
         goto LABEL_49;
-      v6 = (unsigned __int8)(v5 - 7);
+      mode_phase = (unsigned __int8)(mode_after_command_queue - 7);
     }
-    v7 = 1;
-    v8 = 0;
-    v9 = &xmmword_E50A40;
+    particle_state_class = 1;
+    processed_particle_count = 0;
+    particle_state_list = &xmmword_E50A40;
     while ( 2 )
     {
-      v10 = -2;
+      active_particle_index = -2;
       g_current_particle_index = -2;
 LABEL_24:
-      if ( v10 == -2 )
+      if ( active_particle_index == -2 )
         goto LABEL_33;
 LABEL_25:
-      v11 = &g_particle_records[10 * v10];
-      v12 = *((_DWORD *)v11 + 1);
-      if ( g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)v11 + 12) >> 3) & 7] == v7 )
-        dword_334E0 = v10;
+      active_particle_record = &g_particle_records[10 * active_particle_index];
+      next_particle_index = *((_DWORD *)active_particle_record + 1);
+      if ( g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)active_particle_record + 12) >> 3) & 7] == particle_state_class )
+        dword_334E0 = active_particle_index;
       else
         chain_update();
-      g_current_particle_index = v12;
-      if ( v12 != -1 && ++v8 != 1000000 )
+      g_current_particle_index = next_particle_index;
+      if ( next_particle_index != -1 && ++processed_particle_count != 1000000 )
       {
         while ( 1 )
         {
-          if ( v6 > 1 )
+          if ( mode_phase > 1 )
           {
-            v10 = g_current_particle_index;
-            v13 = g_current_particle_index;
+            active_particle_index = g_current_particle_index;
+            render_particle_index = g_current_particle_index;
             goto LABEL_31;
           }
-          v10 = g_current_particle_index;
-          v13 = g_current_particle_index;
-          v35 = &g_particle_records[10 * g_current_particle_index];
-          v36 = *((unsigned __int8 *)v35 + 8);
-          v37 = (unsigned __int8)g_shared_engine_data[12 * v36 + 21];
-          if ( g_shared_engine_data[12 * v36 + 21] != 0 )
+          active_particle_index = g_current_particle_index;
+          render_particle_index = g_current_particle_index;
+          transition_particle_record = &g_particle_records[10 * g_current_particle_index];
+          transition_material_id = *((unsigned __int8 *)transition_particle_record + 8);
+          transition_period = (unsigned __int8)g_shared_engine_data[12 * transition_material_id + 21];
+          if ( g_shared_engine_data[12 * transition_material_id + 21] != 0 )
           {
-            if ( v37 <= 0x14 )
+            if ( transition_period <= 0x14 )
             {
-              if ( v37 <= 6 )
+              if ( transition_period <= 6 )
               {
-                v59 = g_random_state;
-                g_random_state = (v59 - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(v59 - 0x61C8864680B583EBLL) >> 27);
-                if ( (unsigned __int16)((v59 + 31765) ^ ((unsigned __int64)(v59 - 0x61C8864680B583EBLL) >> 27)) != 40 * ((unsigned __int16)((v59 + 31765) ^ ((unsigned __int64)(v59 - 0x61C8864680B583EBLL) >> 27)) / 0x28uLL) )
+                transition_random_state = g_random_state;
+                g_random_state = (transition_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(transition_random_state - 0x61C8864680B583EBLL) >> 27);
+                if ( (unsigned __int16)((transition_random_state + 31765) ^ ((unsigned __int64)(transition_random_state - 0x61C8864680B583EBLL) >> 27)) != 40 * ((unsigned __int16)((transition_random_state + 31765) ^ ((unsigned __int64)(transition_random_state - 0x61C8864680B583EBLL) >> 27)) / 0x28uLL) )
                   goto LABEL_31;
               }
             }
-            else if ( *((_BYTE *)v35 + 12) >> 6 == 2 )
+            else if ( *((_BYTE *)transition_particle_record + 12) >> 6 == 2 )
             {
               goto LABEL_31;
             }
             if ( ((LOBYTE(g_particle_records[10 * g_current_particle_index + 6]) >> 3) & 7) != 4 )
             {
-              process_transistion(v37, g_shared_engine_data[12 * v36 + 22]);
-              v10 = g_current_particle_index;
-              v13 = g_current_particle_index;
+              process_transistion(transition_period, g_shared_engine_data[12 * transition_material_id + 22]);
+              active_particle_index = g_current_particle_index;
+              render_particle_index = g_current_particle_index;
             }
           }
 LABEL_31:
           draw_particle();
-          v14 = &g_particle_records[10 * v13];
-          if ( (*((_BYTE *)v14 + 9) & 4) == 0 )
+          render_particle_record = &g_particle_records[10 * render_particle_index];
+          if ( (*((_BYTE *)render_particle_record + 9) & 4) == 0 )
             goto LABEL_24;
-          *((_BYTE *)v14 + 16) = 0;
-          if ( v10 != -2 )
+          *((_BYTE *)render_particle_record + 16) = 0;
+          if ( active_particle_index != -2 )
             goto LABEL_25;
 LABEL_33:
-          if ( *((_DWORD *)v9 + 3) != -1 )
+          if ( *((_DWORD *)particle_state_list + 3) != -1 )
           {
-            ++v8;
-            g_current_particle_index = *((_DWORD *)v9 + 3);
+            ++processed_particle_count;
+            g_current_particle_index = *((_DWORD *)particle_state_list + 3);
             dword_334E0 = -1;
-            if ( v8 != 1000000 )
+            if ( processed_particle_count != 1000000 )
               continue;
           }
           break;
         }
       }
-      v9 = (__int128 *)((char *)v9 + 12);
-      if ( v7 != 2 )
+      particle_state_list = (__int128 *)((char *)particle_state_list + 12);
+      if ( particle_state_class != 2 )
       {
-        v7 = 2;
+        particle_state_class = 2;
         continue;
       }
       break;
     }
-    v15 = (unsigned __int8)g_framebuffer_bank_index;
-    v16 = g_framebuffer_state_banks[150003 * (unsigned __int8)g_framebuffer_bank_index + 2];
-    v17 = 300006LL * (unsigned __int8)g_framebuffer_bank_index + v16 + 4;
-    v18 = v16 + 1;
-    v19 = HIDWORD(g_framebuffer_state_banks[150003 * (unsigned __int8)g_framebuffer_bank_index + 1]);
-    v20 = (char *)g_framebuffer_state_banks + 4 * v17;
-    if ( v18 == 300000 )
-      v18 = 0;
-    *((_WORD *)v20 + 2) = -1;
-    *((_WORD *)v20 + 3) = -1;
-    if ( v19 == v18 )
+    framebuffer_bank_index = (unsigned __int8)g_framebuffer_bank_index;
+    dirty_ring_read_index = g_framebuffer_state_banks[150003 * (unsigned __int8)g_framebuffer_bank_index + 2];
+    dirty_ring_write_offset = 300006LL * (unsigned __int8)g_framebuffer_bank_index + dirty_ring_read_index + 4;
+    dirty_ring_next_index = dirty_ring_read_index + 1;
+    dirty_ring_end_index = HIDWORD(g_framebuffer_state_banks[150003 * (unsigned __int8)g_framebuffer_bank_index + 1]);
+    dirty_ring_entry = (char *)g_framebuffer_state_banks + 4 * dirty_ring_write_offset;
+    if ( dirty_ring_next_index == 300000 )
+      dirty_ring_next_index = 0;
+    *((_WORD *)dirty_ring_entry + 2) = -1;
+    *((_WORD *)dirty_ring_entry + 3) = -1;
+    if ( dirty_ring_end_index == dirty_ring_next_index )
     {
-      v21 = &g_framebuffer_state_banks[150003 * v15];
-      v22 = v21 + 149504;
-      v18 = *((_DWORD *)v21 + 2);
-      *((_BYTE *)v22 + 3988) = 0;
+      framebuffer_bank_entry = &g_framebuffer_state_banks[150003 * framebuffer_bank_index];
+      framebuffer_bank_cursor = framebuffer_bank_entry + 149504;
+      dirty_ring_next_index = *((_DWORD *)framebuffer_bank_entry + 2);
+      *((_BYTE *)framebuffer_bank_cursor + 3988) = 0;
     }
-    v23 = &g_framebuffer_state_banks[150003 * v15];
-    *((_DWORD *)v23 + 4) = v18;
-    if ( *((_BYTE *)v23 + 1200021) != 0 )
+    framebuffer_bank_state = &g_framebuffer_state_banks[150003 * framebuffer_bank_index];
+    *((_DWORD *)framebuffer_bank_state + 4) = dirty_ring_next_index;
+    if ( *((_BYTE *)framebuffer_bank_state + 1200021) != 0 )
     {
-      v60 = g_cell_state_grid;
-      v61 = g_framebuffer_pixels;
-      v62 = g_view_width[0];
-      v63 = HIDWORD(g_framebuffer_state_banks[150003 * v15 + 1]);
-      v64 = g_framebuffer_stride;
-      v65 = g_background_color;
+      dirty_clear_cell_grid = g_cell_state_grid;
+      dirty_clear_framebuffer = g_framebuffer_pixels;
+      dirty_clear_grid_width = g_view_width[0];
+      dirty_clear_queue_index = HIDWORD(g_framebuffer_state_banks[150003 * framebuffer_bank_index + 1]);
+      dirty_clear_stride = g_framebuffer_stride;
+      dirty_clear_color = g_background_color;
       while ( 1 )
       {
-        v67 = *((__int16 *)&g_framebuffer_state_banks[150003 * v15 + 2] + 2 * v63 + 2);
-        if ( v67 == -1 )
+        dirty_clear_x = *((__int16 *)&g_framebuffer_state_banks[150003 * framebuffer_bank_index + 2] + 2 * dirty_clear_queue_index + 2);
+        if ( dirty_clear_x == -1 )
           break;
-        if ( *(_BYTE *)(v60 + 8LL * (v67 + *((__int16 *)&g_framebuffer_state_banks[150003 * v15 + 2] + 2 * v63 + 3) * v62)) == 0 )
+        if ( *(_BYTE *)(dirty_clear_cell_grid + 8LL * (dirty_clear_x + *((__int16 *)&g_framebuffer_state_banks[150003 * framebuffer_bank_index + 2] + 2 * dirty_clear_queue_index + 3) * dirty_clear_grid_width)) == 0 )
         {
-          v66 = (char *)&g_framebuffer_state_banks[150003 * v15 + 2] + 4 * v63;
-          *(_WORD *)(v61 + 2LL * (*((__int16 *)v66 + 2) + *((__int16 *)v66 + 3) * v64)) = v65;
+          dirty_clear_entry = (char *)&g_framebuffer_state_banks[150003 * framebuffer_bank_index + 2] + 4 * dirty_clear_queue_index;
+          *(_WORD *)(dirty_clear_framebuffer + 2LL * (*((__int16 *)dirty_clear_entry + 2) + *((__int16 *)dirty_clear_entry + 3) * dirty_clear_stride)) = dirty_clear_color;
         }
-        if ( ++v63 == 300000 )
-          v63 = 0;
+        if ( ++dirty_clear_queue_index == 300000 )
+          dirty_clear_queue_index = 0;
       }
     }
     else
     {
-      v24 = g_view_width[0];
+      grid_width = g_view_width[0];
       if ( g_view_width[0] > 4 )
       {
-        v25 = g_view_height;
-        v26 = 2;
-        v27 = g_background_color;
-        v28 = g_view_width[0] - 2;
-        v29 = g_cell_state_grid;
-        LOWORD(v30) = 2;
-        v31 = g_framebuffer_stride;
-        v32 = g_view_height - 2;
+        grid_height = g_view_height;
+        grid_x = 2;
+        background_pixel = g_background_color;
+        right_grid_bound = g_view_width[0] - 2;
+        cell_grid_base = g_cell_state_grid;
+        LOWORD(grid_y_cursor) = 2;
+        framebuffer_stride = g_framebuffer_stride;
+        bottom_grid_bound = g_view_height - 2;
         do
         {
-          if ( v25 > 4 )
+          if ( grid_height > 4 )
           {
-            v33 = 2;
-            LOWORD(v34) = 2;
+            grid_x_cursor = 2;
+            LOWORD(grid_y) = 2;
             do
             {
-              if ( *(_BYTE *)(v29 + 8LL * (v26 + v24 * v33)) == 0 )
-                *(_WORD *)(g_framebuffer_state_banks[150003 * v15] + 2LL * (v26 + v33 * v31)) = v27;
-              v34 = (__int16)(v34 + 1);
-              v33 = v34;
+              if ( *(_BYTE *)(cell_grid_base + 8LL * (grid_x + grid_width * grid_x_cursor)) == 0 )
+                *(_WORD *)(g_framebuffer_state_banks[150003 * framebuffer_bank_index] + 2LL * (grid_x + grid_x_cursor * framebuffer_stride)) = background_pixel;
+              grid_y = (__int16)(grid_y + 1);
+              grid_x_cursor = grid_y;
             }
-            while ( v34 < v32 );
+            while ( grid_y < bottom_grid_bound );
           }
-          v30 = (__int16)(v30 + 1);
-          v26 = v30;
+          grid_y_cursor = (__int16)(grid_y_cursor + 1);
+          grid_x = grid_y_cursor;
         }
-        while ( v30 < v28 );
+        while ( grid_y_cursor < right_grid_bound );
       }
     }
 LABEL_49:
     ANativeWindow_unlockAndPost((ANativeWindow *)g_native_window);
-    v0 = (unsigned __int8)g_engine_mode;
+    engine_mode_snapshot = (unsigned __int8)g_engine_mode;
     if ( g_engine_mode == 8 )
     {
-      v0 = 5;
+      engine_mode_snapshot = 5;
       g_engine_mode = 5;
     }
     word_330E6 = ((word_330E6 & 0x7E0) + 2040) & 0x7E0 | word_330E6 & 0x1F;
   }
-  while ( v0 <= 8 );
+  while ( engine_mode_snapshot <= 8 );
   ANativeWindow_release((ANativeWindow *)g_native_window);
   if ( g_cell_state_allocated != 0 )
   {
