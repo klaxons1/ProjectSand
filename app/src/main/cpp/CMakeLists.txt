@@ -2,23 +2,22 @@ cmake_minimum_required(VERSION 3.22.1)
 project(sand)
 
 add_library(sand SHARED
-    sand_engine.cpp
-    ported_decompile.cpp
+    arm64/libsand_decompiled.cpp
 )
 
-find_library(log-lib log)
-find_library(android-lib android)
-find_library(native-window-lib nativewindow)
+if(ANDROID AND NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "The reconstructed engine currently targets arm64-v8a only")
+endif()
 
-target_link_libraries(sand
+find_library(log-lib log REQUIRED)
+find_library(android-lib android REQUIRED)
+
+target_link_libraries(sand PRIVATE
     ${log-lib}
     ${android-lib}
-    -landroid
 )
 
-target_include_directories(sand PRIVATE
-    ${ANDROID_NDK}/sources/third_party/googletest/include
-)
+target_include_directories(sand PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_target_properties(sand PROPERTIES
     CXX_STANDARD 17

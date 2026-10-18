@@ -1,26 +1,30 @@
-# `libsand.so`: ARM64 reverse-engineering status
+# ARM64 source reconstruction status
 
 ## Target and source of truth
 
-The requested target is ARM64. The working reference is `docs/lib/arm64-v8a/libsand.so.c`, checked against `docs/lib/arm64-v8a/libsand.so` (AArch64 ELF). Do not use x86_64 addresses or calling conventions for the ARM64 implementation; `docs/lib/x86_64/` is retained only as a cross-check.
+The requested ABI is `arm64-v8a`. The reference inputs are `docs/lib/arm64-v8a/libsand.so.c` and the matching AArch64 ELF `docs/lib/arm64-v8a/libsand.so`. The x86_64 artifacts are cross-reference material only. The original `.so` is not linked or packaged as a replacement.
 
-## Recovered Hex-Rays failures
+## Current source path
 
-The ARM64 Hex-Rays output had two failures in allocator wrappers:
+`tools/generate_arm64_decompile.py` produces `app/src/main/cpp/arm64/libsand_decompiled.cpp`; `app/src/main/cpp/CMakeLists.txt` now builds that file as `libsand.so` (output name `sand`) and rejects non-ARM64 Android ABIs. The earlier grid-based simulation sources remain in the tree for reference but are not part of the native target.
 
-- `0x16C00`: normal path calls `_Znwm` (`operator new(size)`) and returns.
-- `0x16C3C`: exported `_Znam` (`operator new[]`) normal path calls `_Znwm` and returns.
+The generator maps the ELF `.data` and `.bss` address range into one contiguous, zero-initialized native memory arena. It copies the original `.data` bytes into the start of that arena and maps the decompiler's named globals at their original offsets. This is needed because engine code indexes through the decompiler's `byte_33008` base across the `.data`/`.bss` boundary. The `.bss` range remains `0x33510`–`0xE50EF8` (size `0xE1D9E8`). A referenced read-only table is kept in the generated source. ELF startup/libc++abi teardown shims are omitted in favor of Android's runtime, and the private JNI dispatch is expressed through the NDK `JNIEnv` API.
 
-Both normal paths have been written as clean C++ wrappers. The associated cold exception paths were compiler-generated; rebuilding them requires correct C++ ABI/runtime integration. The original binary is unchanged.
+The generator also makes several decompiler pointer/integer casts explicit and preserves unsigned initializer bit patterns. These are source-normalization steps, not proof that every inferred type or operation matches the original behavior.
 
-## What remains before this is a buildable 1:1 source port
+## Verification and remaining work
 
-The decompiler output is still not a clean source project. It relies on IDA/Hex-Rays types and helpers (`defs.h`), includes guessed and incomplete global declarations, ABI/runtime support routines, and contains architecture-specific data layouts. Removing the two `#error` directives only recovers those small wrappers; it does **not** prove the rest compiles or behaves identically.
+- **Passed:** generator execution; strict host `g++ -std=c++17 -fsyntax-only` using temporary host Android/JNI stubs. The current generated source reports zero syntax errors.
+- **Not run here:** Android/NDK compile and link. This environment has no Android NDK toolchain or Java/JDK executable available.
+- **External Gradle log received:** it linked `sand_engine.cpp.o` and `ported_decompile.cpp.o` and failed on undefined simulation globals (`g_zoom_raw`, `g_selectedMat`, etc.). That log used the old CMake source list, so it did not build this generated source. The current `CMakeLists.txt` lists only `arm64/libsand_decompiled.cpp`; do not fix that old failure by adding simulation stubs.
+- **Not run:** device/emulator behavior comparison against the original ARM64 library.
 
-The APK currently targets `arm64-v8a`. The app-side `app/src/main/cpp/sand_engine.{h,cpp}` is still a provisional simplified engine and has not yet been replaced by the decompiled implementation. A clean port must preserve original JNI signatures, global-state layout, command queue behavior, particle storage, simulation/update order, rendering, and lifecycle. Until the source builds and is behaviorally checked against the original ARM64 `.so`, it must not be described as 1:1.
+Therefore the source is wired into the ARM64 CMake target, but a successful Android build and behavioral 1:1 equivalence have **not** been established. In particular, the decompiler's inferred signatures and pointer/integer conversions still need audit against the ARM64 instructions, followed by NDK build and runtime tests covering JNI lifecycle, drawing, commands, and particle evolution.
 
-## Architecture artifacts
+## Important artifacts
 
-- Target ELF: `docs/lib/arm64-v8a/libsand.so`
-- Target decompilation: `docs/lib/arm64-v8a/libsand.so.c`
-- Cross-reference only: `docs/lib/x86_64/libsand.so` and `.c`
+- ARM64 ELF: `docs/lib/arm64-v8a/libsand.so`
+- ARM64 decompilation: `docs/lib/arm64-v8a/libsand.so.c`
+- Generator: `tools/generate_arm64_decompile.py`
+- Generated candidate: `app/src/main/cpp/arm64/libsand_decompiled.cpp`
+- Compatibility layer: `app/src/main/cpp/defs.h`
