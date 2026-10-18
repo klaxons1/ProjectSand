@@ -44,6 +44,12 @@ SEMANTIC_NAMES = {
     "byte_1C6A0": "g_material_properties_lut",
     "word_1C858": "g_direction_lut",
     "byte_1C960": "g_particle_state_lut",
+    "byte_E50A18": "g_direction_index",
+    "byte_E50A30": "g_search_direction",
+    "byte_E50A31": "g_search_remaining",
+    "byte_E50A32": "g_search_step",
+    "word_E50A38": "g_found_x",
+    "word_E50A3A": "g_found_y",
     "qword_E50A08": "g_framebuffer_pixels",
     "qword_E50A10": "g_cell_state_grid",
     "word_E50A72": "g_surface_height",
@@ -142,6 +148,21 @@ def main() -> None:
         return f"hx_i128(0x{high:016X}ULL, 0x{low:016X}ULL)"
     src = re.sub(r"0x([0-9A-Fa-f]{17,32})LL\b", normalize_i128, src)
     src = src.replace("if ( _bss_start__ > 0 )", "if ( _bss_start__[0] > 0 )")
+    # On first startup main_loop() locks the native window and stores its
+    # non-null pixels pointer before calling set_frame(). The decompiled
+    # mode-2 branch used that pointer to skip the one-time initialization,
+    # leaving g_engine_mode stuck at 3 forever; main_loop then skips both the
+    # command queue and simulation (it only runs those for modes > 4). Always
+    # take the mode-2 initialization path, preserving the window pointer for
+    # framebuffer setup below.
+    stale_framebuffer_shortcut = "    if ( qword_E50A08 != 0 )\n      goto LABEL_4;\n"
+    if src.count(stale_framebuffer_shortcut) != 1:
+        raise SystemExit("Expected one stale-framebuffer shortcut in set_frame")
+    src = src.replace(
+        stale_framebuffer_shortcut,
+        "    // Initialize a newly started/resumed engine even when the window\n"
+        "    // already supplied a valid framebuffer pointer.\n",
+    )
     bad_record_read = "(_WORD *)((char *)&dword_0 + (_QWORD)v3 + 2)"
     if src.count(bad_record_read) != 1:
         raise SystemExit("Expected one draw_particle base-relative record access")
