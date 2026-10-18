@@ -10,7 +10,24 @@ The requested ABI is `arm64-v8a`. The reference inputs are `docs/lib/arm64-v8a/l
 
 The generator maps the ELF `.data` and `.bss` address range into one contiguous, zero-initialized native memory arena. It copies the original `.data` bytes into the start of that arena and maps the decompiler's named globals at their original offsets. This is needed because engine code indexes through the decompiler's `byte_33008` base across the `.data`/`.bss` boundary. The `.bss` range remains `0x33510`–`0xE50EF8` (size `0xE1D9E8`). A referenced read-only table is kept in the generated source. ELF startup/libc++abi teardown shims are omitted in favor of Android's runtime, the private JNI dispatch is expressed through the NDK `JNIEnv` API, and both native entry points retain unmangled `JNIEXPORT`/`JNICALL` linkage for ART lookup.
 
-The generator also makes several decompiler pointer/integer casts explicit and preserves unsigned initializer bit patterns. It expands the decompiler's truncated array views for the material table, particle records, and native-window buffer to the bounds of the shared arena. It rewrites one invalid `dword_0 + particle_pointer` expression in `draw_particle` to read the field at `particle_pointer + 2`, matching the ARM64 load from `[x7, #2]`. These corrections address concrete source-level faults but are not proof that every inferred type or operation matches the original behavior.
+The generator removes the orphan PLT resolver and dead libc++abi prototypes, renames the principal address-derived engine globals to semantic names, and renames the key particle-record locals. It also makes several decompiler pointer/integer casts explicit and preserves unsigned initializer bit patterns. Array views for the shared engine data, material table, particle records, and native-window buffer are extended to the bounds actually used in the shared arena. In `draw_particle`, the invalid `dword_0 + particle_pointer` expression is rewritten as a field read at `particle_pointer + 2`, matching the ARM64 load from `[x7, #2]`. These are concrete deobfuscation/reconstruction steps, not proof that every inferred type or operation matches the original behavior.
+
+## Recovered state names
+
+| Generated name | ELF address | Recovered role |
+|---|---:|---|
+| `g_shared_engine_data` | `0x33008` | Shared header/material-state area; its first byte is also a layer/buffer count. |
+| `g_material_properties` | `0x33018` | 12-byte material-property records overlaid on the shared data area. |
+| `g_framebuffer_stride` | `0x3300C` | Row stride copied from the locked `ANativeWindow_Buffer`. |
+| `g_engine_mode` | `0x33010` | Native engine lifecycle/render mode. |
+| `g_current_particle_index` | `0x33014` | Current particle index, including the `-2` sentinel. |
+| `g_view_width`, `g_view_height` | `0x33510`, `0x33512` | Simulation dimensions after zoom scaling. |
+| `g_background_color` | `0x33514` | Background color used when clearing. |
+| `g_particle_records` | `0x4C7380` | Ten 16-bit fields per particle. |
+| `g_particle_record_aux` | `0x4C7410` | Large auxiliary particle-state byte region. |
+| `g_framebuffer_pixels`, `g_cell_state_grid` | `0xE50A08`, `0xE50A10` | Current pixel buffer and per-cell simulation allocation. |
+| `g_jni_env`, `g_surface_global_ref`, `g_native_window` | `0xE50A78`, `0xE50A80`, `0xE50A88` | JNI/window lifecycle handles. |
+| `g_command_queue` | `0xE50B08` | 50-entry, 6-byte command ring; adjacent names are its read/write indexes. |
 
 ## Verification and remaining work
 

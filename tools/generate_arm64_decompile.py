@@ -21,6 +21,46 @@ BSS_END = 0xE50EF8  # readelf -SW: .bss NOBITS size 0xE1D9E8
 DATA_SIZE = BSS_START - DATA_START
 BSS_SIZE = BSS_END - BSS_START
 MEMORY_SIZE = BSS_END - DATA_START
+
+# Convert the most important address-derived Hex-Rays globals into stable,
+# role-based names. Keep this table explicit: each name is tied to observed use.
+SEMANTIC_NAMES = {
+    "byte_33008": "g_shared_engine_data",
+    "dword_3300C": "g_framebuffer_stride",
+    "byte_33010": "g_engine_mode",
+    "dword_33014": "g_current_particle_index",
+    "byte_33018": "g_material_properties",
+    "byte_334E4": "g_zoom_factor",
+    "byte_334E5": "g_selected_material",
+    "byte_334E6": "g_selected_material_state",
+    "qword_334D8": "g_random_state",
+    "_bss_start__": "g_view_width",
+    "word_33512": "g_view_height",
+    "word_33514": "g_background_color",
+    "byte_33516": "g_framebuffer_bank_index",
+    "qword_33518": "g_framebuffer_state_banks",
+    "word_4C7380": "g_particle_records",
+    "byte_4C7410": "g_particle_record_aux",
+    "byte_1C6A0": "g_material_properties_lut",
+    "word_1C858": "g_direction_lut",
+    "byte_1C960": "g_particle_state_lut",
+    "qword_E50A08": "g_framebuffer_pixels",
+    "qword_E50A10": "g_cell_state_grid",
+    "word_E50A72": "g_surface_height",
+    "qword_E50A78": "g_jni_env",
+    "qword_E50A80": "g_surface_global_ref",
+    "qword_E50A88": "g_native_window",
+    "word_E50A90": "g_surface_width",
+    "byte_E50A92": "g_cell_state_allocated",
+    "algn_E50AA4": "g_native_window_buffer_storage",
+    "dword_E50AB0": "g_native_window_stride",
+    "qword_E50AB8": "g_native_window_pixels",
+    "qword_E50AE0": "g_engine_class_global_ref",
+    "qword_E50AE8": "g_init_callback_method",
+    "byte_E50B00": "g_command_queue_read_index",
+    "byte_E50B01": "g_command_queue_write_index",
+    "byte_E50B08": "g_command_queue",
+}
 assert DATA_SIZE == 0x510
 assert 0x33518 + 600012 * 8 == 0x4C7378
 assert 0x4C7410 + 9996544 == 0xE4FD10
@@ -52,8 +92,15 @@ def bss_array_size(name: str, old_size: str) -> str:
 def main() -> None:
     src = INPUT.read_text()
     src = src.replace("#include <defs.h>", '#include "defs.h"')
-    # Exclude ELF process-startup glue and the bundled libc++abi runtime: the
-    # Android NDK supplies those. Keep the application's simulation/JNI code.
+    # The PLT resolver and ELF entrypoint are linker/runtime machinery, not
+    # application engine code. The Android NDK supplies their responsibilities.
+    src = re.sub(
+        r"//----- \(0000000000005880\).*?(?=//----- \(0000000000005AC0\))",
+        "",
+        src,
+        count=1,
+        flags=re.S,
+    )
     src = re.sub(
         r"//----- \(0000000000005AC0\).*?//----- \(0000000000005C4C\)",
         "// ELF entrypoint and private JNIEnv dispatch shim are supplied by Android.\n\n//----- (0000000000005C4C)",
@@ -65,6 +112,9 @@ def main() -> None:
     if runtime_start not in src:
         raise SystemExit("Could not locate the ARM64 bundled libc++abi tail")
     src = src[:src.index(runtime_start)]
+    # Remove dead Hex-Rays prototypes for omitted PLT/libc++abi functions.
+    src = re.sub(r"(?m)^.*\b(?:sub|nullsub)_[0-9A-Fa-f]+\([^;\n]*\);[^\n]*\n", "", src)
+    src = re.sub(r"(?m)^.*\b(?:start|_gxx_personality_v0|_cxa_call_unexpected)\([^;\n]*\);[^\n]*\n", "", src)
     src = re.sub(r"(?m)^.*\boff_32[0-3][0-9A-Fa-f]+\b.*// weak.*\n", "", src)
     src = src.replace(
         "__int64 _JNIEnv::CallStaticVoidMethod(__int64 a1, __int64 a2, __int64 a3, ...);",
@@ -131,7 +181,7 @@ def main() -> None:
     src = src.replace("return (_BYTE *)(&dword_0 + 1);", "return (char *)(&dword_0 + 1);")
     # Hex-Rays emits negative constants for unsigned lookup bytes/words. Preserve
     # their exact bit patterns while making C++ list initialization legal.
-    first_func = src.index("//----- (0000000000005880)")
+    first_func = src.index("//----- (0000000000005C4C)")
     prefix, rest = src[:first_func], src[first_func:]
     def unsigned_init(match):
         width = 8 if match.group(1) == "_BYTE" else 16
@@ -210,8 +260,25 @@ def main() -> None:
 
     if not injected:
         raise SystemExit("Could not locate the ARM64 BSS declarations")
+    generated = "\n".join(out).rstrip() + "\n"
+    for old_name, semantic_name in SEMANTIC_NAMES.items():
+        generated = re.sub(r"\b" + re.escape(old_name) + r"\b", semantic_name, generated)
+    # Name the key locals in the particle renderer instead of carrying the
+    # decompiler's opaque vN labels through the repaired memory access.
+    start_marker = "//----- (00000000000062B8)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    draw_particle = generated[start:end]
+    for old_name, semantic_name in {
+        "v0": "particle_index",
+        "v3": "particle_record",
+        "v6": "buffer_slot",
+        "v8": "particle_y",
+    }.items():
+        draw_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, draw_particle)
+    generated = generated[:start] + draw_particle + generated[end:]
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text("\n".join(out).rstrip() + "\n")
+    OUTPUT.write_text(generated)
     print(f"Wrote {OUTPUT.relative_to(ROOT)} ({OUTPUT.stat().st_size} bytes; BSS {BSS_SIZE:#x})")
 
 
