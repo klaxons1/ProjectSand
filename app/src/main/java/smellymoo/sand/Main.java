@@ -58,7 +58,6 @@ public class Main extends Activity implements SurfaceHolder.Callback {
                         } catch (Throwable th) {
                             throw th;
                         }
-                        break;
                     }
                     if (canvas != null) {
                         holder.unlockCanvasAndPost(canvas);
