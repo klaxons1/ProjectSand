@@ -75,6 +75,13 @@ def main() -> None:
         "reinterpret_cast<JNIEnv *>(qword_E50A78)->CallStaticVoidMethod("
         "reinterpret_cast<jclass>(qword_E50AE0), reinterpret_cast<jmethodID>(qword_E50AE8));",
     )
+    # JNI name-based lookup requires C linkage; Hex-Rays loses that source-level
+    # property when it emits these exported native entry points.
+    src = re.sub(
+        r"(?m)^__int64 __fastcall (Java_smellymoo_sand_Engine_(?:init|command)\s*\()",
+        r'extern "C" JNIEXPORT __int64 JNICALL \1',
+        src,
+    )
     src = src.replace("`typeinfo for'decltype(nullptr)", "typeinfo_decltype_nullptr")
     src = re.sub(r"`typeinfo name for'([A-Za-z0-9_:]+)", lambda m: "typeinfo_name_" + safe_id(m.group(1)), src)
     src = re.sub(r"`typeinfo for'([A-Za-z0-9_:]+)", lambda m: "typeinfo_" + safe_id(m.group(1)), src)

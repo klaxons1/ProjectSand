@@ -128,8 +128,8 @@ __int64 __fastcall draw_to(__int16 a1, __int16 a2); // idb
 __int64 __fastcall init_all(char a1);
 __int64 __fastcall run_command(__int64 a1);
 void *__fastcall main_loop();
-__int64 __fastcall Java_smellymoo_sand_Engine_init(__int64 a1, __int64 a2, __int64 a3, unsigned __int16 a4, char a5, unsigned __int8 a6);
-__int64 __fastcall Java_smellymoo_sand_Engine_command(__int64 a1, __int64 a2, char a3, __int16 a4, __int16 a5, char a6);
+extern "C" JNIEXPORT __int64 JNICALL Java_smellymoo_sand_Engine_init(__int64 a1, __int64 a2, __int64 a3, unsigned __int16 a4, char a5, unsigned __int8 a6);
+extern "C" JNIEXPORT __int64 JNICALL Java_smellymoo_sand_Engine_command(__int64 a1, __int64 a2, char a3, __int16 a4, __int16 a5, char a6);
 void __fastcall operator delete(void *p); // idb
 void __fastcall operator delete[](void *); // idb
 void __fastcall sub_16A34(void *p);
@@ -12724,7 +12724,7 @@ LABEL_6:
 // E50C3A: using guessed type char byte_E50C3A;
 
 //----- (0000000000016778) ----------------------------------------------------
-__int64 __fastcall Java_smellymoo_sand_Engine_init(
+extern "C" JNIEXPORT __int64 JNICALL Java_smellymoo_sand_Engine_init(
         __int64 a1,
         __int64 a2,
         __int64 a3,
@@ -12836,7 +12836,7 @@ __int64 __fastcall Java_smellymoo_sand_Engine_init(
 // E50B08: using guessed type _BYTE byte_E50B08[300];
 
 //----- (00000000000169A0) ----------------------------------------------------
-__int64 __fastcall Java_smellymoo_sand_Engine_command(__int64 a1, __int64 a2, char a3, __int16 a4, __int16 a5, char a6)
+extern "C" JNIEXPORT __int64 JNICALL Java_smellymoo_sand_Engine_command(__int64 a1, __int64 a2, char a3, __int16 a4, __int16 a5, char a6)
 {
   int v6; // w1
   __int64 result; // x0
