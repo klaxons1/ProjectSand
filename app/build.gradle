@@ -15,12 +15,7 @@ android {
         ndk {
             abiFilters 'arm64-v8a'
         }
-        externalNativeBuild {
-            cmake {
-                cppFlags "-std=c++17"
-                arguments "-DANDROID_STL=c++_static"
-            }
-        }
+        // externalNativeBuild removed – using prebuilt jniLibs (original via REA) + stub cpp for reference
     }
 
     buildTypes {
@@ -36,12 +31,7 @@ android {
         }
     }
 
-    externalNativeBuild {
-        cmake {
-            path file('src/main/cpp/CMakeLists.txt')
-            version "3.22.1"
-        }
-    }
+    // externalNativeBuild disabled – prebuilt libsand in jniLibs (see docs/lib -> jniLibs) + stub in cpp/sand_engine.cpp via REA
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
