@@ -1,24 +1,26 @@
-# Декомпил libsand.so и статус восстановления
+# `libsand.so`: ARM64 reverse-engineering status
 
-## Выбранная архитектура для исходной реконструкции: x86_64
+## Target and source of truth
 
-`docs/lib/x86_64/libsand.so.c` — основной рабочий декомпил для дальнейшей очистки. У него меньше ошибок Hex-Rays, чем у ARM64-версии. Декодирование сверяется с `docs/lib/x86_64/libsand.so`.
+The requested target is ARM64. The working reference is `docs/lib/arm64-v8a/libsand.so.c`, checked against `docs/lib/arm64-v8a/libsand.so` (AArch64 ELF). Do not use x86_64 addresses or calling conventions for the ARM64 implementation; `docs/lib/x86_64/` is retained only as a cross-check.
 
-В Hex-Rays-файле была одна ошибка (`#error` по адресу `0x15589`) внутри реализации `operator new[]`. По x86_64 машинному коду в ELF функция на успешном пути вызывает `operator new(size)` и возвращается. Эта функция восстановлена в `.c`; исходный бинарник не изменялся. Адрес и вызов проверены через `objdump -d`.
+## Recovered Hex-Rays failures
 
-ARM64-декомпил оставлен для сравнительной проверки, но в нём остаются две ошибки анализа. x86_64 выбран как более чистый источник, а не как утверждение, что псевдо-C уже компилируется или что его ABI можно без проверки использовать в ARM64-сборке.
+The ARM64 Hex-Rays output had two failures in allocator wrappers:
 
-## Ограничения исходника
+- `0x16C00`: normal path calls `_Znwm` (`operator new(size)`) and returns.
+- `0x16C3C`: exported `_Znam` (`operator new[]`) normal path calls `_Znwm` and returns.
 
-Hex-Rays `.c` — псевдо-C/C++, а не готовый проект: требуется совместимый `defs.h`, нормализация сгенерированных имён/типов, восстановление адресно-ориентированных глобальных данных и проверка ABI/JNI. Одного снятия `#error` недостаточно для сборки. В диагностической host-компиляции x86_64-псевдокода с временным compatibility header остались сотни ошибок (неполные массивы глобальных данных, IDA-типы/имена и ABI-переходники); этот header не добавлен в проект. Кроме того, APK сейчас ограничен ABI `arm64-v8a`, поэтому x86_64-исходник нельзя просто подключить к текущему target. Пока не заявляем, что файл интегрирован в APK или эквивалентен 1:1 собранному исходнику.
+Both normal paths have been written as clean C++ wrappers. The associated cold exception paths were compiler-generated; rebuilding them requires correct C++ ABI/runtime integration. The original binary is unchanged.
 
-## Оригиналы
+## What remains before this is a buildable 1:1 source port
 
-- x86_64: `docs/lib/x86_64/libsand.so` и `docs/lib/x86_64/libsand.so.c`
-- ARM64: `docs/lib/arm64-v8a/libsand.so` и `docs/lib/arm64-v8a/libsand.so.c`
+The decompiler output is still not a clean source project. It relies on IDA/Hex-Rays types and helpers (`defs.h`), includes guessed and incomplete global declarations, ABI/runtime support routines, and contains architecture-specific data layouts. Removing the two `#error` directives only recovers those small wrappers; it does **not** prove the rest compiles or behaves identically.
 
-Сигнатуры и адреса JNI/основных функций следует сверять с таблицей ELF-символов соответствующей архитектуры — адреса между ABI различаются.
+The APK currently targets `arm64-v8a`. The app-side `app/src/main/cpp/sand_engine.{h,cpp}` is still a provisional simplified engine and has not yet been replaced by the decompiled implementation. A clean port must preserve original JNI signatures, global-state layout, command queue behavior, particle storage, simulation/update order, rendering, and lifecycle. Until the source builds and is behaviorally checked against the original ARM64 `.so`, it must not be described as 1:1.
 
-## Статус приложения
+## Architecture artifacts
 
-Текущие `app/src/main/cpp/sand_engine.{h,cpp}` содержат самостоятельную упрощённую симуляцию, а не перенос оригинальной физики. Этот код ещё не заменён очищенным декомпилом; до удаления необходимо получить и проверить собираемый нативный источник.
+- Target ELF: `docs/lib/arm64-v8a/libsand.so`
+- Target decompilation: `docs/lib/arm64-v8a/libsand.so.c`
+- Cross-reference only: `docs/lib/x86_64/libsand.so` and `.c`

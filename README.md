@@ -6,7 +6,7 @@ Reconstructed from APK `smellymoo.sand` v86 (API 10–21) using [morluto/rea](ht
 ## Stack
 - Gradle 8.5 / AGP 8.2.2 / SDK 34 / NDK r27 (27.0.11718014)
 - CMake 3.22.1 + `liblog` / `libandroid`
-- Native rebuild is **not yet 1:1**: `app/src/main/cpp/sand_engine.{h,cpp}` is a provisional simplified simulation. The x86_64 Hex-Rays output in `docs/lib/x86_64/libsand.so.c` is the current source-reconstruction reference; it is not yet integrated into the APK build. See `docs/REA_FULL_DECOMPILE.md` for status and limitations.
+- Native rebuild is **not yet 1:1**: `app/src/main/cpp/sand_engine.{h,cpp}` is a provisional simplified simulation. The ARM64 Hex-Rays output in `docs/lib/arm64-v8a/libsand.so.c` is the source-reconstruction reference; it is not yet integrated into the APK build. See `docs/REA_FULL_DECOMPILE.md` for status and limitations.
 - Java sources in `app/src/main/java/smellymoo/sand/` (11 files + billing service) decompiled via REA → JADX, normalized (`C0000R` → `R`), `BuildConfig` omitted (generated)
 - Resources decoded via `androguard`/`aapt2`: `AndroidManifest.xml`, `res/values/` (strings/colors/styles/ids), `res/layout` (13), `res/drawable-*`, `assets/help*.html`
 
