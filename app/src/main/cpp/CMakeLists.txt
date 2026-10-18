@@ -3,6 +3,7 @@ project(sand)
 
 add_library(sand SHARED
     sand_engine.cpp
+    ported_decompile.cpp
 )
 
 find_library(log-lib log)
