@@ -439,6 +439,187 @@ def main() -> None:
         seek_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, seek_particle)
     generated = generated[:start] + seek_particle + generated[end:]
 
+    # Recover the inputs and candidate-cell roles in the powder slide helper.
+    start_marker = "//----- (000000000000C3C4)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    slide_powder = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "source_x",
+        "a2": "source_y",
+        "a3": "particle_index",
+        "a4": "side_variant",
+        "a5": "particle_density_threshold",
+        "result": "slide_succeeded",
+        "v6": "side_variant_value",
+        "v7": "particle_index_value",
+        "v8": "directional_table_base",
+        "v9": "candidate_offset_x",
+        "v10": "candidate_offset_y",
+        "v11": "direction_vector",
+        "v12": "gravity_delta_y",
+        "v13": "preferred_delta_x",
+        "v14": "preferred_x",
+        "v15": "preferred_y",
+        "v17": "fallback_x",
+        "v18": "fallback_y",
+        "v19": "fallback_cell_offset",
+        "v20": "preferred_material_id",
+    }.items():
+        slide_powder = re.sub(r"\b" + old_name + r"\b", semantic_name, slide_powder)
+    powder_table_base = (
+        "  unsigned __int8 *directional_table_base; // x3\n",
+        "  directional_table_base = &g_material_properties_lut[32 * (unsigned __int8)g_direction_index];",
+    )
+    for old_text in powder_table_base:
+        if slide_powder.count(old_text) != 1:
+            raise SystemExit("Expected one powder movement-table alias")
+        slide_powder = slide_powder.replace(old_text, "")
+    for old_text, new_text in {
+        "*((_WORD *)directional_table_base + 234)": "g_direction_lut[16 * (unsigned __int8)g_direction_index + 14]",
+        "*((_WORD *)directional_table_base + 235)": "g_direction_lut[16 * (unsigned __int8)g_direction_index + 15]",
+        "*((_WORD *)directional_table_base + 232)": "g_direction_lut[16 * (unsigned __int8)g_direction_index + 12]",
+        "*((_WORD *)directional_table_base + 233)": "g_direction_lut[16 * (unsigned __int8)g_direction_index + 13]",
+    }.items():
+        if slide_powder.count(old_text) != 1:
+            raise SystemExit(f"Expected one powder direction vector access: {old_text}")
+        slide_powder = slide_powder.replace(old_text, new_text)
+    for state_value in (1, 2):
+        old_text = (
+            "LOBYTE(g_particle_records[10 * particle_index_value + 6]) = "
+            f"g_particle_records[10 * particle_index_value + 6] & 0xF8 | {state_value};"
+        )
+        new_text = (
+            "particle_packed_state(particle_index_value) = "
+            f"particle_packed_state(particle_index_value) & 0xF8 | {state_value};"
+        )
+        if slide_powder.count(old_text) != 1:
+            raise SystemExit(f"Expected powder packed-state write {state_value}")
+        slide_powder = slide_powder.replace(old_text, new_text)
+    generated = generated[:start] + slide_powder + generated[end:]
+
+    # The liquid helper tries a side-dependent direction, then the primary
+    # flow vector and (when necessary) the surface-pull fallback.
+    start_marker = "//----- (000000000000C5EC)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    slide_liquid = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "source_x",
+        "a2": "source_y",
+        "a3": "particle_index",
+        "a4": "side_variant",
+        "a5": "particle_density_threshold",
+        "result": "slide_succeeded",
+        "v5": "particle_index_value",
+        "v8": "side_variant_value",
+        "v9": "particle_density_threshold_value",
+        "v10": "initial_direction_entry",
+        "v11": "source_x_value",
+        "v12": "side_direction_delta_y",
+        "v13": "source_y_value",
+        "v14": "side_direction_x",
+        "v15": "direction_index",
+        "v16": "direction_vector",
+        "v17": "flow_delta_x",
+        "v18": "flow_delta_y",
+        "v19": "directional_table_base",
+        "v20": "candidate_offset_x",
+        "v21": "candidate_offset_y",
+        "v22": "selected_offset_x",
+        "v23": "selected_offset_y",
+        "v24": "preferred_delta_x",
+        "v25": "preferred_x",
+        "v26": "preferred_y",
+        "v27": "preferred_material_id",
+        "v29": "side_candidate_y",
+        "v30": "lower_y_limit",
+        "v31": "right_x_limit",
+        "v32": "side_candidate_material_id",
+        "v33": "primary_direction_entry",
+        "v34": "primary_candidate_x",
+        "v35": "primary_candidate_y",
+        "v36": "fallback_x",
+        "v37": "fallback_y",
+        "v38": "fallback_material_id",
+        "v39": "fallback_direction_entry",
+    }.items():
+        slide_liquid = re.sub(r"\b" + old_name + r"\b", semantic_name, slide_liquid)
+    liquid_table_base = (
+        "  unsigned __int8 *directional_table_base; // x5\n",
+        "  directional_table_base = &g_material_properties_lut[32 * direction_index];",
+    )
+    for old_text in liquid_table_base:
+        if slide_liquid.count(old_text) != 1:
+            raise SystemExit("Expected one liquid movement-table alias")
+        slide_liquid = slide_liquid.replace(old_text, "")
+    for old_text, new_text in {
+        "*((_WORD *)directional_table_base + 234)": "g_direction_lut[16 * direction_index + 14]",
+        "*((_WORD *)directional_table_base + 235)": "g_direction_lut[16 * direction_index + 15]",
+        "*((_WORD *)directional_table_base + 232)": "g_direction_lut[16 * direction_index + 12]",
+        "*((_WORD *)directional_table_base + 233)": "g_direction_lut[16 * direction_index + 13]",
+    }.items():
+        if slide_liquid.count(old_text) != 1:
+            raise SystemExit(f"Expected one liquid direction vector access: {old_text}")
+        slide_liquid = slide_liquid.replace(old_text, new_text)
+    for state_value in (1, 2):
+        old_text = (
+            "LOBYTE(g_particle_records[10 * particle_index_value + 6]) = "
+            f"g_particle_records[10 * particle_index_value + 6] & 0xF8 | {state_value};"
+        )
+        new_text = (
+            "particle_packed_state(particle_index_value) = "
+            f"particle_packed_state(particle_index_value) & 0xF8 | {state_value};"
+        )
+        if slide_liquid.count(old_text) != 1:
+            raise SystemExit(f"Expected liquid packed-state write {state_value}")
+        slide_liquid = slide_liquid.replace(old_text, new_text)
+    generated = generated[:start] + slide_liquid + generated[end:]
+
+    # The Hex-Rays listing also indexed direction vectors by walking beyond
+    # the 440-byte material-property table. The ELF places g_direction_lut
+    # immediately after it; offsets 230/231 words in that alias are vector
+    # components 10/11. Use the in-bounds direction-table view instead.
+    start_marker = "//----- (0000000000007D30)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    can_sleep = generated[start:end]
+    for old_text in (
+        "  unsigned __int8 *v11; // x0\n",
+        "  v11 = &g_material_properties_lut[32 * (unsigned __int8)g_direction_index];",
+    ):
+        if can_sleep.count(old_text) != 1:
+            raise SystemExit("Expected one aliased direction-table base in can_sleep")
+        can_sleep = can_sleep.replace(old_text, "")
+    for old_text, new_text in {
+        "*((_WORD *)v11 + 230)": "g_direction_lut[16 * (unsigned __int8)g_direction_index + 10]",
+        "*((_WORD *)v11 + 231)": "g_direction_lut[16 * (unsigned __int8)g_direction_index + 11]",
+    }.items():
+        if can_sleep.count(old_text) != 1:
+            raise SystemExit(f"Unexpected direction-table alias count in can_sleep: {old_text}")
+        can_sleep = can_sleep.replace(old_text, new_text)
+    generated = generated[:start] + can_sleep + generated[end:]
+
+    start_marker = "//----- (000000000000E740)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    flame = generated[start:end]
+    for old_text in (
+        "  unsigned __int8 *v15; // x3\n",
+        "  v15 = &g_material_properties_lut[32 * v0];",
+    ):
+        if flame.count(old_text) != 1:
+            raise SystemExit("Expected one aliased direction-table base in flame")
+        flame = flame.replace(old_text, "")
+    for old_text, new_text in {
+        "*((_WORD *)v15 + 230)": "g_direction_lut[16 * v0 + 10]",
+        "*((_WORD *)v15 + 231)": "g_direction_lut[16 * v0 + 11]",
+    }.items():
+        if flame.count(old_text) != 1:
+            raise SystemExit(f"Expected one direction-table alias in flame: {old_text}")
+        flame = flame.replace(old_text, new_text)
+    generated = generated[:start] + flame + generated[end:]
+
     # Name the key locals in the particle renderer instead of carrying the
     # decompiler's opaque vN labels through the repaired memory access.
     start_marker = "//----- (00000000000062B8)"

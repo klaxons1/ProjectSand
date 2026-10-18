@@ -2832,7 +2832,6 @@ bool __fastcall can_sleep(__int16 a1, __int16 a2)
   int v8; // w4
   int v9; // w0
   _BOOL4 v10; // w22
-  unsigned __int8 *v11; // x0
   int v12; // w2
   _WORD *v13; // x0
   int v14; // w2
@@ -2883,11 +2882,11 @@ bool __fastcall can_sleep(__int16 a1, __int16 a2)
       }
     }
   }
-  v11 = &g_material_properties_lut[32 * (unsigned __int8)g_direction_index];
-  v12 = (__int16)(a1 + *((_WORD *)v11 + 230));
+
+  v12 = (__int16)(a1 + g_direction_lut[16 * (unsigned __int8)g_direction_index + 10]);
   if ( v12 > 1 )
   {
-    v28 = (__int16)(a2 + *((_WORD *)v11 + 231));
+    v28 = (__int16)(a2 + g_direction_lut[16 * (unsigned __int8)g_direction_index + 11]);
     if ( v28 > 1 && v28 < g_view_height - 2 && v12 < g_view_width[0] - 2 )
     {
       v10 = false;
@@ -5645,81 +5644,80 @@ LABEL_17:
 // E50A3A: using guessed type __int16 g_found_y;
 
 //----- (000000000000C3C4) ----------------------------------------------------
-__int64 __fastcall slide_powder(__int16 a1, __int16 a2, int a3, unsigned __int8 a4, unsigned __int8 a5)
+__int64 __fastcall slide_powder(__int16 source_x, __int16 source_y, int particle_index, unsigned __int8 side_variant, unsigned __int8 particle_density_threshold)
 {
-  int v6; // w20
-  __int64 v7; // x19
-  unsigned __int8 *v8; // x3
-  __int16 v9; // w2
-  __int16 v10; // w3
-  _WORD *v11; // x5
-  __int16 v12; // w9
-  __int16 v13; // w5
-  int v14; // w10
-  int v15; // w6
-  __int64 result; // x0
-  int v17; // w7
-  int v18; // w8
-  __int64 v19; // x7
-  __int64 v20; // x6
+  int side_variant_value; // w20
+  __int64 particle_index_value; // x19
+  __int16 candidate_offset_x; // w2
+  __int16 candidate_offset_y; // w3
+  _WORD *direction_vector; // x5
+  __int16 gravity_delta_y; // w9
+  __int16 preferred_delta_x; // w5
+  int preferred_x; // w10
+  int preferred_y; // w6
+  __int64 slide_succeeded; // x0
+  int fallback_x; // w7
+  int fallback_y; // w8
+  __int64 fallback_cell_offset; // x7
+  __int64 preferred_material_id; // x6
 
-  v6 = a4;
-  v7 = a3;
-  v8 = &g_material_properties_lut[32 * (unsigned __int8)g_direction_index];
-  if ( v6 != 0 )
+  side_variant_value = side_variant;
+  particle_index_value = particle_index;
+
+  if ( side_variant_value != 0 )
   {
-    v9 = *((_WORD *)v8 + 234);
-    v10 = *((_WORD *)v8 + 235);
+    candidate_offset_x = g_direction_lut[16 * (unsigned __int8)g_direction_index + 14];
+    candidate_offset_y = g_direction_lut[16 * (unsigned __int8)g_direction_index + 15];
   }
   else
   {
-    v9 = *((_WORD *)v8 + 232);
-    v10 = *((_WORD *)v8 + 233);
+    candidate_offset_x = g_direction_lut[16 * (unsigned __int8)g_direction_index + 12];
+    candidate_offset_y = g_direction_lut[16 * (unsigned __int8)g_direction_index + 13];
   }
-  v11 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-  v12 = v11[5];
-  v13 = v9 + v11[4];
-  v14 = (__int16)(v13 + a1);
-  if ( v14 > 1 )
+  direction_vector = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+  gravity_delta_y = direction_vector[5];
+  preferred_delta_x = candidate_offset_x + direction_vector[4];
+  preferred_x = (__int16)(preferred_delta_x + source_x);
+  if ( preferred_x > 1 )
   {
-    v15 = (__int16)(v10 + v12 + a2);
-    if ( v15 > 1 && v15 < g_view_height - 2 && v14 < g_view_width[0] - 2 )
+    preferred_y = (__int16)(candidate_offset_y + gravity_delta_y + source_y);
+    if ( preferred_y > 1 && preferred_y < g_view_height - 2 && preferred_x < g_view_width[0] - 2 )
     {
-      v20 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v14 + v15 * g_view_width[0]));
-      if ( hx_cast<_DWORD>(v20) == 0 || (unsigned __int8)g_shared_engine_data[12 * v20 + 17] < hx_cast<unsigned int>(a5) )
+      preferred_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (preferred_x + preferred_y * g_view_width[0]));
+      if ( hx_cast<_DWORD>(preferred_material_id) == 0 || (unsigned __int8)g_shared_engine_data[12 * preferred_material_id + 17] < hx_cast<unsigned int>(particle_density_threshold) )
       {
-        shift_line(a1, a2, v13, v10 + v12);
-        if ( v6 != 0 )
+        shift_line(source_x, source_y, preferred_delta_x, candidate_offset_y + gravity_delta_y);
+        if ( side_variant_value != 0 )
           goto LABEL_20;
         goto LABEL_14;
       }
     }
   }
-  result = 0;
-  v17 = (__int16)(v9 + a1);
-  if ( v17 > 1 )
+  slide_succeeded = 0;
+  fallback_x = (__int16)(candidate_offset_x + source_x);
+  if ( fallback_x > 1 )
   {
-    v18 = (__int16)(v10 + a2);
-    if ( v18 > 1 && v18 < g_view_height - 2 && v17 < g_view_width[0] - 2 )
+    fallback_y = (__int16)(candidate_offset_y + source_y);
+    if ( fallback_y > 1 && fallback_y < g_view_height - 2 && fallback_x < g_view_width[0] - 2 )
     {
-      v19 = 8LL * (v17 + v18 * g_view_width[0]);
-      if ( *(_BYTE *)(g_cell_state_grid + v19) == 0
-        || (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + v19) + 17] < hx_cast<unsigned int>(a5) )
+      fallback_cell_offset = 8LL * (fallback_x + fallback_y * g_view_width[0]);
+      if ( *(_BYTE *)(g_cell_state_grid + fallback_cell_offset) == 0
+        || (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + fallback_cell_offset) + 17] < hx_cast<unsigned int>(particle_density_threshold) )
       {
-        shift_line(a1, a2, v9, v10);
-        if ( v6 != 0 )
+        shift_line(source_x, source_y, candidate_offset_x, candidate_offset_y);
+        if ( side_variant_value != 0 )
         {
 LABEL_20:
-          LOBYTE(g_particle_records[10 * v7 + 6]) = g_particle_records[10 * v7 + 6] & 0xF8 | 1;
+          particle_packed_state(particle_index_value) = particle_packed_state(particle_index_value) & 0xF8 | 1;
           return 1;
         }
 LABEL_14:
-        LOBYTE(g_particle_records[10 * v7 + 6]) = g_particle_records[10 * v7 + 6] & 0xF8 | 2;
+        particle_packed_state(particle_index_value) = particle_packed_state(particle_index_value) & 0xF8 | 2;
         return 1;
       }
     }
   }
-  return result;
+  return slide_succeeded;
 }
 // CF0: using guessed type Elf64_Sym;
 // 1C6A0: using guessed type unsigned __int8 g_material_properties_lut[440];
@@ -5732,169 +5730,168 @@ LABEL_14:
 // E50A18: using guessed type char g_direction_index;
 
 //----- (000000000000C5EC) ----------------------------------------------------
-bool __fastcall slide_liquid(__int16 a1, __int16 a2, int a3, unsigned __int8 a4, unsigned __int8 a5)
+bool __fastcall slide_liquid(__int16 source_x, __int16 source_y, int particle_index, unsigned __int8 side_variant, unsigned __int8 particle_density_threshold)
 {
-  __int64 v5; // x21
-  int v8; // w23
-  unsigned int v9; // w26
-  _WORD *v10; // x0
-  __int16 v11; // w22
-  __int16 v12; // w6
-  __int16 v13; // w27
-  int v14; // w7
-  __int64 v15; // x5
-  _WORD *v16; // x0
-  __int16 v17; // w7
-  __int16 v18; // w6
-  unsigned __int8 *v19; // x5
-  __int16 v20; // w2
-  __int16 v21; // w9
-  __int16 v22; // w0
-  __int16 v23; // w1
-  __int16 v24; // w7
-  int v25; // w8
-  int v26; // w4
-  __int64 v27; // x4
-  _BOOL8 result; // x0
-  int v29; // w5
-  int v30; // w4
-  int v31; // w8
-  __int64 v32; // x5
-  _WORD *v33; // x6
-  int v34; // w1
-  int v35; // w3
-  __int16 v36; // w22
-  int v37; // w1
-  __int64 v38; // x1
-  _WORD *v39; // x0
+  __int64 particle_index_value; // x21
+  int side_variant_value; // w23
+  unsigned int particle_density_threshold_value; // w26
+  _WORD *initial_direction_entry; // x0
+  __int16 source_x_value; // w22
+  __int16 side_direction_delta_y; // w6
+  __int16 source_y_value; // w27
+  int side_direction_x; // w7
+  __int64 direction_index; // x5
+  _WORD *direction_vector; // x0
+  __int16 flow_delta_x; // w7
+  __int16 flow_delta_y; // w6
+  __int16 candidate_offset_x; // w2
+  __int16 candidate_offset_y; // w9
+  __int16 selected_offset_x; // w0
+  __int16 selected_offset_y; // w1
+  __int16 preferred_delta_x; // w7
+  int preferred_x; // w8
+  int preferred_y; // w4
+  __int64 preferred_material_id; // x4
+  _BOOL8 slide_succeeded; // x0
+  int side_candidate_y; // w5
+  int lower_y_limit; // w4
+  int right_x_limit; // w8
+  __int64 side_candidate_material_id; // x5
+  _WORD *primary_direction_entry; // x6
+  int primary_candidate_x; // w1
+  int primary_candidate_y; // w3
+  __int16 fallback_x; // w22
+  int fallback_y; // w1
+  __int64 fallback_material_id; // x1
+  _WORD *fallback_direction_entry; // x0
 
-  v5 = a3;
-  v8 = a4;
-  v9 = a5;
-  v10 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-  if ( a4 != 0 )
+  particle_index_value = particle_index;
+  side_variant_value = side_variant;
+  particle_density_threshold_value = particle_density_threshold;
+  initial_direction_entry = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+  if ( side_variant != 0 )
   {
-    v11 = a1;
-    v12 = v10[7];
-    v13 = a2;
-    v14 = (__int16)(a1 + v10[6]);
-    if ( v14 <= 1 )
+    source_x_value = source_x;
+    side_direction_delta_y = initial_direction_entry[7];
+    source_y_value = source_y;
+    side_direction_x = (__int16)(source_x + initial_direction_entry[6]);
+    if ( side_direction_x <= 1 )
     {
 LABEL_3:
-      v15 = (unsigned __int8)g_direction_index;
-      v16 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-      v17 = v16[4];
-      v18 = v16[5];
+      direction_index = (unsigned __int8)g_direction_index;
+      direction_vector = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+      flow_delta_x = direction_vector[4];
+      flow_delta_y = direction_vector[5];
       goto LABEL_4;
     }
   }
   else
   {
-    v11 = a1;
-    v12 = v10[3];
-    v13 = a2;
-    v14 = (__int16)(a1 + v10[2]);
-    if ( v14 <= 1 )
+    source_x_value = source_x;
+    side_direction_delta_y = initial_direction_entry[3];
+    source_y_value = source_y;
+    side_direction_x = (__int16)(source_x + initial_direction_entry[2]);
+    if ( side_direction_x <= 1 )
       goto LABEL_3;
   }
-  v29 = (__int16)(v13 + v12);
-  if ( v29 <= 1 )
+  side_candidate_y = (__int16)(source_y_value + side_direction_delta_y);
+  if ( side_candidate_y <= 1 )
     goto LABEL_3;
-  v30 = g_view_height - 2;
-  if ( v29 >= v30 )
+  lower_y_limit = g_view_height - 2;
+  if ( side_candidate_y >= lower_y_limit )
     goto LABEL_3;
-  v31 = g_view_width[0] - 2;
-  if ( v14 >= v31 )
+  right_x_limit = g_view_width[0] - 2;
+  if ( side_direction_x >= right_x_limit )
     goto LABEL_3;
-  v32 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v14 + v29 * g_view_width[0]));
-  if ( hx_cast<_DWORD>(v32) != 0 && (unsigned __int8)g_shared_engine_data[12 * v32 + 17] >= v9 )
+  side_candidate_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (side_direction_x + side_candidate_y * g_view_width[0]));
+  if ( hx_cast<_DWORD>(side_candidate_material_id) != 0 && (unsigned __int8)g_shared_engine_data[12 * side_candidate_material_id + 17] >= particle_density_threshold_value )
   {
-    v15 = (unsigned __int8)g_direction_index;
-    v39 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-    v17 = v39[4];
-    v18 = v39[5];
+    direction_index = (unsigned __int8)g_direction_index;
+    fallback_direction_entry = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+    flow_delta_x = fallback_direction_entry[4];
+    flow_delta_y = fallback_direction_entry[5];
   }
   else
   {
-    v15 = (unsigned __int8)g_direction_index;
-    v33 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-    v17 = v33[4];
-    v18 = v33[5];
-    v34 = (__int16)(v11 + v17);
-    if ( v34 <= 1
-      || (v35 = (__int16)(v13 + v18)) <= 1
-      || v30 <= v35
-      || v31 <= v34
-      || *(_BYTE *)(g_cell_state_grid + 8LL * (v34 + g_view_width[0] * v35)) != 0
-      && (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v34 + g_view_width[0] * v35)) + 17] >= v9 )
+    direction_index = (unsigned __int8)g_direction_index;
+    primary_direction_entry = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+    flow_delta_x = primary_direction_entry[4];
+    flow_delta_y = primary_direction_entry[5];
+    primary_candidate_x = (__int16)(source_x_value + flow_delta_x);
+    if ( primary_candidate_x <= 1
+      || (primary_candidate_y = (__int16)(source_y_value + flow_delta_y)) <= 1
+      || lower_y_limit <= primary_candidate_y
+      || right_x_limit <= primary_candidate_x
+      || *(_BYTE *)(g_cell_state_grid + 8LL * (primary_candidate_x + g_view_width[0] * primary_candidate_y)) != 0
+      && (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (primary_candidate_x + g_view_width[0] * primary_candidate_y)) + 17] >= particle_density_threshold_value )
     {
-      result = pull_surface_HR(a3, v8);
-      if ( result )
-        return result;
+      slide_succeeded = pull_surface_HR(particle_index, side_variant_value);
+      if ( slide_succeeded )
+        return slide_succeeded;
       goto LABEL_3;
     }
   }
 LABEL_4:
-  v19 = &g_material_properties_lut[32 * v15];
-  if ( v8 != 0 )
+
+  if ( side_variant_value != 0 )
   {
-    v20 = *((_WORD *)v19 + 234);
-    v21 = *((_WORD *)v19 + 235);
-    v22 = v20;
-    v23 = v21;
-    v24 = v20 + v17;
-    v25 = (__int16)(v24 + v11);
-    if ( v25 <= 1 )
+    candidate_offset_x = g_direction_lut[16 * direction_index + 14];
+    candidate_offset_y = g_direction_lut[16 * direction_index + 15];
+    selected_offset_x = candidate_offset_x;
+    selected_offset_y = candidate_offset_y;
+    preferred_delta_x = candidate_offset_x + flow_delta_x;
+    preferred_x = (__int16)(preferred_delta_x + source_x_value);
+    if ( preferred_x <= 1 )
       goto LABEL_30;
   }
   else
   {
-    v20 = *((_WORD *)v19 + 232);
-    v21 = *((_WORD *)v19 + 233);
-    v22 = v20;
-    v23 = v21;
-    v24 = v20 + v17;
-    v25 = (__int16)(v24 + v11);
-    if ( v25 <= 1 )
+    candidate_offset_x = g_direction_lut[16 * direction_index + 12];
+    candidate_offset_y = g_direction_lut[16 * direction_index + 13];
+    selected_offset_x = candidate_offset_x;
+    selected_offset_y = candidate_offset_y;
+    preferred_delta_x = candidate_offset_x + flow_delta_x;
+    preferred_x = (__int16)(preferred_delta_x + source_x_value);
+    if ( preferred_x <= 1 )
       goto LABEL_30;
   }
-  v26 = (__int16)(v23 + v18 + v13);
-  if ( v26 > 1 && v26 < g_view_height - 2 && v25 < g_view_width[0] - 2 )
+  preferred_y = (__int16)(selected_offset_y + flow_delta_y + source_y_value);
+  if ( preferred_y > 1 && preferred_y < g_view_height - 2 && preferred_x < g_view_width[0] - 2 )
   {
-    v27 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v25 + v26 * g_view_width[0]));
-    if ( hx_cast<_DWORD>(v27) == 0 || (unsigned __int8)g_shared_engine_data[12 * v27 + 17] < v9 )
+    preferred_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (preferred_x + preferred_y * g_view_width[0]));
+    if ( hx_cast<_DWORD>(preferred_material_id) == 0 || (unsigned __int8)g_shared_engine_data[12 * preferred_material_id + 17] < particle_density_threshold_value )
     {
-      shift_line(a1, a2, v24, v23 + v18);
+      shift_line(source_x, source_y, preferred_delta_x, selected_offset_y + flow_delta_y);
       goto LABEL_12;
     }
   }
 LABEL_30:
-  v36 = v22 + v11;
-  result = false;
-  if ( v36 > 1 )
+  fallback_x = selected_offset_x + source_x_value;
+  slide_succeeded = false;
+  if ( fallback_x > 1 )
   {
-    v37 = (__int16)(v23 + v13);
-    if ( v37 > 1 && v37 < g_view_height - 2 && v36 < g_view_width[0] - 2 )
+    fallback_y = (__int16)(selected_offset_y + source_y_value);
+    if ( fallback_y > 1 && fallback_y < g_view_height - 2 && fallback_x < g_view_width[0] - 2 )
     {
-      v38 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v36 + v37 * g_view_width[0]));
-      if ( hx_cast<_DWORD>(v38) == 0 || (unsigned __int8)g_shared_engine_data[12 * v38 + 17] < v9 )
+      fallback_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (fallback_x + fallback_y * g_view_width[0]));
+      if ( hx_cast<_DWORD>(fallback_material_id) == 0 || (unsigned __int8)g_shared_engine_data[12 * fallback_material_id + 17] < particle_density_threshold_value )
       {
-        shift_line(a1, a2, v20, v21);
+        shift_line(source_x, source_y, candidate_offset_x, candidate_offset_y);
 LABEL_12:
-        if ( v8 != 0 )
+        if ( side_variant_value != 0 )
         {
-          LOBYTE(g_particle_records[10 * v5 + 6]) = g_particle_records[10 * v5 + 6] & 0xF8 | 1;
+          particle_packed_state(particle_index_value) = particle_packed_state(particle_index_value) & 0xF8 | 1;
           return true;
         }
         else
         {
-          result = true;
-          LOBYTE(g_particle_records[10 * v5 + 6]) = g_particle_records[10 * v5 + 6] & 0xF8 | 2;
+          slide_succeeded = true;
+          particle_packed_state(particle_index_value) = particle_packed_state(particle_index_value) & 0xF8 | 2;
         }
       }
     }
   }
-  return result;
+  return slide_succeeded;
 }
 // CF0: using guessed type Elf64_Sym;
 // 1C6A0: using guessed type unsigned __int8 g_material_properties_lut[440];
@@ -7167,7 +7164,6 @@ __int64 __fastcall flame()
   _WORD *v12; // x4
   int v13; // w5
   int v14; // w3
-  unsigned __int8 *v15; // x3
   int v16; // w0
   int v17; // w1
   unsigned __int64 v18; // x2
@@ -7268,11 +7264,11 @@ LABEL_4:
       }
     }
   }
-  v15 = &g_material_properties_lut[32 * v0];
-  v16 = (__int16)(v4 + *((_WORD *)v15 + 230));
+
+  v16 = (__int16)(v4 + g_direction_lut[16 * v0 + 10]);
   if ( v16 > 1 )
   {
-    v17 = (__int16)(v6 + *((_WORD *)v15 + 231));
+    v17 = (__int16)(v6 + g_direction_lut[16 * v0 + 11]);
     if ( v17 > 1
       && v17 < g_view_height - 2
       && v16 < g_view_width[0] - 2
