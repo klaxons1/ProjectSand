@@ -40,7 +40,7 @@ SEMANTIC_NAMES = {
     "byte_33516": "g_framebuffer_bank_index",
     "qword_33518": "g_framebuffer_state_banks",
     "word_4C7380": "g_particle_records",
-    "byte_4C7410": "g_particle_record_aux",
+    "byte_4C7410": "g_particle_record_bytes",
     "byte_1C6A0": "g_material_properties_lut",
     "word_1C858": "g_direction_lut",
     "byte_1C960": "g_particle_state_lut",
@@ -284,6 +284,61 @@ def main() -> None:
     generated = "\n".join(out).rstrip() + "\n"
     for old_name, semantic_name in SEMANTIC_NAMES.items():
         generated = re.sub(r"\b" + re.escape(old_name) + r"\b", semantic_name, generated)
+
+    # The byte global at 0x4C7410 is a shifted view into the same 20-byte
+    # records as g_particle_records (0x4C7380). Recover record-relative field
+    # accessors instead of preserving Hex-Rays' negative-base byte arithmetic.
+    link_access = re.compile(
+        r"\*\(_DWORD \*\)&g_particle_record_bytes\[20 \* (.*?) - 140\]"
+    )
+    generated, link_count = link_access.subn(r"particle_next_link(\1)", generated)
+    if link_count != 6:
+        raise SystemExit(f"Expected six particle-list link accesses, found {link_count}")
+    byte_accessors = {
+        "136": "particle_material_id",
+        "135": "particle_flags",
+        "133": "particle_status_flag",
+        "132": "particle_packed_state",
+        "128": "particle_counter",
+    }
+    byte_access = re.compile(
+        r"g_particle_record_bytes\[20 \* (.*?) - (136|135|133|132|128)\]"
+    )
+    def particle_field_access(match):
+        accessor = byte_accessors[match.group(2)]
+        return f"{accessor}({match.group(1)})"
+    generated, byte_count = byte_access.subn(particle_field_access, generated)
+    if byte_count != 36:
+        raise SystemExit(f"Expected 36 particle-byte field accesses, found {byte_count}")
+    counter_pointer = (
+        "result = (__int64)&g_particle_record_bytes[20 * dword_E50A00];\n"
+        "      *(_BYTE *)(result - 128) = 0;"
+    )
+    if generated.count(counter_pointer) != 1:
+        raise SystemExit("Expected one shifted-base particle-counter access")
+    generated = generated.replace(
+        counter_pointer,
+        "result = (__int64)&particle_counter(dword_E50A00);\n"
+        "      *(_BYTE *)result = 0;",
+    )
+    accessors = (
+        "\nstatic inline _BYTE &particle_byte_field(__int64 index, unsigned offset) {\n"
+        "  return reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index)[offset];\n"
+        "}\n"
+        "static inline _DWORD &particle_next_link(__int64 index) {\n"
+        "  return *reinterpret_cast<_DWORD *>(reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index) + 4);\n"
+        "}\n"
+        "static inline _BYTE &particle_material_id(__int64 index) { return particle_byte_field(index, 8); }\n"
+        "static inline _BYTE &particle_flags(__int64 index) { return particle_byte_field(index, 9); }\n"
+        "static inline _BYTE &particle_status_flag(__int64 index) { return particle_byte_field(index, 11); }\n"
+        "static inline _BYTE &particle_packed_state(__int64 index) { return particle_byte_field(index, 12); }\n"
+        "static inline _BYTE &particle_counter(__int64 index) { return particle_byte_field(index, 16); }\n"
+    )
+    record_alias = re.search(r"(?m)^#define g_particle_record_bytes .*\n", generated)
+    if not record_alias:
+        raise SystemExit("Could not locate particle byte-view alias for accessors")
+    generated = generated[:record_alias.end()] + accessors + generated[record_alias.end():]
+
     # Name the key locals in the particle renderer instead of carrying the
     # decompiler's opaque vN labels through the repaired memory access.
     start_marker = "//----- (00000000000062B8)"

@@ -29,8 +29,8 @@ The generator now removes that stale-framebuffer shortcut: mode 2 always complet
 | `g_current_particle_index` | `0x33014` | Current particle index, including the `-2` sentinel. |
 | `g_view_width`, `g_view_height` | `0x33510`, `0x33512` | Simulation dimensions after zoom scaling. |
 | `g_background_color` | `0x33514` | Background color used when clearing. |
-| `g_particle_records` | `0x4C7380` | Ten 16-bit fields per particle. |
-| `g_particle_record_aux` | `0x4C7410` | Large auxiliary particle-state byte region. |
+| `g_particle_records` | `0x4C7380` | Short-oriented view of the 20-byte particle records. |
+| `g_particle_record_bytes` | `0x4C7410` | Overlapping byte-oriented view of that same arena, not a separate auxiliary array; Hex-Rays expressions use negative constants to address fields relative to each record. |
 | `g_framebuffer_pixels`, `g_cell_state_grid` | `0xE50A08`, `0xE50A10` | Current pixel buffer and per-cell simulation allocation. |
 | `g_jni_env`, `g_surface_global_ref`, `g_native_window` | `0xE50A78`, `0xE50A80`, `0xE50A88` | JNI/window lifecycle handles. |
 | `g_command_queue` | `0xE50B08` | 50-entry, 6-byte command ring; adjacent names are its read/write indexes. |
@@ -38,9 +38,25 @@ The generator now removes that stale-framebuffer shortcut: mode 2 always complet
 | `g_search_direction`, `g_search_remaining`, `g_search_step` | `0xE50A30`–`0xE50A32` | Shared angular-scan cursor, remaining probes, and signed direction increment used by `near_point()` and the movement routines. |
 | `g_found_x`, `g_found_y` | `0xE50A38`, `0xE50A3A` | Coordinates written when `pixel_is()` finds a matching neighboring cell and consumed by the particle movement routines. |
 
+### Particle-record layout (20 bytes per record)
+
+The two decompiler globals at `0x4C7380` and `0x4C7410` are not separate arrays. Their accesses resolve to the same record: for example, the original `g_particle_record_bytes[20 * i - 136]` expression is byte offset 8 of record `i`, while `...[20 * i - 140]` addresses byte offset 4. The generator now expresses these as record-relative accessors (`particle_material_id(i)`, `particle_flags(i)`, `particle_packed_state(i)`, `particle_counter(i)`, and `particle_next_link(i)`) rather than preserving the shifted-base arithmetic. This recovers structure without changing storage or behavior.
+
+| Byte offset | Recovered use |
+|---:|---|
+| `0`–`1` | Particle x coordinate. |
+| `2`–`3` | Particle y coordinate. |
+| `4`–`7` | 32-bit next-particle/list link. |
+| `8` | Material identifier. |
+| `9` | Bit flags (masks `1`, `2`, and `4` are independently tested). |
+| `11` | Additional one-bit state flag. |
+| `12` | Packed particle state/category bits. |
+| `16` | Mutable per-particle counter (incremented, cleared, and assigned by update routines; exact gameplay meaning remains under audit). |
+| Other bytes | Not assigned semantic names until their use is fully traced. |
+
 ## Verification and remaining work
 
-- **Passed:** generator execution; strict host `g++ -std=c++17 -fsyntax-only` using temporary host Android/JNI stubs (zero syntax errors); host object compilation; `nm` confirms both unmangled JNI exports; focused generated-source assertions confirm `set_frame()` now reaches mode 7/callback without the non-null-framebuffer bypass; `git diff --check`.
+- **Passed:** generator execution; strict host `g++ -std=c++17 -fsyntax-only` using temporary host Android/JNI stubs (zero syntax errors); host object compilation; `nm` confirms both unmangled JNI exports; focused assertions confirm the startup mode-7 path and that particle accesses use the recovered record-relative accessors; `git diff --check`.
 - **Not run here:** Android/NDK compile and link. This environment has no Android NDK toolchain or Java/JDK executable available.
 - **External Gradle log received:** it linked `sand_engine.cpp.o` and `ported_decompile.cpp.o` and failed on undefined simulation globals (`g_zoom_raw`, `g_selectedMat`, etc.). That log used the old CMake source list, so it did not build this generated source. The current `CMakeLists.txt` lists only `arm64/libsand_decompiled.cpp`; do not fix that old failure by adding simulation stubs.
 - **Not run:** device/emulator behavior comparison against the original ARM64 library.

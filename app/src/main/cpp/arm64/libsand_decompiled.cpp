@@ -893,7 +893,19 @@ __attribute__((constructor)) static void initialize_native_memory() {
 #define byte_4C7375 (*reinterpret_cast<char *>(g_native_memory + 0x494375))
 #define byte_4C7378 (*reinterpret_cast<char *>(g_native_memory + 0x494378))
 #define g_particle_records (*reinterpret_cast<__int16 (*)[5000636]>(g_native_memory + 0x494380))
-#define g_particle_record_aux (*reinterpret_cast<_BYTE (*)[9996544]>(g_native_memory + 0x494410))
+#define g_particle_record_bytes (*reinterpret_cast<_BYTE (*)[9996544]>(g_native_memory + 0x494410))
+
+static inline _BYTE &particle_byte_field(__int64 index, unsigned offset) {
+  return reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index)[offset];
+}
+static inline _DWORD &particle_next_link(__int64 index) {
+  return *reinterpret_cast<_DWORD *>(reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index) + 4);
+}
+static inline _BYTE &particle_material_id(__int64 index) { return particle_byte_field(index, 8); }
+static inline _BYTE &particle_flags(__int64 index) { return particle_byte_field(index, 9); }
+static inline _BYTE &particle_status_flag(__int64 index) { return particle_byte_field(index, 11); }
+static inline _BYTE &particle_packed_state(__int64 index) { return particle_byte_field(index, 12); }
+static inline _BYTE &particle_counter(__int64 index) { return particle_byte_field(index, 16); }
 #define unk_E4FD10 (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1cd10))
 #define unk_E50000 (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1d000))
 #define dword_E50A00 (*reinterpret_cast<int *>(g_native_memory + 0xe1da00))
@@ -1833,7 +1845,7 @@ __int16 *__fastcall set_state(__int16 *result, char a2)
         v4 = 0;
 LABEL_9:
         result = (__int16 *)hx_cast<int>(result);
-        if ( (g_particle_record_aux[20 * hx_cast<int>(result) - 135] & 1) != 0 )
+        if ( (particle_flags(hx_cast<int>(result)) & 1) != 0 )
           return result;
         goto LABEL_7;
       case 8:
@@ -1859,7 +1871,7 @@ LABEL_22:
         goto LABEL_7;
       default:
         result = (__int16 *)hx_cast<int>(result);
-        if ( (g_particle_record_aux[20 * hx_cast<int>(result) - 135] & 1) != 0 )
+        if ( (particle_flags(hx_cast<int>(result)) & 1) != 0 )
           return result;
         v2 = 0;
         v3 = 0;
@@ -1877,7 +1889,7 @@ LABEL_7:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (0000000000006D70) ----------------------------------------------------
@@ -2119,7 +2131,7 @@ LABEL_31:
 // 3A23EC: using guessed type int dword_3A23EC;
 // 3A23F0: using guessed type int dword_3A23F0;
 // 4C7374: using guessed type char byte_4C7374;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A20: using guessed type int dword_E50A20;
 // E50A24: using guessed type int dword_E50A24;
@@ -2197,7 +2209,7 @@ __int64 __fastcall release_pixel(int a1)
 // 27D448: using guessed type __int64 qword_27D448;
 // 3A23E0: using guessed type __int64 qword_3A23E0;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A24: using guessed type int dword_E50A24;
 // E50A28: using guessed type char byte_E50A28;
@@ -2330,7 +2342,7 @@ __int64 __fastcall release_and_hold(__int64 result, __int16 a2)
 // 27D448: using guessed type __int64 qword_27D448;
 // 3A23E0: using guessed type __int64 qword_3A23E0;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A20: using guessed type int dword_E50A20;
 // E50A24: using guessed type int dword_E50A24;
@@ -2805,7 +2817,7 @@ LABEL_25:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
 // E50A3A: using guessed type __int16 g_found_y;
@@ -3008,7 +3020,7 @@ __int64 __fastcall chain_append(unsigned __int8 a1, unsigned __int8 a2, char a3)
   {
     v4 = (_DWORD *)&xmmword_E50A40 + 3 * a1;
     v5 = v4[1];
-    *(_DWORD *)&g_particle_record_aux[20 * *((int *)&xmmword_E50A40 + 3 * a2 + 1) - 140] = *v4;
+    particle_next_link(*((int *)&xmmword_E50A40 + 3 * a2 + 1)) = *v4;
   }
   *((_DWORD *)&xmmword_E50A40 + 3 * a2 + 1) = v5;
   if ( a3 != 0 )
@@ -3031,7 +3043,7 @@ __int64 __fastcall chain_append(unsigned __int8 a1, unsigned __int8 a2, char a3)
   return result;
 }
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
 //----- (00000000000083B8) ----------------------------------------------------
@@ -3167,7 +3179,7 @@ LABEL_17:
 // 27D448: using guessed type __int64 qword_27D448;
 // 3A23E0: using guessed type __int64 qword_3A23E0;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
@@ -3233,12 +3245,12 @@ __int16 *__fastcall chain_update()
     {
       *((_DWORD *)&xmmword_E50A40 + 3 * v6) = v0;
       *(_DWORD *)((char *)&xmmword_E50A40 + v7 + 4) = v0;
-      *(_DWORD *)&g_particle_record_aux[20 * (_QWORD)result - 140] = -1;
+      particle_next_link((_QWORD)result) = -1;
     }
     else
     {
       *((_DWORD *)&xmmword_E50A40 + 3 * v6) = v0;
-      *(_DWORD *)&g_particle_record_aux[20 * (_QWORD)result - 140] = v8;
+      particle_next_link((_QWORD)result) = v8;
       if ( v0 == v8 )
         dword_334E0 = v0;
     }
@@ -3254,7 +3266,7 @@ __int16 *__fastcall chain_update()
 // 33014: using guessed type int g_current_particle_index;
 // 334E0: using guessed type int dword_334E0;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
 //----- (00000000000087C0) ----------------------------------------------------
@@ -3308,7 +3320,7 @@ LABEL_22:
             v11 = 3;
             LODWORD(result) = g_current_particle_index;
             v5 = g_current_particle_index;
-            v7 = ((unsigned __int64)(unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 132] >> 3) & 7;
+            v7 = ((unsigned __int64)(unsigned __int8)particle_packed_state(g_current_particle_index) >> 3) & 7;
             goto LABEL_14;
           }
           LODWORD(result) = g_current_particle_index;
@@ -3363,7 +3375,7 @@ LABEL_19:
 // 33014: using guessed type int g_current_particle_index;
 // 334E0: using guessed type int dword_334E0;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
 //----- (00000000000089CC) ----------------------------------------------------
@@ -3430,7 +3442,7 @@ _BYTE *__fastcall before_first_lock()
 // 334E4: using guessed type char g_zoom_factor;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A70: using guessed type char byte_E50A70;
 // E50A72: using guessed type __int16 g_surface_height;
@@ -3543,7 +3555,7 @@ __int64 __fastcall delete_pixel(__int16 a1, __int16 a2)
   {
     v8 = dword_E50A00;
     v9 = dword_E50A00;
-    if ( (g_particle_record_aux[20 * dword_E50A00 - 135] & 2) != 0 )
+    if ( (particle_flags(dword_E50A00) & 2) != 0 )
     {
       drop_interupted(v2, v3);
       if ( v8 == -2 )
@@ -3592,7 +3604,7 @@ LABEL_7:
 // 27D448: using guessed type __int64 qword_27D448;
 // 3A23E0: using guessed type __int64 qword_3A23E0;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
@@ -3668,7 +3680,7 @@ __int64 __fastcall pixel_custom_test(__int16 a1, __int16 a2, char a3)
       {
         return 0;
       }
-      if ( return_particle(a1, a2, 0, 0) && (unsigned __int8)g_particle_record_aux[20 * dword_E50A00 - 128] > 4u )
+      if ( return_particle(a1, a2, 0, 0) && (unsigned __int8)particle_counter(dword_E50A00) > 4u )
         goto LABEL_8;
       return 0;
     case 1:
@@ -3705,7 +3717,7 @@ __int64 __fastcall pixel_custom_test(__int16 a1, __int16 a2, char a3)
       {
         return 0;
       }
-      if ( !return_particle(a1, a2, 0, 0) || (unsigned __int8)g_particle_record_aux[20 * dword_E50A00 - 128] <= 0x13u )
+      if ( !return_particle(a1, a2, 0, 0) || (unsigned __int8)particle_counter(dword_E50A00) <= 0x13u )
         return 0;
       goto LABEL_8;
     case 2:
@@ -3742,7 +3754,7 @@ __int64 __fastcall pixel_custom_test(__int16 a1, __int16 a2, char a3)
       {
         return 0;
       }
-      if ( !return_particle(a1, a2, 0, 0) || (unsigned __int8)g_particle_record_aux[20 * dword_E50A00 - 128] <= 0x95u )
+      if ( !return_particle(a1, a2, 0, 0) || (unsigned __int8)particle_counter(dword_E50A00) <= 0x95u )
         return 0;
       goto LABEL_8;
     case 3:
@@ -3760,7 +3772,7 @@ __int64 __fastcall pixel_custom_test(__int16 a1, __int16 a2, char a3)
       if ( *(_BYTE *)(g_cell_state_grid + 8LL * (a1 + a2 * g_view_width[0])) == 0
         || (*(_WORD *)&g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (a1 + a2 * g_view_width[0])) + 24]
           & 0x400) != 0
-        || (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136] == hx_cast<_DWORD>(v5) )
+        || (unsigned __int8)particle_material_id(g_current_particle_index) == hx_cast<_DWORD>(v5) )
       {
         return 0;
       }
@@ -3800,11 +3812,11 @@ __int64 __fastcall pixel_custom_test(__int16 a1, __int16 a2, char a3)
       }
       goto LABEL_8;
     case 10:
-      if ( (unsigned __int8)g_shared_engine_data[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136] + 21] != hx_cast<_DWORD>(v5) )
+      if ( (unsigned __int8)g_shared_engine_data[12 * (unsigned __int8)particle_material_id(g_current_particle_index) + 21] != hx_cast<_DWORD>(v5) )
         return 0;
       goto LABEL_8;
     case 11:
-      if ( (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136] == hx_cast<_DWORD>(v5) || g_shared_engine_data[12 * v5 + 20] == 1 )
+      if ( (unsigned __int8)particle_material_id(g_current_particle_index) == hx_cast<_DWORD>(v5) || g_shared_engine_data[12 * v5 + 20] == 1 )
         return 0;
       goto LABEL_8;
     case 12:
@@ -3902,7 +3914,7 @@ LABEL_13:
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 33510: using guessed type __int16 g_view_width[];
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -4038,7 +4050,7 @@ LABEL_7:
 // D20: using guessed type Elf64_Sym;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
 // E50A3A: using guessed type __int16 g_found_y;
@@ -4099,7 +4111,7 @@ LABEL_7:
 // 0: using guessed type int dword_0;
 // 1C858: using guessed type _WORD g_direction_lut[132];
 // 334D8: using guessed type __int64 g_random_state;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A30: using guessed type char g_search_direction;
 // E50A31: using guessed type char g_search_remaining;
 // E50A32: using guessed type char g_search_step;
@@ -4235,7 +4247,7 @@ LABEL_13:
         v22 = g_cell_state_grid;
         HIBYTE(g_particle_records[10 * v4 + 4]) &= ~4u;
 LABEL_14:
-        g_particle_record_aux[20 * v4 - 128] = byte_E50A94;
+        particle_counter(v4) = byte_E50A94;
         goto LABEL_15;
       }
 LABEL_11:
@@ -4279,10 +4291,10 @@ LABEL_5:
             }
           }
 LABEL_37:
-          if ( (g_particle_record_aux[20 * v4 - 135] & 4) == 0 )
+          if ( (particle_flags(v4) & 4) == 0 )
             goto LABEL_14;
 LABEL_38:
-          g_particle_record_aux[20 * v4 - 128] = 0;
+          particle_counter(v4) = 0;
           goto LABEL_15;
         }
       }
@@ -4428,7 +4440,7 @@ LABEL_29:
     *((_BYTE *)v37 + 16) = hx_cast<unsigned __int8>(v40) % 0xFFu;
   v19 = g_view_width[0];
   v22 = g_cell_state_grid;
-  if ( (g_particle_record_aux[20 * v4 - 135] & 4) != 0 )
+  if ( (particle_flags(v4) & 4) != 0 )
     goto LABEL_38;
 LABEL_15:
   result = v22 + 8LL * (g_particle_records[10 * v4] + g_particle_records[10 * v4 + 1] * v19);
@@ -4449,7 +4461,7 @@ LABEL_15:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 // E50A30: using guessed type char g_search_direction;
@@ -4612,7 +4624,7 @@ __int64 __fastcall resume_particle(__int16 a1, __int16 a2)
 // 3A23F0: using guessed type int dword_3A23F0;
 // 4C7374: using guessed type char byte_4C7374;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
@@ -4647,7 +4659,7 @@ bool __fastcall return_particle(__int16 a1, __int16 a2, char a3, char a4)
 }
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
@@ -4688,7 +4700,7 @@ bool __fastcall pixel_bool(__int16 a1, __int16 a2, char a3)
                                         + 20]
                              - 1) <= 1u;
     case 2:
-      if ( g_material_properties[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136]] != g_material_properties[12
+      if ( g_material_properties[12 * (unsigned __int8)particle_material_id(g_current_particle_index)] != g_material_properties[12
                                                                                              * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0]))] )
         return 1;
       result = (v3 <= 1) | (unsigned int)(a2 <= 1);
@@ -4700,16 +4712,16 @@ bool __fastcall pixel_bool(__int16 a1, __int16 a2, char a3)
       }
       return result;
     case 3:
-      return g_material_properties[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136]] == g_material_properties[12
+      return g_material_properties[12 * (unsigned __int8)particle_material_id(g_current_particle_index)] == g_material_properties[12
                                                                                                * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0]))];
     case 4:
-      return g_material_properties[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136] + 1] == g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0])) + 1]
-          && g_material_properties[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136]] != g_material_properties[12
+      return g_material_properties[12 * (unsigned __int8)particle_material_id(g_current_particle_index) + 1] == g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0])) + 1]
+          && g_material_properties[12 * (unsigned __int8)particle_material_id(g_current_particle_index)] != g_material_properties[12
                                                                                                * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0]))];
     case 5:
-      return g_material_properties[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136] + 1] == g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0])) + 1];
+      return g_material_properties[12 * (unsigned __int8)particle_material_id(g_current_particle_index) + 1] == g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0])) + 1];
     case 6:
-      if ( g_material_properties[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136] + 1] != g_material_properties[12
+      if ( g_material_properties[12 * (unsigned __int8)particle_material_id(g_current_particle_index) + 1] != g_material_properties[12
                                                                                                  * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0]))
                                                                                                  + 1] )
         return 1;
@@ -4741,9 +4753,9 @@ LABEL_45:
       {
         v14 = -1;
       }
-      return ((g_particle_record_aux[20 * v14 - 132] >> 3) & 7) != 4;
+      return ((particle_packed_state(v14) >> 3) & 7) != 4;
     case 9:
-      if ( g_material_properties[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136]] != g_material_properties[12
+      if ( g_material_properties[12 * (unsigned __int8)particle_material_id(g_current_particle_index)] != g_material_properties[12
                                                                                              * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0]))] )
         return 0;
       goto LABEL_9;
@@ -4841,7 +4853,7 @@ LABEL_9:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A95: using guessed type char byte_E50A95;
@@ -4917,7 +4929,7 @@ __int64 __fastcall wake_particle(__int64 result, __int16 a2)
               *(_BYTE *)(result + 12) = v6 & 0xC7;
               *(_BYTE *)(result + 9) = v7;
               if ( (v7 & 4) != 0 )
-                g_particle_record_aux[20 * v5 - 128] = 0;
+                particle_counter(v5) = 0;
             }
           }
         }
@@ -4929,7 +4941,7 @@ __int64 __fastcall wake_particle(__int64 result, __int16 a2)
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (000000000000B1A4) ----------------------------------------------------
@@ -5116,7 +5128,7 @@ LABEL_8:
       }
       hold_pixel(v5, v6);
       v31 = (__int16 *)(unsigned int)dword_E50A24;
-      if ( (g_particle_record_aux[20 * dword_E50A24 - 135] & 2) != 0 )
+      if ( (particle_flags(dword_E50A24) & 2) != 0 )
       {
         drop_interupted(v5, v6);
         v31 = (__int16 *)(unsigned int)dword_E50A24;
@@ -5125,7 +5137,7 @@ LABEL_8:
       release_and_hold(hx_cast<unsigned __int16>(v16), v17);
       if ( byte_E50A28 != 0 )
       {
-        if ( (g_particle_record_aux[20 * dword_E50A24 - 135] & 2) != 0 )
+        if ( (particle_flags(dword_E50A24) & 2) != 0 )
           drop_interupted(v16, v17);
         release_pixel(v5 | (v6 << 16));
       }
@@ -5144,7 +5156,7 @@ LABEL_8:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -5373,7 +5385,7 @@ LABEL_61:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -5442,7 +5454,7 @@ __int64 __fastcall displace_make_gap(__int16 a1, __int16 a2)
 // D08: using guessed type Elf64_Sym;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A20: using guessed type int dword_E50A20;
 // E50A24: using guessed type int dword_E50A24;
@@ -5499,7 +5511,7 @@ __int64 __fastcall shift_line(__int16 a1, __int16 a2, __int16 a3, __int16 a4)
       {
         v27 = *(unsigned int *)(g_cell_state_grid + 8LL * (v26 + v32 * g_view_width[0]) + 4);
         v28 = hx_cast<int>(v27);
-        if ( (g_particle_record_aux[20 * hx_cast<int>(v27) - 135] & 2) == 0 )
+        if ( (particle_flags(hx_cast<int>(v27)) & 2) == 0 )
           goto LABEL_35;
         goto LABEL_24;
       }
@@ -5515,7 +5527,7 @@ LABEL_24:
   v9 = g_found_y;
   hold_pixel(g_found_x, g_found_y);
   v10 = dword_E50A24;
-  if ( (g_particle_record_aux[20 * dword_E50A24 - 135] & 2) != 0 )
+  if ( (particle_flags(dword_E50A24) & 2) != 0 )
   {
     drop_interupted(v8, v9);
     v10 = dword_E50A24;
@@ -5623,7 +5635,7 @@ LABEL_17:
 // 33512: using guessed type __int16 g_view_height;
 // 4C7375: using guessed type char byte_4C7375;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A20: using guessed type int dword_E50A20;
 // E50A24: using guessed type int dword_E50A24;
@@ -5715,7 +5727,7 @@ LABEL_14:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 
@@ -5890,7 +5902,7 @@ LABEL_12:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 
@@ -6046,7 +6058,7 @@ LABEL_15:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 // E50A20: using guessed type int dword_E50A20;
@@ -6385,7 +6397,7 @@ LABEL_53:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -6454,7 +6466,7 @@ __int64 __fastcall new_particle(char a1)
           else
           {
             v12 = SHIDWORD(xmmword_E50A40);
-            v7 = *(_DWORD *)&g_particle_record_aux[20 * SHIDWORD(xmmword_E50A40) - 140];
+            v7 = particle_next_link(SHIDWORD(xmmword_E50A40));
           }
           v13 = &g_particle_records[10 * v12];
           v14 = *((_BYTE *)v13 + 12);
@@ -6546,7 +6558,7 @@ __int64 __fastcall new_particle(char a1)
     else
     {
       v8 = SDWORD2(xmmword_E50A50);
-      v1 = *(_DWORD *)&g_particle_record_aux[20 * SDWORD2(xmmword_E50A50) - 140];
+      v1 = particle_next_link(SDWORD2(xmmword_E50A50));
     }
     v9 = &g_particle_records[10 * v8];
     v10 = *((_BYTE *)v9 + 12);
@@ -6569,7 +6581,7 @@ __int64 __fastcall new_particle(char a1)
     else
     {
       v3 = SDWORD1(xmmword_E50A60);
-      v4 = *(_DWORD *)&g_particle_record_aux[20 * SDWORD1(xmmword_E50A60) - 140];
+      v4 = particle_next_link(SDWORD1(xmmword_E50A60));
     }
     v5 = &g_particle_records[10 * v3];
     DWORD1(xmmword_E50A60) = v4;
@@ -6612,7 +6624,7 @@ __int64 __fastcall new_particle(char a1)
 // 3A23F0: using guessed type int dword_3A23F0;
 // 4C7374: using guessed type char byte_4C7374;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 // E50A40: using guessed type __int128 xmmword_E50A40;
@@ -6727,7 +6739,7 @@ LABEL_33:
     if ( (dword_E50A00 & 0x80000000) == 0 )
     {
       set_state((__int16 *)(unsigned int)dword_E50A00, 8);
-      g_particle_record_aux[20 * v12 - 136] = v4;
+      particle_material_id(v12) = v4;
     }
     goto LABEL_33;
   }
@@ -6781,7 +6793,7 @@ LABEL_14:
 // 27D448: using guessed type __int64 qword_27D448;
 // 3A23E0: using guessed type __int64 qword_3A23E0;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 xmmword_E50A40;
@@ -6949,7 +6961,7 @@ LABEL_8:
   v8 = v11;
   if ( v11 )
   {
-    v13 = &g_material_properties_lut[3 * (unsigned __int8)g_material_properties[12 * (unsigned __int8)g_particle_record_aux[20 * dword_E50A00 - 136] + 6]];
+    v13 = &g_material_properties_lut[3 * (unsigned __int8)g_material_properties[12 * (unsigned __int8)particle_material_id(dword_E50A00) + 6]];
     trans_particle(dword_E50A00, *v13, v13[2]);
     return v8;
   }
@@ -6963,7 +6975,7 @@ LABEL_8:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
@@ -7129,7 +7141,7 @@ LABEL_40:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
@@ -7314,7 +7326,7 @@ LABEL_4:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 
@@ -7546,7 +7558,7 @@ LABEL_27:
 // 4C7374: using guessed type char byte_4C7374;
 // 4C7375: using guessed type char byte_4C7375;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
@@ -8146,7 +8158,7 @@ LABEL_10:
 // 3A23F0: using guessed type int dword_3A23F0;
 // 4C7374: using guessed type char byte_4C7374;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A28: using guessed type char byte_E50A28;
 // E50A40: using guessed type __int128 xmmword_E50A40;
@@ -8234,7 +8246,7 @@ LABEL_4:
 // 33010: using guessed type char g_engine_mode;
 // 33516: using guessed type char g_framebuffer_bank_index;
 // 33518: using guessed type __int64 g_framebuffer_state_banks[];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 // E50A18: using guessed type char g_direction_index;
 // E50A70: using guessed type char byte_E50A70;
@@ -8416,7 +8428,7 @@ LABEL_6:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 // E50A30: using guessed type char g_search_direction;
@@ -8563,7 +8575,7 @@ LABEL_13:
 // 33516: using guessed type char g_framebuffer_bank_index;
 // 33518: using guessed type __int64 g_framebuffer_state_banks[];
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -8590,8 +8602,8 @@ __int64 __fastcall kill_fire(__int16 a1, __int16 a2, char a3)
   {
     case 8:
       return_particle(a1, a2, 0, 1);
-      result = (__int64)&g_particle_record_aux[20 * dword_E50A00];
-      *(_BYTE *)(result - 128) = 0;
+      result = (__int64)&particle_counter(dword_E50A00);
+      *(_BYTE *)result = 0;
       break;
     case 9:
     case 24:
@@ -8653,7 +8665,7 @@ LABEL_2:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
@@ -8789,7 +8801,7 @@ LABEL_14:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
 // E50A3A: using guessed type __int16 g_found_y;
@@ -9117,7 +9129,7 @@ LABEL_197:
             add_type(g_found_x, g_found_y, LOBYTE(g_particle_records[10 * g_current_particle_index + 4]) + 1, 1);
           }
         }
-        trans_particle(g_current_particle_index, (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136] - 1, 0);
+        trans_particle(g_current_particle_index, (unsigned __int8)particle_material_id(g_current_particle_index) - 1, 0);
         v4 = g_current_particle_index;
       }
       goto LABEL_3;
@@ -9262,7 +9274,7 @@ LABEL_99:
                 *((_BYTE *)v79 + 16) = v80 - 1;
             }
 LABEL_3:
-            result = (__int64)&g_material_properties[12 * (unsigned __int8)g_particle_record_aux[20 * v4 - 136]];
+            result = (__int64)&g_material_properties[12 * (unsigned __int8)particle_material_id(v4)];
             if ( (*(_WORD *)(result + 8) & 8) != 0 )
               return process_heat(*(unsigned __int8 *)(result + 10));
             return result;
@@ -9493,7 +9505,7 @@ LABEL_109:
         goto LABEL_197;
       goto LABEL_12;
     case 14:
-      v51 = (unsigned __int8)g_shared_engine_data[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136] + 26];
+      v51 = (unsigned __int8)g_shared_engine_data[12 * (unsigned __int8)particle_material_id(g_current_particle_index) + 26];
       if ( v51 == 7 )
       {
         v2 = g_direction_index & 7;
@@ -9580,10 +9592,10 @@ LABEL_109:
           goto LABEL_182;
         }
 LABEL_181:
-        add_type(g_found_x, g_found_y, g_particle_record_aux[20 * g_current_particle_index - 128], 1);
+        add_type(g_found_x, g_found_y, particle_counter(g_current_particle_index), 1);
 LABEL_182:
         v4 = g_current_particle_index;
-        g_particle_record_aux[20 * g_current_particle_index - 128] = 0;
+        particle_counter(g_current_particle_index) = 0;
         goto LABEL_3;
       }
       if ( v51 == 8 )
@@ -9666,7 +9678,7 @@ LABEL_182:
     case 16:
       v64 = g_current_particle_index;
       v4 = g_current_particle_index;
-      if ( (g_particle_record_aux[20 * g_current_particle_index - 133] & 1) == 0 )
+      if ( (particle_status_flag(g_current_particle_index) & 1) == 0 )
       {
         flame();
         v64 = g_current_particle_index;
@@ -10381,7 +10393,7 @@ LABEL_60:
 // 3A23F0: using guessed type int dword_3A23F0;
 // 4C7374: using guessed type char byte_4C7374;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 // E50A10: using guessed type __int64 g_cell_state_grid;
@@ -10430,7 +10442,7 @@ __int16 *__fastcall seek_boom()
   v6 = v3[6] & 7;
   if ( *((unsigned __int8 *)v3 + 16) > (unsigned int)(unsigned __int8)(v2 + hx_cast<unsigned __int8>(v2) / 0xFFu) )
     v6 = (hx_cast<_BYTE>(v6) + 1) & 7;
-  v7 = (unsigned __int8)g_shared_engine_data[12 * (unsigned __int8)g_particle_record_aux[20 * g_current_particle_index - 136] + 26];
+  v7 = (unsigned __int8)g_shared_engine_data[12 * (unsigned __int8)particle_material_id(g_current_particle_index) + 26];
   if ( v7 != 5 )
   {
     g_random_state = (v2 - 0x61C8864680B583EBLL) ^ ((v2 - 0x61C8864680B583EBLL) >> 27);
@@ -10510,7 +10522,7 @@ LABEL_5:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A30: using guessed type char g_search_direction;
 // E50A31: using guessed type char g_search_remaining;
@@ -10913,7 +10925,7 @@ LABEL_69:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
@@ -11323,7 +11335,7 @@ LABEL_30:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int dword_E50A00;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50AA0: using guessed type __int16 word_E50AA0;
@@ -11517,7 +11529,7 @@ LABEL_7:
 // 334E5: using guessed type char g_selected_material;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A18: using guessed type char g_direction_index;
 // E50AF2: using guessed type char byte_E50AF2;
 // E50AF8: using guessed type __int16 word_E50AF8;
@@ -11609,7 +11621,7 @@ __int64 __fastcall init_all(char a1)
 // 3A23F0: using guessed type int dword_3A23F0;
 // 4C7374: using guessed type char byte_4C7374;
 // 4C7375: using guessed type char byte_4C7375;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A28: using guessed type char byte_E50A28;
 // E50A40: using guessed type __int128 xmmword_E50A40;
 // E50A50: using guessed type __int128 xmmword_E50A50;
@@ -11928,7 +11940,7 @@ LABEL_13:
 // 4C7374: using guessed type char byte_4C7374;
 // 4C7375: using guessed type char byte_4C7375;
 // 4C7378: using guessed type char byte_4C7378;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A28: using guessed type char byte_E50A28;
 // E50A40: using guessed type __int128 xmmword_E50A40;
@@ -12542,7 +12554,7 @@ LABEL_6:
 // 33516: using guessed type char g_framebuffer_bank_index;
 // 33518: using guessed type __int64 g_framebuffer_state_banks[];
 // 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 xmmword_E50A40;
@@ -12670,7 +12682,7 @@ extern "C" JNIEXPORT __int64 JNICALL Java_smellymoo_sand_Engine_init(
 // DC8: using guessed type Elf64_Sym;
 // DE0: using guessed type Elf64_Sym;
 // 33010: using guessed type char g_engine_mode;
-// 4C7410: using guessed type _BYTE g_particle_record_aux[9996544];
+// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A78: using guessed type __int64 g_jni_env;
 // E50A80: using guessed type __int64 g_surface_global_ref;
 // E50AD8: using guessed type char byte_E50AD8;
