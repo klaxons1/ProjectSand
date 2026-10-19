@@ -1160,6 +1160,35 @@ def main() -> None:
         new_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, new_particle)
     generated = generated[:start] + new_particle + generated[end:]
 
+    # Describe the line-walk coordinates and the per-call modes used by
+    # particle shifting, drop recovery, and seeking.
+    start_marker = "//----- (0000000000007A5C)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    scan_line = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "start_x",
+        "a2": "start_y",
+        "a3": "step_x",
+        "a4": "step_y",
+        "a5": "single_step",
+        "a6": "particle_action_mode",
+        "v6": "current_x",
+        "v7": "current_y",
+        "v8": "single_step_mode",
+        "v9": "particle_action_mode_copy",
+        "v10": "starting_material_density",
+        "i": "steps_scanned",
+        "v14": "found_particle_index",
+        "v15": "particle_record",
+        "v16": "particle_state_code",
+        "v18": "next_cell_behavior",
+        "v19": "particle_state_record",
+        "v20": "particle_state_byte",
+    }.items():
+        scan_line = re.sub(r"\b" + old_name + r"\b", semantic_name, scan_line)
+    generated = generated[:start] + scan_line + generated[end:]
+
     # Name the coordinate lookup, class filter, and optional resume path used
     # to resolve a particle handle from a simulation-grid cell.
     start_marker = "//----- (000000000000A744)"
@@ -1324,6 +1353,18 @@ def main() -> None:
         particle_lookup_prototype,
         "bool __fastcall lookup_particle_at_cell(__int16 x, __int16 y, "
         "char class_filter, char allow_resume);",
+    )
+    scan_line_prototype = (
+        "__int64 __fastcall scan_line(__int16 a1, __int16 a2, __int16 a3, "
+        "__int16 a4, unsigned __int8 a5, unsigned __int8 a6); // idb"
+    )
+    if generated.count(scan_line_prototype) != 1:
+        raise SystemExit("Expected one scan_line prototype")
+    generated = generated.replace(
+        scan_line_prototype,
+        "__int64 __fastcall scan_line(__int16 start_x, __int16 start_y, "
+        "__int16 step_x, __int16 step_y, unsigned __int8 single_step, "
+        "unsigned __int8 particle_action_mode);",
     )
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)

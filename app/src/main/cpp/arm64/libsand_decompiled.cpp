@@ -65,7 +65,7 @@ __int64 __fastcall draw_border(__int64 result, __int16 a2);
 __int64 __fastcall draw_border(unsigned __int16 a1); // idb
 __int16 *__fastcall set_rocket_direction(int a1, __int16 a2, __int16 a3);
 __int64 __fastcall near_config(__int64 result, char a2, char a3);
-__int64 __fastcall scan_line(__int16 a1, __int16 a2, __int16 a3, __int16 a4, unsigned __int8 a5, unsigned __int8 a6); // idb
+__int64 __fastcall scan_line(__int16 start_x, __int16 start_y, __int16 step_x, __int16 step_y, unsigned __int8 single_step, unsigned __int8 particle_action_mode);
 bool __fastcall can_sleep(__int16 a1, __int16 a2);
 bool __fastcall can_sleep(int a1);
 bool __fastcall around_matches(__int16 a1, __int16 a2, char a3);
@@ -2711,108 +2711,108 @@ __int64 __fastcall near_config(__int64 result, char a2, char a3)
 // E50A32: using guessed type char g_search_step;
 
 //----- (0000000000007A5C) ----------------------------------------------------
-__int64 __fastcall scan_line(__int16 a1, __int16 a2, __int16 a3, __int16 a4, unsigned __int8 a5, unsigned __int8 a6)
+__int64 __fastcall scan_line(__int16 start_x, __int16 start_y, __int16 step_x, __int16 step_y, unsigned __int8 single_step, unsigned __int8 particle_action_mode)
 {
-  int v6; // w19
-  int v7; // w20
-  int v8; // w24
-  int v9; // w28
-  int v10; // s8
-  unsigned int i; // w21
-  __int16 *v14; // x0
-  __int16 *v15; // x1
-  char v16; // w1
-  unsigned int v18; // w0
-  __int16 *v19; // x2
-  char v20; // w1
+  int current_x; // w19
+  int current_y; // w20
+  int single_step_mode; // w24
+  int particle_action_mode_copy; // w28
+  int starting_material_density; // s8
+  unsigned int steps_scanned; // w21
+  __int16 *found_particle_index; // x0
+  __int16 *particle_record; // x1
+  char particle_state_code; // w1
+  unsigned int next_cell_behavior; // w0
+  __int16 *particle_state_record; // x2
+  char particle_state_byte; // w1
 
-  v6 = a1;
-  v7 = a2;
-  v8 = a5;
-  v9 = a6;
-  if ( a1 <= 1 || a2 <= 1 || a2 >= g_view_height - 2 || a1 >= g_view_width[0] - 2 )
+  current_x = start_x;
+  current_y = start_y;
+  single_step_mode = single_step;
+  particle_action_mode_copy = particle_action_mode;
+  if ( start_x <= 1 || start_y <= 1 || start_y >= g_view_height - 2 || start_x >= g_view_width[0] - 2 )
   {
-    v10 = 255;
+    starting_material_density = 255;
   }
   else
   {
-    v10 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (a1 + a2 * g_view_width[0]));
-    if ( *(_BYTE *)(g_cell_state_grid + 8LL * (a1 + a2 * g_view_width[0])) != 0 )
-      v10 = (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (a1 + a2 * g_view_width[0])) + 17];
+    starting_material_density = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (start_x + start_y * g_view_width[0]));
+    if ( *(_BYTE *)(g_cell_state_grid + 8LL * (start_x + start_y * g_view_width[0])) != 0 )
+      starting_material_density = (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (start_x + start_y * g_view_width[0])) + 17];
   }
-  for ( i = 0; ; i = (unsigned __int16)(i + 1) )
+  for ( steps_scanned = 0; ; steps_scanned = (unsigned __int16)(steps_scanned + 1) )
   {
     while ( 1 )
     {
-      if ( v9 == 2 )
+      if ( particle_action_mode_copy == 2 )
         goto LABEL_17;
-      if ( v6 > 1 && v7 > 1 && v7 < g_view_height - 2 && v6 < g_view_width[0] - 2 )
+      if ( current_x > 1 && current_y > 1 && current_y < g_view_height - 2 && current_x < g_view_width[0] - 2 )
       {
-        v14 = (__int16 *)*(unsigned int *)(g_cell_state_grid + 8LL * (v6 + v7 * g_view_width[0]) + 4);
-        if ( (hx_cast<unsigned int>(v14) & 0x80000000) == 0 )
+        found_particle_index = (__int16 *)*(unsigned int *)(g_cell_state_grid + 8LL * (current_x + current_y * g_view_width[0]) + 4);
+        if ( (hx_cast<unsigned int>(found_particle_index) & 0x80000000) == 0 )
           break;
       }
     }
-    v15 = &g_particle_records[10 * hx_cast<int>(v14)];
-    if ( (*((_BYTE *)v15 + 9) & 4) == 0 )
+    particle_record = &g_particle_records[10 * hx_cast<int>(found_particle_index)];
+    if ( (*((_BYTE *)particle_record + 9) & 4) == 0 )
       goto LABEL_12;
-    if ( *((_BYTE *)v15 + 16) == 0 )
+    if ( *((_BYTE *)particle_record + 16) == 0 )
     {
-      *((_BYTE *)v15 + 16) = 1;
+      *((_BYTE *)particle_record + 16) = 1;
 LABEL_12:
-      if ( v9 != 4 )
+      if ( particle_action_mode_copy != 4 )
         goto LABEL_13;
       goto LABEL_34;
     }
-    ++*((_BYTE *)v15 + 16);
-    if ( v9 != 4 )
+    ++*((_BYTE *)particle_record + 16);
+    if ( particle_action_mode_copy != 4 )
     {
 LABEL_13:
-      if ( i != 0 )
-        v16 = 4;
+      if ( steps_scanned != 0 )
+        particle_state_code = 4;
       else
-        v16 = 0;
-      set_state(v14, v16);
+        particle_state_code = 0;
+      set_state(found_particle_index, particle_state_code);
       goto LABEL_17;
     }
 LABEL_34:
-    v19 = &g_particle_records[10 * hx_cast<int>(v14)];
-    if ( (*((_BYTE *)v19 + 9) & 1) == 0 )
+    particle_state_record = &g_particle_records[10 * hx_cast<int>(found_particle_index)];
+    if ( (*((_BYTE *)particle_state_record + 9) & 1) == 0 )
     {
-      v20 = *((_BYTE *)v19 + 12);
-      *((_BYTE *)v19 + 9) &= ~2u;
-      *((_BYTE *)v19 + 12) = v20 & 0xC7;
+      particle_state_byte = *((_BYTE *)particle_state_record + 12);
+      *((_BYTE *)particle_state_record + 9) &= ~2u;
+      *((_BYTE *)particle_state_record + 12) = particle_state_byte & 0xC7;
     }
 LABEL_17:
-    g_found_x = v6;
-    v6 = (__int16)(a3 + v6);
-    g_found_y = v7;
-    v7 = (__int16)(a4 + v7);
-    if ( v8 == 1 )
+    g_found_x = current_x;
+    current_x = (__int16)(step_x + current_x);
+    g_found_y = current_y;
+    current_y = (__int16)(step_y + current_y);
+    if ( single_step_mode == 1 )
       break;
-    if ( v6 <= 1 )
-      return i;
-    if ( v7 <= 1 )
-      return i;
-    if ( v7 >= g_view_height - 2 )
-      return i;
-    if ( v6 >= g_view_width[0] - 2 )
-      return i;
-    v18 = (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v6 + v7 * g_view_width[0])) + 4];
-    if ( v18 <= 2 || v18 == 6 )
-      return i;
+    if ( current_x <= 1 )
+      return steps_scanned;
+    if ( current_y <= 1 )
+      return steps_scanned;
+    if ( current_y >= g_view_height - 2 )
+      return steps_scanned;
+    if ( current_x >= g_view_width[0] - 2 )
+      return steps_scanned;
+    next_cell_behavior = (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (current_x + current_y * g_view_width[0])) + 4];
+    if ( next_cell_behavior <= 2 || next_cell_behavior == 6 )
+      return steps_scanned;
 LABEL_25:
     ;
   }
-  if ( v6 > 1
-    && v7 > 1
-    && v7 < g_view_height - 2
-    && v6 < g_view_width[0] - 2
-    && (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v6 + v7 * g_view_width[0])) + 1] == v10 )
+  if ( current_x > 1
+    && current_y > 1
+    && current_y < g_view_height - 2
+    && current_x < g_view_width[0] - 2
+    && (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (current_x + current_y * g_view_width[0])) + 1] == starting_material_density )
   {
     goto LABEL_25;
   }
-  return i;
+  return steps_scanned;
 }
 // CF0: using guessed type Elf64_Sym;
 // D20: using guessed type Elf64_Sym;
