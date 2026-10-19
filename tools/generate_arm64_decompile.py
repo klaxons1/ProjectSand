@@ -1130,6 +1130,28 @@ LABEL_16:
         "v72": "frame_timestamp_ticks",
     }.items():
         main_loop = re.sub(r"\b" + old_name + r"\b", semantic_name, main_loop)
+    # clock_gettime writes a full struct timespec. The decompiler split the
+    # 16-byte stack object into a char and a qword, which leaves only one byte
+    # declared at the write address in C++ and corrupts adjacent stack locals.
+    timestamp_locals = (
+        "  char frame_timestamp_storage; // [xsp+80h] [xbp-10h] BYREF\n"
+        "  unsigned __int64 frame_timestamp_ticks; // [xsp+88h] [xbp-8h]\n"
+    )
+    if main_loop.count(timestamp_locals) != 1:
+        raise SystemExit("Expected the decompiled 16-byte frame timestamp local")
+    main_loop = main_loop.replace(timestamp_locals, "  struct timespec frame_timestamp;\n")
+    timestamp_call = "clock_gettime(4, (struct timespec *)&frame_timestamp_storage);"
+    if main_loop.count(timestamp_call) != 1:
+        raise SystemExit("Expected one clock_gettime call using the decompiled timestamp buffer")
+    main_loop = main_loop.replace(timestamp_call, "clock_gettime(4, &frame_timestamp);")
+    timestamp_read = "frame_timestamp_ticks >> 20"
+    if main_loop.count(timestamp_read) != 1:
+        raise SystemExit("Expected one read of the decompiled nanosecond timestamp")
+    main_loop = main_loop.replace(
+        timestamp_read,
+        "static_cast<unsigned __int64>(frame_timestamp.tv_nsec) >> 20",
+    )
+
     # The original ARM64 instruction loads dword +0x0C: the head of state
     # list 1. Hex-Rays labels this overlapping 12-byte list structure as
     # HIDWORD(xmmword_E50A40), which points at dword +0x04 (the wrong list).
@@ -2719,9 +2741,34 @@ LABEL_16:
     for old_name, semantic_name in DEFERRED_SEMANTIC_NAMES.items():
         generated = re.sub(r"\b" + re.escape(old_name) + r"\b", semantic_name, generated)
 
-    # These weak declarations are unreferenced by any active native function.
-    generated = generated.replace("_UNKNOWN unk_322B0; // weak\n", "")
-    generated = generated.replace("_UNKNOWN unk_32C20; // weak\n", "")
+    # The original decompiler emitted computed-goto table reads before
+    # ordinary C++ switches. They are not needed once the switch is emitted;
+    # the recovered one-entry tables were indexed out of bounds for common
+    # commands and combustible material classes (including IDs 22 and 23).
+    synthetic_switch_reads = {
+        "  fire_action_result = (__int64)&material_action_jump_table_base + 4 * material_action_case_offsets[(unsigned __int8)g_shared_engine_data[12 * cell_material_id + 21] - 8];":
+            "  fire_action_result = 0;",
+        "  command_result = (__int64)&engine_command_jump_table_base + 4 * engine_command_case_offsets[command_case_index];":
+            "  command_result = 0;",
+    }
+    for old_expression, safe_initialization in synthetic_switch_reads.items():
+        if generated.count(old_expression) != 1:
+            raise SystemExit(f"Expected one synthetic switch-table read: {old_expression}")
+        generated = generated.replace(old_expression, safe_initialization)
+
+    # These weak declarations are unreferenced once the decompiler's fake
+    # computed-goto expressions have been removed.
+    for declaration in (
+        "_UNKNOWN unk_322B0; // weak\n",
+        "_UNKNOWN unk_32C20; // weak\n",
+        "_UNKNOWN material_action_jump_table_base; // weak\n",
+        "_UNKNOWN engine_command_jump_table_base; // weak\n",
+        "char material_action_case_offsets[] = { '\\0' }; // weak\n",
+        "__int16 engine_command_case_offsets[] = { 84 }; // weak\n",
+    ):
+        generated = generated.replace(declaration, "")
+    generated = re.sub(r"(?m)^// [^:\n]+: using guessed type .*material_action_case_offsets.*\n", "", generated)
+    generated = re.sub(r"(?m)^// [^:\n]+: using guessed type .*engine_command_case_offsets.*\n", "", generated)
 
     # Parameter names in forward declarations carry no ABI meaning. Strip
     # any remaining Hex-Rays aN/result labels from these prototypes.

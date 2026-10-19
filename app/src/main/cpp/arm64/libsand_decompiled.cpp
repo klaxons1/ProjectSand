@@ -163,15 +163,12 @@ int g_native_image_magic = 1179403647; // weak
 __int128 initial_particle_state_list_header_a = hx_i128(0xFFFFFFFF00000000ULL, 0xFFFFFFFFFFFFFFFFULL); // weak
 __int128 initial_particle_state_list_header_b = hx_i128(0xFFFFFFFFFFFFFFFFULL, 0x00000000FFFFFFFFULL); // weak
 __int128 initial_particle_state_list_header_c = hx_i128(0x00000000FFFFFFFFULL, 0xFFFFFFFF00000000ULL); // weak
-_UNKNOWN material_action_jump_table_base; // weak
 __int128 reset_particle_state_list_header_a = hx_i128(0xFFFFFFFF00000000ULL, 0xFFFFFFFFFFFFFFFFULL); // weak
 __int128 reset_particle_state_list_header_b = hx_i128(0xFFFFFFFFFFFFFFFFULL, 0x00000000FFFFFFFFULL); // weak
 __int128 reset_particle_state_list_header_c = hx_i128(0x00000000FFFFFFFFULL, 0xFFFFFFFF00000000ULL); // weak
-_UNKNOWN engine_command_jump_table_base; // weak
 __int128 command_reset_particle_state_list_header_a = hx_i128(0xFFFFFFFF00000000ULL, 0xFFFFFFFFFFFFFFFFULL); // weak
 __int128 command_reset_particle_state_list_header_b = hx_i128(0xFFFFFFFFFFFFFFFFULL, 0x00000000FFFFFFFFULL); // weak
 __int128 command_reset_particle_state_list_header_c = hx_i128(0x00000000FFFFFFFFULL, 0xFFFFFFFF00000000ULL); // weak
-__int16 engine_command_case_offsets[] = { 84 }; // weak
 unsigned __int8 g_material_properties_lut[440] =
 {
   0u,
@@ -750,7 +747,6 @@ _WORD g_direction_lut[132] = {
   0
 }; // weak
 unsigned __int8 g_particle_state_lut[16] = { 1u, 1u, 2u, 2u, 3u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u }; // weak
-char material_action_case_offsets[] = { '\0' }; // weak
 alignas(16) static unsigned char g_native_memory[0xe1def8] = {};
 static const unsigned char g_native_data_image[0x510] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
@@ -8585,7 +8581,7 @@ __int64 __fastcall extinguish_fire(__int16 x, __int16 y, char allow_fire_spread)
   unsigned __int64 random_variant_sample; // x1
 
   cell_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (x + y * g_view_width[0]));
-  fire_action_result = (__int64)&material_action_jump_table_base + 4 * material_action_case_offsets[(unsigned __int8)g_shared_engine_data[12 * cell_material_id + 21] - 8];
+  fire_action_result = 0;
   switch ( g_shared_engine_data[12 * cell_material_id + 21] )
   {
     case 8:
@@ -11651,7 +11647,7 @@ __int64 __fastcall dispatch_engine_command(__int64 packed_command)
   command_case_index = hx_cast<unsigned __int8>(packed_command) - 1;
   command_parameter_1 = hx_cast<int>(packed_command) >> 16;
   command_parameter_2 = SWORD2(packed_command);
-  command_result = (__int64)&engine_command_jump_table_base + 4 * engine_command_case_offsets[command_case_index];
+  command_result = 0;
   switch ( command_case_index )
   {
     case 0:
@@ -11902,7 +11898,6 @@ LABEL_13:
 // 15B80: using guessed type __int128 command_reset_particle_state_list_header_a;
 // 15B90: using guessed type __int128 command_reset_particle_state_list_header_b;
 // 15BA0: using guessed type __int128 command_reset_particle_state_list_header_c;
-// 1C668: using guessed type __int16 engine_command_case_offsets[];
 // 1C6A0: using guessed type unsigned __int8 g_material_properties_lut[440];
 // 33010: using guessed type char g_engine_mode;
 // 334D8: using guessed type __int64 g_random_state;
@@ -12027,8 +12022,7 @@ void *__fastcall main_loop()
   __int16 *dirty_clear_particle_record; // x0
   __int16 previous_frame_timestamp; // w1
   unsigned int elapsed_frame_ticks; // w0
-  char frame_timestamp_storage; // [xsp+80h] [xbp-10h] BYREF
-  unsigned __int64 frame_timestamp_ticks; // [xsp+88h] [xbp-8h]
+  struct timespec frame_timestamp;
 
   initialize_simulation_state(1);
   engine_mode_snapshot = (unsigned __int8)g_engine_mode;
@@ -12092,9 +12086,9 @@ LABEL_5:
 LABEL_65:
         if ( (g_simulation_tick_counter & 4) != 0 )
         {
-          clock_gettime(4, (struct timespec *)&frame_timestamp_storage);
+          clock_gettime(4, &frame_timestamp);
           previous_frame_timestamp = g_previous_frame_timestamp;
-          g_previous_frame_timestamp = frame_timestamp_ticks >> 20;
+          g_previous_frame_timestamp = static_cast<unsigned __int64>(frame_timestamp.tv_nsec) >> 20;
           elapsed_frame_ticks = (unsigned __int16)(g_previous_frame_timestamp - previous_frame_timestamp);
           if ( elapsed_frame_ticks <= 0xFA0 && g_engine_mode != 8 && g_engine_mode != 5 )
           {

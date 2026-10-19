@@ -62,6 +62,12 @@ The two decompiler globals at `0x4C7380` and `0x4C7410` are not separate arrays.
 
 The original listing accessed direction-vector components 10–15 by indexing past the end of the 440-byte material-property table. The ELF places the direction table immediately after it (`0x1C6A0 + 0x1B8 = 0x1C858`), so those same addresses are now expressed as in-bounds `g_direction_lut[16 * direction + component]` accesses. This preserves the address calculation while making the table boundary explicit and avoiding out-of-bounds C++ pointer arithmetic.
 
+## Crash fixes for ignition and frame scheduling
+
+The host AddressSanitizer regression reproduced two invalid-memory paths relevant to frequent ignition. In `extinguish_fire()`, Hex-Rays had left a computed-goto lookup through a one-entry table immediately before a normal `switch`; combustible material behavior codes (including firework powder and gunpowder) indexed beyond that table. The native C++ switch already performs the dispatch, so the synthetic read is removed. The same artifact was present in `dispatch_engine_command()` and has also been removed. Separately, `main_loop()` passed a one-byte decompiler local to `clock_gettime()`, which writes a full 16-byte `timespec`; the local is now correctly declared as `struct timespec` and the scheduler reads `tv_nsec` explicitly. These stack writes could corrupt adjacent scheduler state during frequent particle updates.
+
+The host probe now exercises the material-action cases for material IDs 22 and 23, and the test script runs both native probes under AddressSanitizer. This confirms the ignition dispatch and frame scheduler paths no longer trigger the reproduced out-of-bounds accesses. It does not replace an Android/device test.
+
 ## Verification and remaining work
 
 - **Passed:** generator execution; strict host `g++ -std=c++17 -fsyntax-only` using temporary host Android/JNI stubs (zero syntax errors); host object compilation; `nm` confirms both unmangled JNI exports; focused assertions cover startup mode progression, particle-record accessors, and in-bounds direction-table references in the movement helpers; `git diff --check`.

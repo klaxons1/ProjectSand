@@ -224,4 +224,36 @@ int main() {
     return 1;
   }
   std::printf("blocked flow: water moved around wall to (%d,%d)\n", water_x, water_y);
+
+  // Regression for the firework/gunpowder ignition crash. The decompiled
+  // material-action switch used to read a one-entry fake jump table with an
+  // index derived from the fuel's behavior code (10 for firework powder and
+  // 30 for gunpowder). Exercise both real switch paths under ASan.
+  constexpr unsigned char combustible_material_ids[] = {22, 23};
+  for (const unsigned char material_id : combustible_material_ids) {
+    initialize_simulation_state(1);
+    g_view_width[0] = width;
+    g_view_height = height;
+    g_framebuffer_stride = width;
+    g_cell_state_grid = reinterpret_cast<__int64>(
+        std::calloc(static_cast<size_t>(width) * height, 8));
+    if (!g_cell_state_grid) {
+      std::fprintf(stderr, "could not allocate ignition-dispatch test grid\n");
+      return 1;
+    }
+    g_cell_state_allocated = 1;
+    g_engine_mode = 7;
+    const __int16 x = static_cast<__int16>(20 + 4 * (material_id - 22));
+    constexpr __int16 y = 20;
+    add_type(x, y, material_id, 1);
+    const int particle_index = *reinterpret_cast<int*>(
+        g_cell_state_grid + 8LL * (x + y * width) + 4);
+    if (particle_index < 0) {
+      std::fprintf(stderr, "could not create combustible material %u\n", material_id);
+      return 1;
+    }
+    g_current_particle_index = particle_index;
+    extinguish_fire(x, y, 0);
+    std::printf("combustible material %u ignition dispatch passed\n", material_id);
+  }
 }
