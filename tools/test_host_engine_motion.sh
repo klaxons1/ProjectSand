@@ -11,3 +11,11 @@ trap 'rm -rf "$BUILD_DIR"' EXIT
   "$ROOT/tools/host_engine_motion_probe.cpp" \
   -Wl,--gc-sections -o "$BUILD_DIR/host_engine_motion_probe"
 "$BUILD_DIR/host_engine_motion_probe"
+
+"${CXX:-c++}" -std=c++17 -w \
+  -ffunction-sections -fdata-sections \
+  -I"$ROOT/tools/host_engine_stubs" \
+  -I"$ROOT/app/src/main/cpp" \
+  "$ROOT/tools/host_engine_frame_probe.cpp" \
+  -Wl,--gc-sections -o "$BUILD_DIR/host_engine_frame_probe"
+"$BUILD_DIR/host_engine_frame_probe"

@@ -328,6 +328,9 @@ def main() -> None:
         "static inline _DWORD &particle_next_link(__int64 index) {\n"
         "  return *reinterpret_cast<_DWORD *>(reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index) + 4);\n"
         "}\n"
+        "static inline _DWORD &particle_state_list_head(unsigned list_index) {\n"
+        "  return *reinterpret_cast<_DWORD *>(g_native_memory + 0xe1da40 + 12 * list_index);\n"
+        "}\n"
         "static inline _BYTE &particle_material_id(__int64 index) { return particle_byte_field(index, 8); }\n"
         "static inline _BYTE &particle_flags(__int64 index) { return particle_byte_field(index, 9); }\n"
         "static inline _BYTE &particle_status_flag(__int64 index) { return particle_byte_field(index, 11); }\n"
@@ -889,6 +892,13 @@ def main() -> None:
         "v72": "frame_timestamp_ticks",
     }.items():
         main_loop = re.sub(r"\b" + old_name + r"\b", semantic_name, main_loop)
+    # The original ARM64 instruction loads dword +0x0C: the head of state
+    # list 1. Hex-Rays labels this overlapping 12-byte list structure as
+    # HIDWORD(xmmword_E50A40), which points at dword +0x04 (the wrong list).
+    scheduler_list_cursor = "HIDWORD(xmmword_E50A40)"
+    if main_loop.count(scheduler_list_cursor) != 2:
+        raise SystemExit("Expected two scheduler reads of the state-list cursor")
+    main_loop = main_loop.replace(scheduler_list_cursor, "particle_state_list_head(1)")
     generated = generated[:start] + main_loop + generated[end:]
 
     # Clarify the material placement path: target grid cell, incumbent material,

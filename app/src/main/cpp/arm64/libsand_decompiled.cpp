@@ -901,6 +901,9 @@ static inline _BYTE &particle_byte_field(__int64 index, unsigned offset) {
 static inline _DWORD &particle_next_link(__int64 index) {
   return *reinterpret_cast<_DWORD *>(reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index) + 4);
 }
+static inline _DWORD &particle_state_list_head(unsigned list_index) {
+  return *reinterpret_cast<_DWORD *>(g_native_memory + 0xe1da40 + 12 * list_index);
+}
 static inline _BYTE &particle_material_id(__int64 index) { return particle_byte_field(index, 8); }
 static inline _BYTE &particle_flags(__int64 index) { return particle_byte_field(index, 9); }
 static inline _BYTE &particle_status_flag(__int64 index) { return particle_byte_field(index, 11); }
@@ -12326,9 +12329,9 @@ LABEL_115:
           }
           while ( g_current_particle_index != -2 );
         }
-        simulation_particle_index = HIDWORD(xmmword_E50A40);
+        simulation_particle_index = particle_state_list_head(1);
         byte_E50C3A = 0;
-        g_current_particle_index = HIDWORD(xmmword_E50A40);
+        g_current_particle_index = particle_state_list_head(1);
         dword_334E0 = -1;
         goto LABEL_91;
       }
