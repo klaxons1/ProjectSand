@@ -2,10 +2,11 @@
 """Normalize the ARM64 Hex-Rays export into a compilable-source candidate.
 
 The original Hex-Rays listing is kept under docs/lib as an immutable reference.
-This script preserves the legacy contiguous arena where declarations overlap
-or are used as section-wide views, while converting independent BSS state and
-known particle fields to fixed-width structures. The remaining raw views are
-retained only where recovered code still depends on their shared storage.
+This script emits an exact-size `NativeMemoryArena` with asserted layouts for
+`.data`, framebuffer storage, the 500,000-record particle pool, and runtime
+state. Shared tables and dirty rings retain byte/word views only within their
+typed parent structures. Any writable ELF global without an explicit mapping
+fails generation instead of falling back to an address-based macro.
 """
 from pathlib import Path
 import re
@@ -110,25 +111,39 @@ SEMANTIC_NAMES = {
     "byte_E50B08": "g_command_queue",
 }
 
+UNUSED_BSS_SYMBOLS = {
+    "qword_33508", "word_4C7380", "byte_4C7410", "algn_E50AA4", "algn_E50D11",
+    "qword_E50C40", "unk_E50C48", "qword_E50C50", "qword_E50C58", "qword_E50C60",
+    "stru_E50C68", "qword_E50C90", "qword_E50C98", "dword_E50CA0", "byte_E50CB0",
+    "byte_E50CCF", "byte_E50CF0", "qword_E50D20", "qword_E50D28",
+    "unk_E50D30", "qword_E50EA8", "unk_E50EB0", "unk_E50EB8", "stru_E50EC0",
+    "qword_E50EE8", "qword_E50EF0",
+}
+
 DATA_GLOBAL_MEMBERS = {
     "unk_33000": ("g_native_memory_base_marker", "native_data_region().base_marker"),
-    "byte_33008": ("g_shared_engine_data", "native_data_region().shared_engine_data()"),
+    "byte_33008": ("g_shared_engine_data", "g_native_memory.shared_engine_data()"),
     "dword_3300C": ("g_framebuffer_stride", "native_data_region().framebuffer_stride"),
     "byte_33010": ("g_engine_mode", "native_data_region().engine_mode"),
     "dword_33014": ("g_current_particle_index", "native_data_region().current_particle_index"),
-    "byte_33018": ("g_material_properties", "native_data_region().material_properties()"),
-    "byte_33028": ("g_material_behavior_parameter_028", "native_data_region().material_byte(0x28)"),
-    "byte_33058": ("g_material_behavior_parameter_058", "native_data_region().material_byte(0x58)"),
-    "byte_33070": ("g_material_behavior_parameter_070", "native_data_region().material_byte(0x70)"),
-    "byte_33088": ("g_material_behavior_parameter_088", "native_data_region().material_byte(0x88)"),
-    "word_330E6": ("g_screen_transition_color", "native_data_region().material_word(0xe6)"),
-    "byte_332E0": ("g_material_behavior_parameter_2E0", "native_data_region().material_byte(0x2e0)"),
-    "byte_33310": ("g_surface_material_selector", "native_data_region().material_byte(0x310)"),
+    "byte_33018": ("g_material_properties", "g_native_memory.material_properties()"),
+    "byte_33028": ("g_material_behavior_parameter_028", "native_data_region().data_byte_at(0x28)"),
+    "byte_33058": ("g_material_behavior_parameter_058", "native_data_region().data_byte_at(0x58)"),
+    "byte_33070": ("g_material_behavior_parameter_070", "native_data_region().data_byte_at(0x70)"),
+    "byte_33088": ("g_material_behavior_parameter_088", "native_data_region().data_byte_at(0x88)"),
+    "word_330E6": ("g_screen_transition_color", "native_data_region().data_word_at(0xe6)"),
+    "byte_332E0": ("g_material_behavior_parameter_2E0", "native_data_region().data_byte_at(0x2e0)"),
+    "byte_33310": ("g_surface_material_selector", "native_data_region().data_byte_at(0x310)"),
     "qword_334D8": ("g_random_state", "native_data_region().random_state"),
     "dword_334E0": ("g_particle_list_previous_index", "native_data_region().particle_list_previous_index"),
     "byte_334E4": ("g_zoom_factor", "native_data_region().zoom_factor"),
     "byte_334E5": ("g_selected_material", "native_data_region().selected_material"),
     "byte_334E6": ("g_selected_material_state", "native_data_region().selected_material_state"),
+}
+
+PARTICLE_TAIL_GLOBAL_MEMBERS = {
+    "unk_E4FD10": ("g_engine_resume_response_token", "g_native_memory.particle_and_runtime.particle_pool.engine_resume_response_token()"),
+    "unk_E50000": ("g_engine_state_response_token", "g_native_memory.particle_and_runtime.particle_pool.engine_state_response_token()"),
 }
 
 # The framebuffer's ring counters and pixel-bank pointers occupy documented
@@ -170,6 +185,9 @@ FRAMEBUFFER_GLOBAL_MEMBERS = {
 # BSS fields that do not alias another symbol are modeled as named members,
 # rather than emitted as casts into the address-shaped compatibility arena.
 RUNTIME_GLOBAL_MEMBERS = {
+    "xmmword_E50A40": ("g_particle_state_lists", "particle_lists.block0()"),
+    "xmmword_E50A50": ("g_particle_state_lists_block_1", "particle_lists.block1()"),
+    "xmmword_E50A60": ("g_particle_state_lists_block_2", "particle_lists.block2()"),
     "dword_E50A00": ("g_lookup_particle_index", "lookup_particle_index"),
     "qword_E50A08": ("g_framebuffer_pixels", "framebuffer_pixels"),
     "qword_E50A10": ("g_cell_state_grid", "cell_state_grid"),
@@ -198,27 +216,26 @@ RUNTIME_GLOBAL_MEMBERS = {
     "dword_E50A98": ("g_next_particle_index", "next_particle_index"),
     "word_E50AA0": ("g_drag_tool_origin_x", "drag_tool_origin_x"),
     "word_E50AA2": ("g_drag_tool_origin_y", "drag_tool_origin_y"),
-    "algn_E50AA4": ("g_native_window_buffer_storage", "window_buffer_region.storage"),
-    "dword_E50AB0": ("g_native_window_stride", "window_buffer_region.stride()"),
-    "qword_E50AB8": ("g_native_window_pixels", "window_buffer_region.pixels()"),
-    "byte_E50AD8": ("g_restore_simulation_box_on_next_surface", "restore_simulation_box_on_next_surface"),
-    "qword_E50AE0": ("g_engine_class_global_ref", "engine_class_global_ref"),
-    "qword_E50AE8": ("g_init_callback_method", "init_callback_method"),
-    "byte_E50AF0": ("g_requested_direction", "requested_direction"),
-    "byte_E50AF1": ("g_previous_direction", "previous_direction"),
-    "byte_E50AF2": ("g_brush_radius", "brush_radius"),
-    "word_E50AF8": ("g_last_touch_pixel_x", "last_touch_pixel_x"),
-    "word_E50AFA": ("g_last_touch_pixel_y", "last_touch_pixel_y"),
-    "byte_E50AFC": ("g_gas_field_enabled", "gas_field_enabled"),
-    "byte_E50AFD": ("g_frame_rate_adaptation_counter", "frame_rate_adaptation_counter"),
-    "byte_E50AFE": ("g_touch_drawing_active", "touch_drawing_active"),
-    "byte_E50AFF": ("g_drag_tool_active", "drag_tool_active"),
-    "byte_E50B00": ("g_command_queue_read_index", "command_queue_read_index"),
-    "byte_E50B01": ("g_command_queue_write_index", "command_queue_write_index"),
-    "byte_E50B08": ("g_command_queue", "command_queue"),
-    "dword_E50C34": ("g_simulation_tick_counter", "simulation_tick_counter"),
-    "word_E50C38": ("g_previous_frame_timestamp", "previous_frame_timestamp"),
-    "byte_E50C3A": ("g_particle_state_list_sync_pending", "particle_state_list_sync_pending"),
+    "dword_E50AB0": ("g_native_window_stride", "window_region.buffer.stride"),
+    "qword_E50AB8": ("g_native_window_pixels", "window_pixel_pointer()"),
+    "byte_E50AD8": ("g_restore_simulation_box_on_next_surface", "window_region.restore_simulation_box_on_next_surface"),
+    "qword_E50AE0": ("g_engine_class_global_ref", "window_region.engine_class_global_ref"),
+    "qword_E50AE8": ("g_init_callback_method", "window_region.init_callback_method"),
+    "byte_E50AF0": ("g_requested_direction", "window_region.requested_direction"),
+    "byte_E50AF1": ("g_previous_direction", "window_region.previous_direction"),
+    "byte_E50AF2": ("g_brush_radius", "window_region.brush_radius"),
+    "word_E50AF8": ("g_last_touch_pixel_x", "window_region.last_touch_pixel_x"),
+    "word_E50AFA": ("g_last_touch_pixel_y", "window_region.last_touch_pixel_y"),
+    "byte_E50AFC": ("g_gas_field_enabled", "window_region.gas_field_enabled"),
+    "byte_E50AFD": ("g_frame_rate_adaptation_counter", "window_region.frame_rate_adaptation_counter"),
+    "byte_E50AFE": ("g_touch_drawing_active", "window_region.touch_drawing_active"),
+    "byte_E50AFF": ("g_drag_tool_active", "window_region.drag_tool_active"),
+    "byte_E50B00": ("g_command_queue_read_index", "window_region.command_queue_read_index"),
+    "byte_E50B01": ("g_command_queue_write_index", "window_region.command_queue_write_index"),
+    "byte_E50B08": ("g_command_queue", "window_region.command_queue"),
+    "dword_E50C34": ("g_simulation_tick_counter", "window_region.simulation_tick_counter"),
+    "word_E50C38": ("g_previous_frame_timestamp", "window_region.previous_frame_timestamp"),
+    "byte_E50C3A": ("g_particle_state_list_sync_pending", "window_region.particle_state_list_sync_pending"),
 }
 
 DEFERRED_SEMANTIC_NAMES = {
@@ -306,26 +323,6 @@ DEFERRED_SEMANTIC_NAMES = {
     "dword_E50C34": "g_simulation_tick_counter",
     "word_E50C38": "g_previous_frame_timestamp",
     "byte_E50C3A": "g_particle_state_list_sync_pending",
-    "qword_E50C40": "g_native_runtime_reserved_slot_1",
-    "unk_E50C48": "g_native_runtime_reserved_slot_2",
-    "qword_E50C50": "g_native_runtime_reserved_slot_3",
-    "qword_E50C58": "g_native_runtime_reserved_slot_4",
-    "qword_E50C60": "g_native_runtime_reserved_slot_5",
-    "qword_E50C90": "g_native_runtime_reserved_slot_6",
-    "qword_E50C98": "g_native_runtime_reserved_slot_7",
-    "dword_E50CA0": "g_native_runtime_reserved_slot_8",
-    "byte_E50CB0": "g_native_runtime_reserved_bytes_1",
-    "byte_E50CCF": "g_native_runtime_reserved_flag_1",
-    "byte_E50CF0": "g_native_runtime_reserved_flag_2",
-    "algn_E50D11": "g_native_runtime_alignment_padding",
-    "qword_E50D20": "g_native_runtime_reserved_slot_9",
-    "qword_E50D28": "g_native_runtime_reserved_slot_10",
-    "unk_E50D30": "g_native_runtime_reserved_slot_11",
-    "qword_E50EA8": "g_native_runtime_reserved_slot_12",
-    "unk_E50EB0": "g_native_runtime_reserved_slot_13",
-    "unk_E50EB8": "g_native_runtime_reserved_slot_14",
-    "qword_E50EE8": "g_native_runtime_reserved_slot_15",
-    "qword_E50EF0": "g_native_runtime_reserved_slot_16",
 }
 assert DATA_SIZE == 0x510
 assert 0x33518 + 600012 * 8 == 0x4C7378
@@ -382,23 +379,6 @@ def rename_typed_register_locals(text: str, marker: str, scope: str) -> str:
         semantic_name = f"{scope}_{kind}_{suffix}"
         block = re.sub(r"\b" + old_name + r"\b", semantic_name, block)
     return text[:start] + block + text[end:]
-
-
-def bss_array_size(name: str, old_size: str) -> str:
-    if old_size:
-        return old_size
-    if name == "_bss_start__":
-        return str(BSS_SIZE // 2)
-    if name == "byte_33008":
-        return "1"
-    if name == "qword_33518":
-        # The four particle banks use a 150003-slot stride; the final bank
-        # reaches exactly to the next named global at 0x4C7374.
-        return "600012"
-    if name == "byte_E50CB0":
-        # Bytes up to the next named global at 0xE50CCF.
-        return "31"
-    raise ValueError(f"Unbounded BSS array needs a verified size: {name}")
 
 
 def main() -> None:
@@ -552,22 +532,29 @@ def main() -> None:
             if addr is not None and DATA_START <= addr < BSS_END:
                 if not injected:
                     out.append("alignas(16) static NativeMemoryArena g_native_memory{};")
-                    out.append("static inline unsigned char *native_memory_bytes() { return reinterpret_cast<unsigned char *>(&g_native_memory); }")
-                    out.append("static NativeRuntimeGlobals g_native_runtime_globals{};")
                     out.append(f"static const unsigned char g_native_data_image[{DATA_SIZE:#x}] = {{")
                     out.extend(data_rows)
                     out.append("};")
                     out.append("__attribute__((constructor)) static void initialize_native_memory() {")
-                    out.append("  std::memcpy(native_memory_bytes(), g_native_data_image, sizeof(g_native_data_image));")
+                    out.append("  std::memcpy(&g_native_memory.data, g_native_data_image, sizeof(g_native_data_image));")
                     out.append("}")
                     out.append("#define unk_1C858 word_1C858")
                     out.append("#define unk_33018 byte_33018")
                     out.append("#define unk_E50B08 byte_E50B08")
                     injected = True
+                if name in UNUSED_BSS_SYMBOLS:
+                    continue
                 data_member = DATA_GLOBAL_MEMBERS.get(name)
                 if data_member:
                     global_name, member_name = data_member
                     out.append(f"#define {global_name} ({member_name})")
+                    continue
+                tail_member = PARTICLE_TAIL_GLOBAL_MEMBERS.get(name)
+                if tail_member:
+                    global_name, expression = tail_member
+                    out.append(f"#define {global_name} ({expression})")
+                    continue
+                if name in {"algn_E50AA4", "algn_E50D11"}:
                     continue
                 framebuffer_member = FRAMEBUFFER_GLOBAL_MEMBERS.get(name)
                 if framebuffer_member:
@@ -577,29 +564,9 @@ def main() -> None:
                 runtime_member = RUNTIME_GLOBAL_MEMBERS.get(name)
                 if runtime_member:
                     global_name, member_name = runtime_member
-                    out.append(f"#define {global_name} (g_native_runtime_globals.{member_name})")
+                    out.append(f"#define {global_name} (native_runtime_memory().{member_name})")
                     continue
-                offset = addr - DATA_START
-                if name == "_bss_start__":
-                    out.append(f"#define _bss_start__ reinterpret_cast<__int16 *>(g_native_memory + {offset:#x})")
-                    continue
-                suffix = ""
-                if old_size is not None:
-                    if name in {"byte_33008", "byte_33018", "algn_E50AA4"}:
-                        # These are views into larger contiguous records/buffers;
-                        # their Hex-Rays declarator lengths only describe the first field.
-                        length = BSS_END - addr
-                    elif name == "word_4C7380":
-                        # Particle records are indexed at 10 shorts per particle.
-                        length = (BSS_END - addr) // 2
-                    else:
-                        length = bss_array_size(name, old_size)
-                    suffix = f" (*)[{length}]"
-                    expr = f"(*reinterpret_cast<{typ}{suffix}>(g_native_memory + {offset:#x}))"
-                else:
-                    expr = f"(*reinterpret_cast<{typ} *>(g_native_memory + {offset:#x}))"
-                out.append(f"#define {name} {expr}")
-                continue
+                raise SystemExit(f"Unmodeled writable global in ARM64 image: {name} at {addr:#x}")
         out.append(line)
 
     if not injected:
@@ -688,26 +655,35 @@ def main() -> None:
     accessors = (
         "\nstatic inline NativeDataRegion &native_data_region() { return g_native_memory.data; }\n"
         "static inline FramebufferMemory &framebuffer_memory() { return g_native_memory.framebuffer; }\n"
-        "static inline __int16 *particle_records_data() {\n"
-        "  return reinterpret_cast<__int16 *>(g_native_memory.particle_and_runtime.data());\n"
+        "static inline NativeRuntimeMemory &native_runtime_memory() { return g_native_memory.particle_and_runtime.runtime; }\n"
+        "static inline ParticleRecord *particle_records_data() { return g_native_memory.particle_and_runtime.particle_pool.records; }\n"
+        "static inline ParticleRecord &particle_record_at(__int64 index) { return particle_records_data()[index]; }\n"
+        "static inline __int16 &particle_word_at(__int64 word_index) {\n"
+        "  ParticleRecord &record = particle_record_at(word_index / 10);\n"
+        "  switch (word_index % 10) {\n"
+        "    case 0: return record.x;\n"
+        "    case 1: return record.y;\n"
+        "    case 2: return reinterpret_cast<__int16 &>(record.next_link_low);\n"
+        "    case 3: return reinterpret_cast<__int16 &>(record.next_link_high);\n"
+        "    case 4: return reinterpret_cast<__int16 &>(record.material_flags_word);\n"
+        "    case 5: return reinterpret_cast<__int16 &>(record.auxiliary_status_word);\n"
+        "    case 6: return reinterpret_cast<__int16 &>(record.packed_state_word);\n"
+        "    case 7: return reinterpret_cast<__int16 &>(record.reserved_word_7);\n"
+        "    case 8: return reinterpret_cast<__int16 &>(record.counter_word);\n"
+        "    default: return reinterpret_cast<__int16 &>(record.reserved_word_9);\n"
+        "  }\n"
         "}\n"
-        "static inline __int16 &particle_word_at(__int64 word_index) { return particle_records_data()[word_index]; }\n"
-        "static inline ParticleRecord &particle_record_at(__int64 index) {\n"
-        "  return *reinterpret_cast<ParticleRecord *>(reinterpret_cast<_BYTE *>(particle_records_data()) + 20LL * index);\n"
-        "}\n"
-        "static inline _DWORD &particle_next_link(__int64 index) { return particle_record_at(index).next_link; }\n"
-        "static inline _DWORD &particle_state_list_head(unsigned list_index) {\n"
-        "  return *reinterpret_cast<_DWORD *>(g_native_memory + 0xe1da40 + 12 * list_index);\n"
-        "}\n"
+        "static inline _DWORD &particle_next_link(__int64 index) { return *reinterpret_cast<_DWORD *>(&particle_record_at(index).next_link_low); }\n"
+        "static inline _DWORD &particle_state_list_head(unsigned list_index) { return native_runtime_memory().particle_lists.head(list_index); }\n"
         "static inline _BYTE &particle_material_id(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).material_flags_word); }\n"
         "static inline _BYTE &particle_flags(__int64 index) { return reinterpret_cast<_BYTE *>(&particle_record_at(index).material_flags_word)[1]; }\n"
         "static inline _BYTE &particle_status_flag(__int64 index) { return reinterpret_cast<_BYTE *>(&particle_record_at(index).auxiliary_status_word)[1]; }\n"
         "static inline _BYTE &particle_packed_state(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).packed_state_word); }\n"
         "static inline _BYTE &particle_counter(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).counter_word); }\n"
     )
-    record_alias = re.search(r"(?m)^#define g_particle_record_bytes .*\n", generated)
+    record_alias = re.search(r"(?m)^#define g_visualization_material_mode .*\n", generated)
     if not record_alias:
-        raise SystemExit("Could not locate particle byte-view alias for accessors")
+        raise SystemExit("Could not locate framebuffer field aliases for typed accessors")
     generated = generated[:record_alias.end()] + accessors + generated[record_alias.end():]
 
     # Make the gas-particle update readable without changing its control flow:
@@ -2952,10 +2928,13 @@ LABEL_16:
 
     generated = re.sub(
         r"\(char \*\)&g_material_properties(?!_lut)\b",
-        "(char *)native_data_region().material_properties()",
+        "(char *)g_native_memory.material_properties()",
         generated,
     )
-    generated = generated.replace("g_native_memory +", "native_memory_bytes() +")
+    generated = generated.replace(
+        "(ANativeWindow_Buffer *)&g_native_window_buffer_storage[4]",
+        "&native_runtime_memory().window_region.buffer",
+    )
     generated = re.sub(
         r"(?m)^#define (?:g_native_runtime_reserved_\w+|stru_E50C68|stru_E50EC0) .*\n",
         "",

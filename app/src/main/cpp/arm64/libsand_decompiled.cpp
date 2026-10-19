@@ -748,8 +748,6 @@ _WORD g_direction_lut[132] = {
 }; // weak
 unsigned __int8 g_particle_state_lut[16] = { 1u, 1u, 2u, 2u, 3u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u }; // weak
 alignas(16) static NativeMemoryArena g_native_memory{};
-static inline unsigned char *native_memory_bytes() { return reinterpret_cast<unsigned char *>(&g_native_memory); }
-static NativeRuntimeGlobals g_native_runtime_globals{};
 static const unsigned char g_native_data_image[0x510] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
   0x02, 0x00, 0x00, 0x00, 0xFE, 0xFF, 0xFF, 0xFF, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -834,21 +832,21 @@ static const unsigned char g_native_data_image[0x510] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 };
 __attribute__((constructor)) static void initialize_native_memory() {
-  std::memcpy(native_memory_bytes(), g_native_data_image, sizeof(g_native_data_image));
+  std::memcpy(&g_native_memory.data, g_native_data_image, sizeof(g_native_data_image));
 }
 #define g_native_memory_base_marker (native_data_region().base_marker)
-#define g_shared_engine_data (native_data_region().shared_engine_data())
+#define g_shared_engine_data (g_native_memory.shared_engine_data())
 #define g_framebuffer_stride (native_data_region().framebuffer_stride)
 #define g_engine_mode (native_data_region().engine_mode)
 #define g_current_particle_index (native_data_region().current_particle_index)
-#define g_material_properties (native_data_region().material_properties())
-#define g_material_behavior_parameter_028 (native_data_region().material_byte(0x28))
-#define g_material_behavior_parameter_058 (native_data_region().material_byte(0x58))
-#define g_material_behavior_parameter_070 (native_data_region().material_byte(0x70))
-#define g_material_behavior_parameter_088 (native_data_region().material_byte(0x88))
-#define g_screen_transition_color (native_data_region().material_word(0xe6))
-#define g_material_behavior_parameter_2E0 (native_data_region().material_byte(0x2e0))
-#define g_surface_material_selector (native_data_region().material_byte(0x310))
+#define g_material_properties (g_native_memory.material_properties())
+#define g_material_behavior_parameter_028 (native_data_region().data_byte_at(0x28))
+#define g_material_behavior_parameter_058 (native_data_region().data_byte_at(0x58))
+#define g_material_behavior_parameter_070 (native_data_region().data_byte_at(0x70))
+#define g_material_behavior_parameter_088 (native_data_region().data_byte_at(0x88))
+#define g_screen_transition_color (native_data_region().data_word_at(0xe6))
+#define g_material_behavior_parameter_2E0 (native_data_region().data_byte_at(0x2e0))
+#define g_surface_material_selector (native_data_region().data_byte_at(0x310))
 #define g_random_state (native_data_region().random_state)
 #define g_particle_list_previous_index (native_data_region().particle_list_previous_index)
 #define g_zoom_factor (native_data_region().zoom_factor)
@@ -888,77 +886,84 @@ __attribute__((constructor)) static void initialize_native_memory() {
 
 static inline NativeDataRegion &native_data_region() { return g_native_memory.data; }
 static inline FramebufferMemory &framebuffer_memory() { return g_native_memory.framebuffer; }
-static inline __int16 *particle_records_data() {
-  return reinterpret_cast<__int16 *>(g_native_memory.particle_and_runtime.data());
+static inline NativeRuntimeMemory &native_runtime_memory() { return g_native_memory.particle_and_runtime.runtime; }
+static inline ParticleRecord *particle_records_data() { return g_native_memory.particle_and_runtime.particle_pool.records; }
+static inline ParticleRecord &particle_record_at(__int64 index) { return particle_records_data()[index]; }
+static inline __int16 &particle_word_at(__int64 word_index) {
+  ParticleRecord &record = particle_record_at(word_index / 10);
+  switch (word_index % 10) {
+    case 0: return record.x;
+    case 1: return record.y;
+    case 2: return reinterpret_cast<__int16 &>(record.next_link_low);
+    case 3: return reinterpret_cast<__int16 &>(record.next_link_high);
+    case 4: return reinterpret_cast<__int16 &>(record.material_flags_word);
+    case 5: return reinterpret_cast<__int16 &>(record.auxiliary_status_word);
+    case 6: return reinterpret_cast<__int16 &>(record.packed_state_word);
+    case 7: return reinterpret_cast<__int16 &>(record.reserved_word_7);
+    case 8: return reinterpret_cast<__int16 &>(record.counter_word);
+    default: return reinterpret_cast<__int16 &>(record.reserved_word_9);
+  }
 }
-static inline __int16 &particle_word_at(__int64 word_index) { return particle_records_data()[word_index]; }
-static inline ParticleRecord &particle_record_at(__int64 index) {
-  return *reinterpret_cast<ParticleRecord *>(reinterpret_cast<_BYTE *>(particle_records_data()) + 20LL * index);
-}
-static inline _DWORD &particle_next_link(__int64 index) { return particle_record_at(index).next_link; }
-static inline _DWORD &particle_state_list_head(unsigned list_index) {
-  return *reinterpret_cast<_DWORD *>(native_memory_bytes() + 0xe1da40 + 12 * list_index);
-}
+static inline _DWORD &particle_next_link(__int64 index) { return *reinterpret_cast<_DWORD *>(&particle_record_at(index).next_link_low); }
+static inline _DWORD &particle_state_list_head(unsigned list_index) { return native_runtime_memory().particle_lists.head(list_index); }
 static inline _BYTE &particle_material_id(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).material_flags_word); }
 static inline _BYTE &particle_flags(__int64 index) { return reinterpret_cast<_BYTE *>(&particle_record_at(index).material_flags_word)[1]; }
 static inline _BYTE &particle_status_flag(__int64 index) { return reinterpret_cast<_BYTE *>(&particle_record_at(index).auxiliary_status_word)[1]; }
 static inline _BYTE &particle_packed_state(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).packed_state_word); }
 static inline _BYTE &particle_counter(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).counter_word); }
-#define g_engine_resume_response_token (*reinterpret_cast<_UNKNOWN *>(native_memory_bytes() + 0xe1cd10))
-#define g_engine_state_response_token (*reinterpret_cast<_UNKNOWN *>(native_memory_bytes() + 0xe1d000))
-#define g_lookup_particle_index (g_native_runtime_globals.lookup_particle_index)
-#define g_framebuffer_pixels (g_native_runtime_globals.framebuffer_pixels)
-#define g_cell_state_grid (g_native_runtime_globals.cell_state_grid)
-#define g_direction_index (g_native_runtime_globals.direction_index)
-#define g_held_pixel_coordinates (g_native_runtime_globals.held_pixel_coordinates)
-#define g_held_particle_index (g_native_runtime_globals.held_particle_index)
-#define g_pixel_is_held (g_native_runtime_globals.pixel_is_held)
-#define g_held_material_id (g_native_runtime_globals.held_material_id)
-#define g_search_direction (g_native_runtime_globals.search_direction)
-#define g_search_remaining (g_native_runtime_globals.search_remaining)
-#define g_search_step (g_native_runtime_globals.search_step)
-#define g_found_x (g_native_runtime_globals.found_x)
-#define g_found_y (g_native_runtime_globals.found_y)
-#define g_particle_state_lists (*reinterpret_cast<__int128 *>(native_memory_bytes() + 0xe1da40))
-#define g_particle_state_lists_block_1 (*reinterpret_cast<__int128 *>(native_memory_bytes() + 0xe1da50))
-#define g_particle_state_lists_block_2 (*reinterpret_cast<__int128 *>(native_memory_bytes() + 0xe1da60))
-#define g_preserve_box_on_next_resize (g_native_runtime_globals.preserve_box_on_next_resize)
-#define g_surface_height (g_native_runtime_globals.surface_height)
-#define g_jni_env (g_native_runtime_globals.jni_env)
-#define g_surface_global_ref (g_native_runtime_globals.surface_global_ref)
-#define g_native_window (g_native_runtime_globals.native_window)
-#define g_surface_width (g_native_runtime_globals.surface_width)
-#define g_cell_state_allocated (g_native_runtime_globals.cell_state_allocated)
-#define g_particle_update_phase (g_native_runtime_globals.particle_update_phase)
-#define g_particle_counter_reset_value (g_native_runtime_globals.particle_counter_reset_value)
-#define g_particle_counter_threshold (g_native_runtime_globals.particle_counter_threshold)
-#define g_gas_motion_enabled (g_native_runtime_globals.gas_motion_enabled)
-#define g_gas_search_radius (g_native_runtime_globals.gas_search_radius)
-#define g_next_particle_index (g_native_runtime_globals.next_particle_index)
-#define g_drag_tool_origin_x (g_native_runtime_globals.drag_tool_origin_x)
-#define g_drag_tool_origin_y (g_native_runtime_globals.drag_tool_origin_y)
-#define g_native_window_buffer_storage (g_native_runtime_globals.window_buffer_region.storage)
-#define g_native_window_stride (g_native_runtime_globals.window_buffer_region.stride())
-#define g_native_window_pixels (g_native_runtime_globals.window_buffer_region.pixels())
-#define g_restore_simulation_box_on_next_surface (g_native_runtime_globals.restore_simulation_box_on_next_surface)
-#define g_engine_class_global_ref (g_native_runtime_globals.engine_class_global_ref)
-#define g_init_callback_method (g_native_runtime_globals.init_callback_method)
-#define g_requested_direction (g_native_runtime_globals.requested_direction)
-#define g_previous_direction (g_native_runtime_globals.previous_direction)
-#define g_brush_radius (g_native_runtime_globals.brush_radius)
-#define g_last_touch_pixel_x (g_native_runtime_globals.last_touch_pixel_x)
-#define g_last_touch_pixel_y (g_native_runtime_globals.last_touch_pixel_y)
-#define g_gas_field_enabled (g_native_runtime_globals.gas_field_enabled)
-#define g_frame_rate_adaptation_counter (g_native_runtime_globals.frame_rate_adaptation_counter)
-#define g_touch_drawing_active (g_native_runtime_globals.touch_drawing_active)
-#define g_drag_tool_active (g_native_runtime_globals.drag_tool_active)
-#define g_command_queue_read_index (g_native_runtime_globals.command_queue_read_index)
-#define g_command_queue_write_index (g_native_runtime_globals.command_queue_write_index)
-#define g_command_queue (g_native_runtime_globals.command_queue)
-#define g_simulation_tick_counter (g_native_runtime_globals.simulation_tick_counter)
-#define g_previous_frame_timestamp (g_native_runtime_globals.previous_frame_timestamp)
-#define g_particle_state_list_sync_pending (g_native_runtime_globals.particle_state_list_sync_pending)
-#define g_native_runtime_alignment_padding (*reinterpret_cast<_BYTE (*)[15]>(native_memory_bytes() + 0xe1dd11))
+#define g_engine_resume_response_token (g_native_memory.particle_and_runtime.particle_pool.engine_resume_response_token())
+#define g_engine_state_response_token (g_native_memory.particle_and_runtime.particle_pool.engine_state_response_token())
+#define g_lookup_particle_index (native_runtime_memory().lookup_particle_index)
+#define g_framebuffer_pixels (native_runtime_memory().framebuffer_pixels)
+#define g_cell_state_grid (native_runtime_memory().cell_state_grid)
+#define g_direction_index (native_runtime_memory().direction_index)
+#define g_held_pixel_coordinates (native_runtime_memory().held_pixel_coordinates)
+#define g_held_particle_index (native_runtime_memory().held_particle_index)
+#define g_pixel_is_held (native_runtime_memory().pixel_is_held)
+#define g_held_material_id (native_runtime_memory().held_material_id)
+#define g_search_direction (native_runtime_memory().search_direction)
+#define g_search_remaining (native_runtime_memory().search_remaining)
+#define g_search_step (native_runtime_memory().search_step)
+#define g_found_x (native_runtime_memory().found_x)
+#define g_found_y (native_runtime_memory().found_y)
+#define g_particle_state_lists (native_runtime_memory().particle_lists.block0())
+#define g_particle_state_lists_block_1 (native_runtime_memory().particle_lists.block1())
+#define g_particle_state_lists_block_2 (native_runtime_memory().particle_lists.block2())
+#define g_preserve_box_on_next_resize (native_runtime_memory().preserve_box_on_next_resize)
+#define g_surface_height (native_runtime_memory().surface_height)
+#define g_jni_env (native_runtime_memory().jni_env)
+#define g_surface_global_ref (native_runtime_memory().surface_global_ref)
+#define g_native_window (native_runtime_memory().native_window)
+#define g_surface_width (native_runtime_memory().surface_width)
+#define g_cell_state_allocated (native_runtime_memory().cell_state_allocated)
+#define g_particle_update_phase (native_runtime_memory().particle_update_phase)
+#define g_particle_counter_reset_value (native_runtime_memory().particle_counter_reset_value)
+#define g_particle_counter_threshold (native_runtime_memory().particle_counter_threshold)
+#define g_gas_motion_enabled (native_runtime_memory().gas_motion_enabled)
+#define g_gas_search_radius (native_runtime_memory().gas_search_radius)
+#define g_next_particle_index (native_runtime_memory().next_particle_index)
+#define g_drag_tool_origin_x (native_runtime_memory().drag_tool_origin_x)
+#define g_drag_tool_origin_y (native_runtime_memory().drag_tool_origin_y)
+#define g_native_window_stride (native_runtime_memory().window_region.buffer.stride)
+#define g_native_window_pixels (native_runtime_memory().window_pixel_pointer())
+#define g_restore_simulation_box_on_next_surface (native_runtime_memory().window_region.restore_simulation_box_on_next_surface)
+#define g_engine_class_global_ref (native_runtime_memory().window_region.engine_class_global_ref)
+#define g_init_callback_method (native_runtime_memory().window_region.init_callback_method)
+#define g_requested_direction (native_runtime_memory().window_region.requested_direction)
+#define g_previous_direction (native_runtime_memory().window_region.previous_direction)
+#define g_brush_radius (native_runtime_memory().window_region.brush_radius)
+#define g_last_touch_pixel_x (native_runtime_memory().window_region.last_touch_pixel_x)
+#define g_last_touch_pixel_y (native_runtime_memory().window_region.last_touch_pixel_y)
+#define g_gas_field_enabled (native_runtime_memory().window_region.gas_field_enabled)
+#define g_frame_rate_adaptation_counter (native_runtime_memory().window_region.frame_rate_adaptation_counter)
+#define g_touch_drawing_active (native_runtime_memory().window_region.touch_drawing_active)
+#define g_drag_tool_active (native_runtime_memory().window_region.drag_tool_active)
+#define g_command_queue_read_index (native_runtime_memory().window_region.command_queue_read_index)
+#define g_command_queue_write_index (native_runtime_memory().window_region.command_queue_write_index)
+#define g_command_queue (native_runtime_memory().window_region.command_queue)
+#define g_simulation_tick_counter (native_runtime_memory().window_region.simulation_tick_counter)
+#define g_previous_frame_timestamp (native_runtime_memory().window_region.previous_frame_timestamp)
+#define g_particle_state_list_sync_pending (native_runtime_memory().window_region.particle_state_list_sync_pending)
 // extern _UNKNOWN _sF; weak
 
 
@@ -1392,7 +1397,7 @@ __int64 __fastcall draw_particle()
     case 1:
       particle_index = g_current_particle_index;
       material_table_offset = LOBYTE(particle_record_at(g_current_particle_index).material_flags_word);
-      material_properties_record = (char *)native_data_region().material_properties() + 12 * material_table_offset;
+      material_properties_record = (char *)g_native_memory.material_properties() + 12 * material_table_offset;
       if ( (*((_WORD *)material_properties_record + 4) & 8) != 0 )
       {
         motion_class = hx_cast<unsigned __int8>(material_properties_record[10]);
@@ -11936,7 +11941,7 @@ void *__fastcall main_loop()
       default:
         break;
     }
-    if ( ANativeWindow_lock((ANativeWindow *)g_native_window, (ANativeWindow_Buffer *)&g_native_window_buffer_storage[4], nullptr) < 0 )
+    if ( ANativeWindow_lock((ANativeWindow *)g_native_window, &native_runtime_memory().window_region.buffer, nullptr) < 0 )
     {
 LABEL_5:
       if ( g_cell_state_allocated != 0 )
