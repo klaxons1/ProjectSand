@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <cstdint>
 #include <cstddef>
+#include <array>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -56,6 +57,180 @@
 #define SDWORD2(x) (*((int *)&(x) + 2))
 #define SWORD2(x) (*((short *)&(x) + 2))
 #define _OWORD __int128
+
+// ANativeWindow_lock receives a native buffer at storage + 4. Its stride and
+// pixel pointer are therefore aliases inside the same fixed-size backing field.
+struct alignas(8) NativeWindowBufferRegion {
+  std::array<std::uint8_t, 4> prefix{};
+  std::array<std::uint8_t, 1108> storage{};
+
+  ANativeWindow_Buffer &buffer() {
+    return *reinterpret_cast<ANativeWindow_Buffer *>(storage.data() + 4);
+  }
+  const ANativeWindow_Buffer &buffer() const {
+    return *reinterpret_cast<const ANativeWindow_Buffer *>(storage.data() + 4);
+  }
+  std::int32_t &stride() { return buffer().stride; }
+  std::uintptr_t pixels() const {
+    return reinterpret_cast<std::uintptr_t>(buffer().bits);
+  }
+};
+static_assert(offsetof(NativeWindowBufferRegion, storage) == 4);
+
+// The writable ELF data image contains the engine header and material bytes.
+// Model its stable fields by their declared widths and keep byte views only for
+// the material table, whose records share the same image.
+struct NativeDataRegion {
+  std::uint64_t base_marker{};
+  std::array<std::uint8_t, 4> shared_engine_header{};
+  std::int32_t framebuffer_stride{};
+  std::int8_t engine_mode{};
+  std::array<std::uint8_t, 3> header_padding{};
+  std::int32_t current_particle_index{};
+  std::array<std::uint8_t, 0x4c0> material_table_prefix{};
+  std::int64_t random_state{};
+  std::int32_t particle_list_previous_index{};
+  std::int8_t zoom_factor{};
+  std::int8_t selected_material{};
+  std::int8_t selected_material_state{};
+  std::array<std::uint8_t, 0x29> trailing_data{};
+
+  std::uint8_t *bytes() { return reinterpret_cast<std::uint8_t *>(this); }
+  char *shared_engine_data() { return reinterpret_cast<char *>(bytes() + 8); }
+  _BYTE *material_properties() { return bytes() + 0x18; }
+  std::int8_t &material_byte(std::size_t offset) {
+    return *reinterpret_cast<std::int8_t *>(bytes() + offset);
+  }
+  std::int16_t &material_word(std::size_t offset) {
+    return *reinterpret_cast<std::int16_t *>(bytes() + offset);
+  }
+};
+static_assert(offsetof(NativeDataRegion, framebuffer_stride) == 0x0c);
+static_assert(offsetof(NativeDataRegion, engine_mode) == 0x10);
+static_assert(offsetof(NativeDataRegion, current_particle_index) == 0x14);
+static_assert(offsetof(NativeDataRegion, material_table_prefix) == 0x18);
+static_assert(offsetof(NativeDataRegion, random_state) == 0x4d8);
+static_assert(offsetof(NativeDataRegion, particle_list_previous_index) == 0x4e0);
+static_assert(sizeof(NativeDataRegion) == 0x510);
+
+// The renderer, dirty rings, and their index/pixel aliases share one BSS span.
+// Keep its physical storage contiguous while exposing fixed-width typed access.
+struct FramebufferMemory {
+  std::int16_t width{};
+  std::int16_t height{};
+  std::int16_t background_color{};
+  std::int8_t bank_index{};
+  std::uint8_t header_padding{};
+  __int64 bank_words[600012]{};
+  std::int8_t visualization_material_mode{};
+  std::array<std::uint8_t, 7> tail_padding{};
+
+  std::int32_t &dword_at(std::size_t offset) {
+    return *reinterpret_cast<std::int32_t *>(
+        reinterpret_cast<std::uint8_t *>(bank_words) + offset);
+  }
+  std::int8_t &byte_at(std::size_t offset) {
+    return *reinterpret_cast<std::int8_t *>(
+        reinterpret_cast<std::uint8_t *>(bank_words) + offset);
+  }
+  __int64 &qword_at(std::size_t offset) {
+    return *reinterpret_cast<__int64 *>(
+        reinterpret_cast<std::uint8_t *>(bank_words) + offset);
+  }
+};
+static_assert(offsetof(FramebufferMemory, bank_words) == 8);
+static_assert(sizeof(FramebufferMemory) == 0x493e70);
+
+// A particle occupies ten 16-bit words in the recovered pool. Keep the field
+// offsets explicit so the engine no longer depends on host `short`/`int` sizes.
+struct ParticleRecord {
+  std::int16_t x{};
+  std::int16_t y{};
+  std::uint32_t next_link{};
+  std::uint16_t material_flags_word{};
+  std::uint16_t auxiliary_status_word{};
+  std::uint16_t packed_state_word{};
+  std::uint16_t reserved_word_7{};
+  std::uint16_t counter_word{};
+  std::uint16_t reserved_word_9{};
+};
+static_assert(sizeof(ParticleRecord) == 20);
+static_assert(offsetof(ParticleRecord, x) == 0);
+static_assert(offsetof(ParticleRecord, y) == 2);
+static_assert(offsetof(ParticleRecord, next_link) == 4);
+static_assert(offsetof(ParticleRecord, material_flags_word) == 8);
+static_assert(offsetof(ParticleRecord, auxiliary_status_word) == 10);
+static_assert(offsetof(ParticleRecord, packed_state_word) == 12);
+static_assert(offsetof(ParticleRecord, counter_word) == 16);
+
+// Preserve the engine's contiguous data/BSS image as named regions. The final
+// pool span remains byte storage only where decompiler-derived overlays are
+// still unresolved.
+struct NativeMemoryArena {
+  NativeDataRegion data{};
+  FramebufferMemory framebuffer{};
+  std::array<std::uint8_t, 0x989b78> particle_and_runtime{};
+};
+static_assert(offsetof(NativeMemoryArena, data) == 0);
+static_assert(offsetof(NativeMemoryArena, framebuffer) == 0x510);
+static_assert(offsetof(NativeMemoryArena, particle_and_runtime) == 0x494380);
+static_assert(sizeof(NativeMemoryArena) == 0xe1def8);
+
+// Named, fixed-width storage for independent BSS globals in the recovered
+// engine. The legacy ELF-backed arena still holds overlapping section views;
+// these values are state, not offsets into that arena.
+struct NativeRuntimeGlobals {
+  std::int32_t lookup_particle_index{};
+  std::uintptr_t framebuffer_pixels{};
+  std::uintptr_t cell_state_grid{};
+  std::int8_t direction_index{};
+  std::int32_t held_pixel_coordinates{};
+  std::int32_t held_particle_index{};
+  std::int8_t pixel_is_held{};
+  std::int8_t held_material_id{};
+  std::int8_t search_direction{};
+  std::int8_t search_remaining{};
+  std::int8_t search_step{};
+  std::int16_t found_x{};
+  std::int16_t found_y{};
+  std::int8_t preserve_box_on_next_resize{};
+  std::int16_t surface_height{};
+  std::uintptr_t jni_env{};
+  std::uintptr_t surface_global_ref{};
+  std::uintptr_t native_window{};
+  std::int16_t surface_width{};
+  std::int8_t cell_state_allocated{};
+  std::int8_t particle_update_phase{};
+  std::int8_t particle_counter_reset_value{};
+  std::int8_t particle_counter_threshold{};
+  std::int8_t gas_motion_enabled{};
+  std::int8_t gas_search_radius{};
+  std::int32_t next_particle_index{};
+  std::int16_t drag_tool_origin_x{};
+  std::int16_t drag_tool_origin_y{};
+  NativeWindowBufferRegion window_buffer_region{};
+  std::int8_t restore_simulation_box_on_next_surface{};
+  std::uintptr_t engine_class_global_ref{};
+  std::uintptr_t init_callback_method{};
+  std::int8_t requested_direction{};
+  std::int8_t previous_direction{};
+  std::int8_t brush_radius{};
+  std::int16_t last_touch_pixel_x{};
+  std::int16_t last_touch_pixel_y{};
+  std::int8_t gas_field_enabled{};
+  std::int8_t frame_rate_adaptation_counter{};
+  std::int8_t touch_drawing_active{};
+  std::int8_t drag_tool_active{};
+  std::int8_t command_queue_read_index{};
+  std::int8_t command_queue_write_index{};
+  std::array<std::uint8_t, 300> command_queue{};
+  std::int32_t simulation_tick_counter{};
+  std::int16_t previous_frame_timestamp{};
+  std::int8_t particle_state_list_sync_pending{};
+};
+
+static_assert(sizeof(NativeWindowBufferRegion::storage) == 1108);
+static_assert(sizeof(NativeRuntimeGlobals::command_queue) == 300);
 
 template <typename To, typename From> static inline To hx_cast(From value) {
   if constexpr (std::is_pointer_v<From> && std::is_integral_v<To>)

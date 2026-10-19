@@ -71,8 +71,8 @@ int main() {
       }
       const int expected_x = start_x + g_gas_search_radius * dx;
       const int expected_y = start_y + g_gas_search_radius * dy;
-      const int actual_x = g_particle_records[10 * particle_index];
-      const int actual_y = g_particle_records[10 * particle_index + 1];
+      const int actual_x = particle_record_at(particle_index).x;
+      const int actual_y = particle_record_at(particle_index).y;
       if (actual_x != expected_x || actual_y != expected_y) {
         std::fprintf(stderr,
                      "material %u, direction %d: expected (%d,%d), got (%d,%d)\n",
@@ -125,10 +125,9 @@ int main() {
     const double dy = stroke[4] - stroke[2];
     const double line_length_squared = dx * dx + dy * dy;
     for (int particle = 0; particle < particle_count; ++particle) {
-      const int x = g_particle_records[10 * particle];
-      const int y = g_particle_records[10 * particle + 1];
-      const int material_id = reinterpret_cast<unsigned char*>(
-          g_particle_records + 10LL * particle)[8];
+      const int x = particle_record_at(particle).x;
+      const int y = particle_record_at(particle).y;
+      const int material_id = particle_material_id(particle);
       double t = ((x - stroke[1]) * dx + (y - stroke[2]) * dy) /
                  line_length_squared;
       if (t < 0.0) t = 0.0;
@@ -215,8 +214,8 @@ int main() {
     g_current_particle_index = water_index;
     process_particle_motion();
   }
-  const int water_x = g_particle_records[10 * water_index];
-  const int water_y = g_particle_records[10 * water_index + 1];
+  const int water_x = particle_record_at(water_index).x;
+  const int water_y = particle_record_at(water_index).y;
   if ((water_x == start_x && water_y == start_y) ||
       (water_x == start_x && water_y == start_y + 1) ||
       *reinterpret_cast<unsigned char*>(wall_cell) != 10) {

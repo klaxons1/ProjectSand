@@ -2,10 +2,10 @@
 """Normalize the ARM64 Hex-Rays export into a compilable-source candidate.
 
 The original Hex-Rays listing is kept under docs/lib as an immutable reference.
-This script rewrites writable `.data` and `.bss` aliases into one contiguous
-memory arena at their original ELF virtual addresses. The decompiler indexes
-through byte_33008 across the section boundary, so separate C++ globals would
-not preserve the original address layout.
+This script preserves the legacy contiguous arena where declarations overlap
+or are used as section-wide views, while converting independent BSS state and
+known particle fields to fixed-width structures. The remaining raw views are
+retained only where recovered code still depends on their shared storage.
 """
 from pathlib import Path
 import re
@@ -108,6 +108,117 @@ SEMANTIC_NAMES = {
     "byte_E50B00": "g_command_queue_read_index",
     "byte_E50B01": "g_command_queue_write_index",
     "byte_E50B08": "g_command_queue",
+}
+
+DATA_GLOBAL_MEMBERS = {
+    "unk_33000": ("g_native_memory_base_marker", "native_data_region().base_marker"),
+    "byte_33008": ("g_shared_engine_data", "native_data_region().shared_engine_data()"),
+    "dword_3300C": ("g_framebuffer_stride", "native_data_region().framebuffer_stride"),
+    "byte_33010": ("g_engine_mode", "native_data_region().engine_mode"),
+    "dword_33014": ("g_current_particle_index", "native_data_region().current_particle_index"),
+    "byte_33018": ("g_material_properties", "native_data_region().material_properties()"),
+    "byte_33028": ("g_material_behavior_parameter_028", "native_data_region().material_byte(0x28)"),
+    "byte_33058": ("g_material_behavior_parameter_058", "native_data_region().material_byte(0x58)"),
+    "byte_33070": ("g_material_behavior_parameter_070", "native_data_region().material_byte(0x70)"),
+    "byte_33088": ("g_material_behavior_parameter_088", "native_data_region().material_byte(0x88)"),
+    "word_330E6": ("g_screen_transition_color", "native_data_region().material_word(0xe6)"),
+    "byte_332E0": ("g_material_behavior_parameter_2E0", "native_data_region().material_byte(0x2e0)"),
+    "byte_33310": ("g_surface_material_selector", "native_data_region().material_byte(0x310)"),
+    "qword_334D8": ("g_random_state", "native_data_region().random_state"),
+    "dword_334E0": ("g_particle_list_previous_index", "native_data_region().particle_list_previous_index"),
+    "byte_334E4": ("g_zoom_factor", "native_data_region().zoom_factor"),
+    "byte_334E5": ("g_selected_material", "native_data_region().selected_material"),
+    "byte_334E6": ("g_selected_material_state", "native_data_region().selected_material_state"),
+}
+
+# The framebuffer's ring counters and pixel-bank pointers occupy documented
+# positions within one contiguous typed storage block.
+FRAMEBUFFER_GLOBAL_MEMBERS = {
+    "_bss_start__": ("g_view_width", "&framebuffer_memory().width"),
+    "word_33512": ("g_view_height", "framebuffer_memory().height"),
+    "word_33514": ("g_background_color", "framebuffer_memory().background_color"),
+    "byte_33516": ("g_framebuffer_bank_index", "framebuffer_memory().bank_index"),
+    "qword_33518": ("g_framebuffer_state_banks", "framebuffer_memory().bank_words"),
+    "dword_33520": ("g_framebuffer_ring0_staged_read_index", "framebuffer_memory().dword_at(8)"),
+    "dword_33524": ("g_framebuffer_ring0_read_index", "framebuffer_memory().dword_at(12)"),
+    "dword_33528": ("g_framebuffer_ring0_write_index", "framebuffer_memory().dword_at(16)"),
+    "byte_1584AC": ("g_framebuffer_ring0_write_available", "framebuffer_memory().byte_at(0x124f94)"),
+    "byte_1584AD": ("g_framebuffer_ring0_read_available", "framebuffer_memory().byte_at(0x124f95)"),
+    "qword_1584B0": ("g_framebuffer_bank1_pixels", "framebuffer_memory().qword_at(0x124f98)"),
+    "dword_1584B8": ("g_framebuffer_ring1_staged_read_index", "framebuffer_memory().dword_at(0x124fa0)"),
+    "dword_1584BC": ("g_framebuffer_ring1_read_index", "framebuffer_memory().dword_at(0x124fa4)"),
+    "dword_1584C0": ("g_framebuffer_ring1_write_index", "framebuffer_memory().dword_at(0x124fa8)"),
+    "byte_27D444": ("g_framebuffer_ring1_write_available", "framebuffer_memory().byte_at(0x249f2c)"),
+    "byte_27D445": ("g_framebuffer_ring1_read_available", "framebuffer_memory().byte_at(0x249f2d)"),
+    "qword_27D448": ("g_framebuffer_bank2_pixels", "framebuffer_memory().qword_at(0x249f30)"),
+    "dword_27D450": ("g_framebuffer_ring2_staged_read_index", "framebuffer_memory().dword_at(0x249f38)"),
+    "dword_27D454": ("g_framebuffer_ring2_read_index", "framebuffer_memory().dword_at(0x249f3c)"),
+    "dword_27D458": ("g_framebuffer_ring2_write_index", "framebuffer_memory().dword_at(0x249f40)"),
+    "unk_3A1518": ("g_framebuffer_bank3_storage_base", "framebuffer_memory().qword_at(0x36e000)"),
+    "byte_3A23DC": ("g_framebuffer_ring2_write_available", "framebuffer_memory().byte_at(0x36eec4)"),
+    "byte_3A23DD": ("g_framebuffer_ring2_read_available", "framebuffer_memory().byte_at(0x36eec5)"),
+    "qword_3A23E0": ("g_framebuffer_bank3_pixels", "framebuffer_memory().qword_at(0x36eec8)"),
+    "dword_3A23E8": ("g_framebuffer_ring3_staged_read_index", "framebuffer_memory().dword_at(0x36eed0)"),
+    "dword_3A23EC": ("g_framebuffer_ring3_read_index", "framebuffer_memory().dword_at(0x36eed4)"),
+    "dword_3A23F0": ("g_framebuffer_ring3_write_index", "framebuffer_memory().dword_at(0x36eed8)"),
+    "unk_4C7000": ("g_framebuffer_render_status_base", "framebuffer_memory().qword_at(0x493ae8)"),
+    "byte_4C7374": ("g_framebuffer_ring3_write_available", "framebuffer_memory().byte_at(0x493e5c)"),
+    "byte_4C7375": ("g_framebuffer_ring3_read_available", "framebuffer_memory().byte_at(0x493e5d)"),
+    "byte_4C7378": ("g_visualization_material_mode", "framebuffer_memory().visualization_material_mode"),
+}
+
+# BSS fields that do not alias another symbol are modeled as named members,
+# rather than emitted as casts into the address-shaped compatibility arena.
+RUNTIME_GLOBAL_MEMBERS = {
+    "dword_E50A00": ("g_lookup_particle_index", "lookup_particle_index"),
+    "qword_E50A08": ("g_framebuffer_pixels", "framebuffer_pixels"),
+    "qword_E50A10": ("g_cell_state_grid", "cell_state_grid"),
+    "byte_E50A18": ("g_direction_index", "direction_index"),
+    "dword_E50A20": ("g_held_pixel_coordinates", "held_pixel_coordinates"),
+    "dword_E50A24": ("g_held_particle_index", "held_particle_index"),
+    "byte_E50A28": ("g_pixel_is_held", "pixel_is_held"),
+    "byte_E50A29": ("g_held_material_id", "held_material_id"),
+    "byte_E50A30": ("g_search_direction", "search_direction"),
+    "byte_E50A31": ("g_search_remaining", "search_remaining"),
+    "byte_E50A32": ("g_search_step", "search_step"),
+    "word_E50A38": ("g_found_x", "found_x"),
+    "word_E50A3A": ("g_found_y", "found_y"),
+    "byte_E50A70": ("g_preserve_box_on_next_resize", "preserve_box_on_next_resize"),
+    "word_E50A72": ("g_surface_height", "surface_height"),
+    "qword_E50A78": ("g_jni_env", "jni_env"),
+    "qword_E50A80": ("g_surface_global_ref", "surface_global_ref"),
+    "qword_E50A88": ("g_native_window", "native_window"),
+    "word_E50A90": ("g_surface_width", "surface_width"),
+    "byte_E50A92": ("g_cell_state_allocated", "cell_state_allocated"),
+    "byte_E50A93": ("g_particle_update_phase", "particle_update_phase"),
+    "byte_E50A94": ("g_particle_counter_reset_value", "particle_counter_reset_value"),
+    "byte_E50A95": ("g_particle_counter_threshold", "particle_counter_threshold"),
+    "byte_E50A96": ("g_gas_motion_enabled", "gas_motion_enabled"),
+    "byte_E50A97": ("g_gas_search_radius", "gas_search_radius"),
+    "dword_E50A98": ("g_next_particle_index", "next_particle_index"),
+    "word_E50AA0": ("g_drag_tool_origin_x", "drag_tool_origin_x"),
+    "word_E50AA2": ("g_drag_tool_origin_y", "drag_tool_origin_y"),
+    "algn_E50AA4": ("g_native_window_buffer_storage", "window_buffer_region.storage"),
+    "dword_E50AB0": ("g_native_window_stride", "window_buffer_region.stride()"),
+    "qword_E50AB8": ("g_native_window_pixels", "window_buffer_region.pixels()"),
+    "byte_E50AD8": ("g_restore_simulation_box_on_next_surface", "restore_simulation_box_on_next_surface"),
+    "qword_E50AE0": ("g_engine_class_global_ref", "engine_class_global_ref"),
+    "qword_E50AE8": ("g_init_callback_method", "init_callback_method"),
+    "byte_E50AF0": ("g_requested_direction", "requested_direction"),
+    "byte_E50AF1": ("g_previous_direction", "previous_direction"),
+    "byte_E50AF2": ("g_brush_radius", "brush_radius"),
+    "word_E50AF8": ("g_last_touch_pixel_x", "last_touch_pixel_x"),
+    "word_E50AFA": ("g_last_touch_pixel_y", "last_touch_pixel_y"),
+    "byte_E50AFC": ("g_gas_field_enabled", "gas_field_enabled"),
+    "byte_E50AFD": ("g_frame_rate_adaptation_counter", "frame_rate_adaptation_counter"),
+    "byte_E50AFE": ("g_touch_drawing_active", "touch_drawing_active"),
+    "byte_E50AFF": ("g_drag_tool_active", "drag_tool_active"),
+    "byte_E50B00": ("g_command_queue_read_index", "command_queue_read_index"),
+    "byte_E50B01": ("g_command_queue_write_index", "command_queue_write_index"),
+    "byte_E50B08": ("g_command_queue", "command_queue"),
+    "dword_E50C34": ("g_simulation_tick_counter", "simulation_tick_counter"),
+    "word_E50C38": ("g_previous_frame_timestamp", "previous_frame_timestamp"),
+    "byte_E50C3A": ("g_particle_state_list_sync_pending", "particle_state_list_sync_pending"),
 }
 
 DEFERRED_SEMANTIC_NAMES = {
@@ -440,17 +551,34 @@ def main() -> None:
                 addr = int(am.group(1), 16)
             if addr is not None and DATA_START <= addr < BSS_END:
                 if not injected:
-                    out.append(f"alignas(16) static unsigned char g_native_memory[{MEMORY_SIZE:#x}] = {{}};")
+                    out.append("alignas(16) static NativeMemoryArena g_native_memory{};")
+                    out.append("static inline unsigned char *native_memory_bytes() { return reinterpret_cast<unsigned char *>(&g_native_memory); }")
+                    out.append("static NativeRuntimeGlobals g_native_runtime_globals{};")
                     out.append(f"static const unsigned char g_native_data_image[{DATA_SIZE:#x}] = {{")
                     out.extend(data_rows)
                     out.append("};")
                     out.append("__attribute__((constructor)) static void initialize_native_memory() {")
-                    out.append("  std::memcpy(g_native_memory, g_native_data_image, sizeof(g_native_data_image));")
+                    out.append("  std::memcpy(native_memory_bytes(), g_native_data_image, sizeof(g_native_data_image));")
                     out.append("}")
                     out.append("#define unk_1C858 word_1C858")
                     out.append("#define unk_33018 byte_33018")
                     out.append("#define unk_E50B08 byte_E50B08")
                     injected = True
+                data_member = DATA_GLOBAL_MEMBERS.get(name)
+                if data_member:
+                    global_name, member_name = data_member
+                    out.append(f"#define {global_name} ({member_name})")
+                    continue
+                framebuffer_member = FRAMEBUFFER_GLOBAL_MEMBERS.get(name)
+                if framebuffer_member:
+                    global_name, member_name = framebuffer_member
+                    out.append(f"#define {global_name} ({member_name})")
+                    continue
+                runtime_member = RUNTIME_GLOBAL_MEMBERS.get(name)
+                if runtime_member:
+                    global_name, member_name = runtime_member
+                    out.append(f"#define {global_name} (g_native_runtime_globals.{member_name})")
+                    continue
                 offset = addr - DATA_START
                 if name == "_bss_start__":
                     out.append(f"#define _bss_start__ reinterpret_cast<__int16 *>(g_native_memory + {offset:#x})")
@@ -479,6 +607,47 @@ def main() -> None:
     generated = "\n".join(out).rstrip() + "\n"
     for old_name, semantic_name in SEMANTIC_NAMES.items():
         generated = re.sub(r"\b" + re.escape(old_name) + r"\b", semantic_name, generated)
+
+    # Model particle coordinates as fields of the fixed 20-byte record rather
+    # than as 16-bit indexes into a flat array. Keep other word views until
+    # their semantics are recovered.
+    coordinate_access = re.compile(r"g_particle_records\[10 \* ([^\]]+?)\]")
+    coordinate_counts = {0: 0, 1: 0}
+    def particle_coordinate_access(match):
+        expression = match.group(1).strip()
+        offset_match = re.match(r"^(.*?) \+ ([0-9]+)$", expression)
+        offset = int(offset_match.group(2)) if offset_match else 0
+        if offset not in coordinate_counts:
+            return match.group(0)
+        index = offset_match.group(1).strip() if offset_match else expression
+        coordinate_counts[offset] += 1
+        return f"particle_record_at({index}).{'x' if offset == 0 else 'y'}"
+    generated = coordinate_access.sub(particle_coordinate_access, generated)
+    if coordinate_counts != {0: 218, 1: 72}:
+        raise SystemExit(f"Unexpected particle coordinate accesses: {coordinate_counts}")
+
+    # Recover the remaining well-understood 16-bit fields. Word 2 is kept as
+    # a compatibility view because it is the low half of the particle link.
+    record_word_members = {
+        4: "material_flags_word",
+        5: "auxiliary_status_word",
+        6: "packed_state_word",
+        8: "counter_word",
+    }
+    word_access = re.compile(r"g_particle_records\[10 \* ([^\]]+?)\]")
+    word_counts = {offset: 0 for offset in record_word_members}
+    def particle_word_access(match):
+        expression = match.group(1).strip()
+        offset_match = re.match(r"^(.*?) \+ ([0-9]+)$", expression)
+        offset = int(offset_match.group(2)) if offset_match else 0
+        if offset not in record_word_members:
+            return match.group(0)
+        index = offset_match.group(1).strip()
+        word_counts[offset] += 1
+        return f"particle_record_at({index}).{record_word_members[offset]}"
+    generated = word_access.sub(particle_word_access, generated)
+    if word_counts != {4: 28, 5: 7, 6: 23, 8: 21}:
+        raise SystemExit(f"Unexpected particle word accesses: {word_counts}")
 
     # The byte global at 0x4C7410 is a shifted view into the same 20-byte
     # records as g_particle_records (0x4C7380). Recover record-relative field
@@ -517,20 +686,24 @@ def main() -> None:
         "      *(_BYTE *)result = 0;",
     )
     accessors = (
-        "\nstatic inline _BYTE &particle_byte_field(__int64 index, unsigned offset) {\n"
-        "  return reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index)[offset];\n"
+        "\nstatic inline NativeDataRegion &native_data_region() { return g_native_memory.data; }\n"
+        "static inline FramebufferMemory &framebuffer_memory() { return g_native_memory.framebuffer; }\n"
+        "static inline __int16 *particle_records_data() {\n"
+        "  return reinterpret_cast<__int16 *>(g_native_memory.particle_and_runtime.data());\n"
         "}\n"
-        "static inline _DWORD &particle_next_link(__int64 index) {\n"
-        "  return *reinterpret_cast<_DWORD *>(reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index) + 4);\n"
+        "static inline __int16 &particle_word_at(__int64 word_index) { return particle_records_data()[word_index]; }\n"
+        "static inline ParticleRecord &particle_record_at(__int64 index) {\n"
+        "  return *reinterpret_cast<ParticleRecord *>(reinterpret_cast<_BYTE *>(particle_records_data()) + 20LL * index);\n"
         "}\n"
+        "static inline _DWORD &particle_next_link(__int64 index) { return particle_record_at(index).next_link; }\n"
         "static inline _DWORD &particle_state_list_head(unsigned list_index) {\n"
         "  return *reinterpret_cast<_DWORD *>(g_native_memory + 0xe1da40 + 12 * list_index);\n"
         "}\n"
-        "static inline _BYTE &particle_material_id(__int64 index) { return particle_byte_field(index, 8); }\n"
-        "static inline _BYTE &particle_flags(__int64 index) { return particle_byte_field(index, 9); }\n"
-        "static inline _BYTE &particle_status_flag(__int64 index) { return particle_byte_field(index, 11); }\n"
-        "static inline _BYTE &particle_packed_state(__int64 index) { return particle_byte_field(index, 12); }\n"
-        "static inline _BYTE &particle_counter(__int64 index) { return particle_byte_field(index, 16); }\n"
+        "static inline _BYTE &particle_material_id(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).material_flags_word); }\n"
+        "static inline _BYTE &particle_flags(__int64 index) { return reinterpret_cast<_BYTE *>(&particle_record_at(index).material_flags_word)[1]; }\n"
+        "static inline _BYTE &particle_status_flag(__int64 index) { return reinterpret_cast<_BYTE *>(&particle_record_at(index).auxiliary_status_word)[1]; }\n"
+        "static inline _BYTE &particle_packed_state(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).packed_state_word); }\n"
+        "static inline _BYTE &particle_counter(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).counter_word); }\n"
     )
     record_alias = re.search(r"(?m)^#define g_particle_record_bytes .*\n", generated)
     if not record_alias:
@@ -684,8 +857,8 @@ def main() -> None:
         slide_powder = slide_powder.replace(old_text, new_text)
     for state_value in (1, 2):
         old_text = (
-            "LOBYTE(g_particle_records[10 * particle_index_value + 6]) = "
-            f"g_particle_records[10 * particle_index_value + 6] & 0xF8 | {state_value};"
+            "LOBYTE(particle_record_at(particle_index_value).packed_state_word) = "
+            f"particle_record_at(particle_index_value).packed_state_word & 0xF8 | {state_value};"
         )
         new_text = (
             "particle_packed_state(particle_index_value) = "
@@ -762,8 +935,8 @@ def main() -> None:
         slide_liquid = slide_liquid.replace(old_text, new_text)
     for state_value in (1, 2):
         old_text = (
-            "LOBYTE(g_particle_records[10 * particle_index_value + 6]) = "
-            f"g_particle_records[10 * particle_index_value + 6] & 0xF8 | {state_value};"
+            "LOBYTE(particle_record_at(particle_index_value).packed_state_word) = "
+            f"particle_record_at(particle_index_value).packed_state_word & 0xF8 | {state_value};"
         )
         new_text = (
             "particle_packed_state(particle_index_value) = "
@@ -2776,6 +2949,45 @@ LABEL_16:
     prototype_prefix = generated[:first_function]
     prototype_prefix = re.sub(r"\b(?:a\d+|v\d+|result)\b", "", prototype_prefix)
     generated = prototype_prefix + generated[first_function:]
+
+    generated = re.sub(
+        r"\(char \*\)&g_material_properties(?!_lut)\b",
+        "(char *)native_data_region().material_properties()",
+        generated,
+    )
+    generated = generated.replace("g_native_memory +", "native_memory_bytes() +")
+    generated = re.sub(
+        r"(?m)^#define (?:g_native_runtime_reserved_\w+|stru_E50C68|stru_E50EC0) .*\n",
+        "",
+        generated,
+    )
+    generated = re.sub(
+        r"(?m)^// .*using guessed type .*\b(?:g_native_runtime_reserved_\w+|stru_E50C68|stru_E50EC0)\b.*\n",
+        "",
+        generated,
+    )
+
+    # The remaining 16-bit particle-pool accesses are explicit views through
+    # one typed pool accessor; do not emit the original global array alias.
+    generated = re.sub(r"(?m)^#define g_particle_records .*\n", "", generated)
+    generated = re.sub(r"(?m)^#define g_particle_record_bytes .*\n", "", generated)
+    generated = re.sub(
+        r"\bg_particle_records\[([^\]]+)\]",
+        r"particle_word_at(\1)",
+        generated,
+    )
+    generated = re.sub(r"\bg_particle_records\b", "particle_records_data()", generated)
+    particle_link_access = re.compile(
+        r"\*\(_DWORD \*\)&particle_word_at\(10 \* (.*?) \+ 2\)"
+    )
+    generated, particle_link_count = particle_link_access.subn(
+        r"particle_next_link(\1)", generated
+    )
+    if particle_link_count != 4:
+        raise SystemExit(f"Expected four typed particle-link accesses, found {particle_link_count}")
+    generated = re.sub(r"(?m)^// .*using guessed type .*g_particle_records.*\n", "", generated)
+    generated = re.sub(r"(?m)^// .*using guessed type .*g_particle_record_bytes.*\n", "", generated)
+    generated = re.sub(r"(?m)^// 4C7380: using guessed type.*\n", "", generated)
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(generated)

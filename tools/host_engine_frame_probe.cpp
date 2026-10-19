@@ -80,8 +80,8 @@ int main() {
                  lock_count);
     return 1;
   }
-  const int final_x = g_particle_records[10 * water_index];
-  const int final_y = g_particle_records[10 * water_index + 1];
+  const int final_x = particle_record_at(water_index).x;
+  const int final_y = particle_record_at(water_index).y;
   if (final_x != water_x || final_y <= water_start_y) {
     std::fprintf(stderr,
                  "frame scheduler failed to move water: start=(%d,%d), final=(%d,%d)\n",

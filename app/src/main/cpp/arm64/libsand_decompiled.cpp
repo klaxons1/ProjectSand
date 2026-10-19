@@ -747,7 +747,9 @@ _WORD g_direction_lut[132] = {
   0
 }; // weak
 unsigned __int8 g_particle_state_lut[16] = { 1u, 1u, 2u, 2u, 3u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u }; // weak
-alignas(16) static unsigned char g_native_memory[0xe1def8] = {};
+alignas(16) static NativeMemoryArena g_native_memory{};
+static inline unsigned char *native_memory_bytes() { return reinterpret_cast<unsigned char *>(&g_native_memory); }
+static NativeRuntimeGlobals g_native_runtime_globals{};
 static const unsigned char g_native_data_image[0x510] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
   0x02, 0x00, 0x00, 0x00, 0xFE, 0xFF, 0xFF, 0xFF, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -832,150 +834,131 @@ static const unsigned char g_native_data_image[0x510] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 };
 __attribute__((constructor)) static void initialize_native_memory() {
-  std::memcpy(g_native_memory, g_native_data_image, sizeof(g_native_data_image));
+  std::memcpy(native_memory_bytes(), g_native_data_image, sizeof(g_native_data_image));
 }
-#define g_native_memory_base_marker (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0x0))
-#define g_shared_engine_data (*reinterpret_cast<char (*)[14802672]>(g_native_memory + 0x8))
-#define g_framebuffer_stride (*reinterpret_cast<int *>(g_native_memory + 0xc))
-#define g_engine_mode (*reinterpret_cast<char *>(g_native_memory + 0x10))
-#define g_current_particle_index (*reinterpret_cast<int *>(g_native_memory + 0x14))
-#define g_material_properties (*reinterpret_cast<_BYTE (*)[14802656]>(g_native_memory + 0x18))
-#define g_material_behavior_parameter_028 (*reinterpret_cast<char *>(g_native_memory + 0x28))
-#define g_material_behavior_parameter_058 (*reinterpret_cast<char *>(g_native_memory + 0x58))
-#define g_material_behavior_parameter_070 (*reinterpret_cast<char *>(g_native_memory + 0x70))
-#define g_material_behavior_parameter_088 (*reinterpret_cast<char *>(g_native_memory + 0x88))
-#define g_screen_transition_color (*reinterpret_cast<__int16 *>(g_native_memory + 0xe6))
-#define g_material_behavior_parameter_2E0 (*reinterpret_cast<char *>(g_native_memory + 0x2e0))
-#define g_surface_material_selector (*reinterpret_cast<char *>(g_native_memory + 0x310))
-#define g_random_state (*reinterpret_cast<__int64 *>(g_native_memory + 0x4d8))
-#define g_particle_list_previous_index (*reinterpret_cast<int *>(g_native_memory + 0x4e0))
-#define g_zoom_factor (*reinterpret_cast<char *>(g_native_memory + 0x4e4))
-#define g_selected_material (*reinterpret_cast<char *>(g_native_memory + 0x4e5))
-#define g_selected_material_state (*reinterpret_cast<char *>(g_native_memory + 0x4e6))
-#define g_view_width reinterpret_cast<__int16 *>(g_native_memory + 0x510)
-#define g_view_height (*reinterpret_cast<__int16 *>(g_native_memory + 0x512))
-#define g_background_color (*reinterpret_cast<__int16 *>(g_native_memory + 0x514))
-#define g_framebuffer_bank_index (*reinterpret_cast<char *>(g_native_memory + 0x516))
-#define g_framebuffer_state_banks (*reinterpret_cast<__int64 (*)[600012]>(g_native_memory + 0x518))
-#define g_framebuffer_ring0_staged_read_index (*reinterpret_cast<int *>(g_native_memory + 0x520))
-#define g_framebuffer_ring0_read_index (*reinterpret_cast<int *>(g_native_memory + 0x524))
-#define g_framebuffer_ring0_write_index (*reinterpret_cast<int *>(g_native_memory + 0x528))
-#define g_framebuffer_ring0_write_available (*reinterpret_cast<char *>(g_native_memory + 0x1254ac))
-#define g_framebuffer_ring0_read_available (*reinterpret_cast<char *>(g_native_memory + 0x1254ad))
-#define g_framebuffer_bank1_pixels (*reinterpret_cast<__int64 *>(g_native_memory + 0x1254b0))
-#define g_framebuffer_ring1_staged_read_index (*reinterpret_cast<int *>(g_native_memory + 0x1254b8))
-#define g_framebuffer_ring1_read_index (*reinterpret_cast<int *>(g_native_memory + 0x1254bc))
-#define g_framebuffer_ring1_write_index (*reinterpret_cast<int *>(g_native_memory + 0x1254c0))
-#define g_framebuffer_ring1_write_available (*reinterpret_cast<char *>(g_native_memory + 0x24a444))
-#define g_framebuffer_ring1_read_available (*reinterpret_cast<char *>(g_native_memory + 0x24a445))
-#define g_framebuffer_bank2_pixels (*reinterpret_cast<__int64 *>(g_native_memory + 0x24a448))
-#define g_framebuffer_ring2_staged_read_index (*reinterpret_cast<int *>(g_native_memory + 0x24a450))
-#define g_framebuffer_ring2_read_index (*reinterpret_cast<int *>(g_native_memory + 0x24a454))
-#define g_framebuffer_ring2_write_index (*reinterpret_cast<int *>(g_native_memory + 0x24a458))
-#define g_framebuffer_bank3_storage_base (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0x36e518))
-#define g_framebuffer_ring2_write_available (*reinterpret_cast<char *>(g_native_memory + 0x36f3dc))
-#define g_framebuffer_ring2_read_available (*reinterpret_cast<char *>(g_native_memory + 0x36f3dd))
-#define g_framebuffer_bank3_pixels (*reinterpret_cast<__int64 *>(g_native_memory + 0x36f3e0))
-#define g_framebuffer_ring3_staged_read_index (*reinterpret_cast<int *>(g_native_memory + 0x36f3e8))
-#define g_framebuffer_ring3_read_index (*reinterpret_cast<int *>(g_native_memory + 0x36f3ec))
-#define g_framebuffer_ring3_write_index (*reinterpret_cast<int *>(g_native_memory + 0x36f3f0))
-#define g_framebuffer_render_status_base (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0x494000))
-#define g_framebuffer_ring3_write_available (*reinterpret_cast<char *>(g_native_memory + 0x494374))
-#define g_framebuffer_ring3_read_available (*reinterpret_cast<char *>(g_native_memory + 0x494375))
-#define g_visualization_material_mode (*reinterpret_cast<char *>(g_native_memory + 0x494378))
-#define g_particle_records (*reinterpret_cast<__int16 (*)[5000636]>(g_native_memory + 0x494380))
-#define g_particle_record_bytes (*reinterpret_cast<_BYTE (*)[9996544]>(g_native_memory + 0x494410))
+#define g_native_memory_base_marker (native_data_region().base_marker)
+#define g_shared_engine_data (native_data_region().shared_engine_data())
+#define g_framebuffer_stride (native_data_region().framebuffer_stride)
+#define g_engine_mode (native_data_region().engine_mode)
+#define g_current_particle_index (native_data_region().current_particle_index)
+#define g_material_properties (native_data_region().material_properties())
+#define g_material_behavior_parameter_028 (native_data_region().material_byte(0x28))
+#define g_material_behavior_parameter_058 (native_data_region().material_byte(0x58))
+#define g_material_behavior_parameter_070 (native_data_region().material_byte(0x70))
+#define g_material_behavior_parameter_088 (native_data_region().material_byte(0x88))
+#define g_screen_transition_color (native_data_region().material_word(0xe6))
+#define g_material_behavior_parameter_2E0 (native_data_region().material_byte(0x2e0))
+#define g_surface_material_selector (native_data_region().material_byte(0x310))
+#define g_random_state (native_data_region().random_state)
+#define g_particle_list_previous_index (native_data_region().particle_list_previous_index)
+#define g_zoom_factor (native_data_region().zoom_factor)
+#define g_selected_material (native_data_region().selected_material)
+#define g_selected_material_state (native_data_region().selected_material_state)
+#define g_view_width (&framebuffer_memory().width)
+#define g_view_height (framebuffer_memory().height)
+#define g_background_color (framebuffer_memory().background_color)
+#define g_framebuffer_bank_index (framebuffer_memory().bank_index)
+#define g_framebuffer_state_banks (framebuffer_memory().bank_words)
+#define g_framebuffer_ring0_staged_read_index (framebuffer_memory().dword_at(8))
+#define g_framebuffer_ring0_read_index (framebuffer_memory().dword_at(12))
+#define g_framebuffer_ring0_write_index (framebuffer_memory().dword_at(16))
+#define g_framebuffer_ring0_write_available (framebuffer_memory().byte_at(0x124f94))
+#define g_framebuffer_ring0_read_available (framebuffer_memory().byte_at(0x124f95))
+#define g_framebuffer_bank1_pixels (framebuffer_memory().qword_at(0x124f98))
+#define g_framebuffer_ring1_staged_read_index (framebuffer_memory().dword_at(0x124fa0))
+#define g_framebuffer_ring1_read_index (framebuffer_memory().dword_at(0x124fa4))
+#define g_framebuffer_ring1_write_index (framebuffer_memory().dword_at(0x124fa8))
+#define g_framebuffer_ring1_write_available (framebuffer_memory().byte_at(0x249f2c))
+#define g_framebuffer_ring1_read_available (framebuffer_memory().byte_at(0x249f2d))
+#define g_framebuffer_bank2_pixels (framebuffer_memory().qword_at(0x249f30))
+#define g_framebuffer_ring2_staged_read_index (framebuffer_memory().dword_at(0x249f38))
+#define g_framebuffer_ring2_read_index (framebuffer_memory().dword_at(0x249f3c))
+#define g_framebuffer_ring2_write_index (framebuffer_memory().dword_at(0x249f40))
+#define g_framebuffer_bank3_storage_base (framebuffer_memory().qword_at(0x36e000))
+#define g_framebuffer_ring2_write_available (framebuffer_memory().byte_at(0x36eec4))
+#define g_framebuffer_ring2_read_available (framebuffer_memory().byte_at(0x36eec5))
+#define g_framebuffer_bank3_pixels (framebuffer_memory().qword_at(0x36eec8))
+#define g_framebuffer_ring3_staged_read_index (framebuffer_memory().dword_at(0x36eed0))
+#define g_framebuffer_ring3_read_index (framebuffer_memory().dword_at(0x36eed4))
+#define g_framebuffer_ring3_write_index (framebuffer_memory().dword_at(0x36eed8))
+#define g_framebuffer_render_status_base (framebuffer_memory().qword_at(0x493ae8))
+#define g_framebuffer_ring3_write_available (framebuffer_memory().byte_at(0x493e5c))
+#define g_framebuffer_ring3_read_available (framebuffer_memory().byte_at(0x493e5d))
+#define g_visualization_material_mode (framebuffer_memory().visualization_material_mode)
 
-static inline _BYTE &particle_byte_field(__int64 index, unsigned offset) {
-  return reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index)[offset];
+static inline NativeDataRegion &native_data_region() { return g_native_memory.data; }
+static inline FramebufferMemory &framebuffer_memory() { return g_native_memory.framebuffer; }
+static inline __int16 *particle_records_data() {
+  return reinterpret_cast<__int16 *>(g_native_memory.particle_and_runtime.data());
 }
-static inline _DWORD &particle_next_link(__int64 index) {
-  return *reinterpret_cast<_DWORD *>(reinterpret_cast<_BYTE *>(g_particle_records + 10LL * index) + 4);
+static inline __int16 &particle_word_at(__int64 word_index) { return particle_records_data()[word_index]; }
+static inline ParticleRecord &particle_record_at(__int64 index) {
+  return *reinterpret_cast<ParticleRecord *>(reinterpret_cast<_BYTE *>(particle_records_data()) + 20LL * index);
 }
+static inline _DWORD &particle_next_link(__int64 index) { return particle_record_at(index).next_link; }
 static inline _DWORD &particle_state_list_head(unsigned list_index) {
-  return *reinterpret_cast<_DWORD *>(g_native_memory + 0xe1da40 + 12 * list_index);
+  return *reinterpret_cast<_DWORD *>(native_memory_bytes() + 0xe1da40 + 12 * list_index);
 }
-static inline _BYTE &particle_material_id(__int64 index) { return particle_byte_field(index, 8); }
-static inline _BYTE &particle_flags(__int64 index) { return particle_byte_field(index, 9); }
-static inline _BYTE &particle_status_flag(__int64 index) { return particle_byte_field(index, 11); }
-static inline _BYTE &particle_packed_state(__int64 index) { return particle_byte_field(index, 12); }
-static inline _BYTE &particle_counter(__int64 index) { return particle_byte_field(index, 16); }
-#define g_engine_resume_response_token (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1cd10))
-#define g_engine_state_response_token (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1d000))
-#define g_lookup_particle_index (*reinterpret_cast<int *>(g_native_memory + 0xe1da00))
-#define g_framebuffer_pixels (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1da08))
-#define g_cell_state_grid (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1da10))
-#define g_direction_index (*reinterpret_cast<char *>(g_native_memory + 0xe1da18))
-#define g_held_pixel_coordinates (*reinterpret_cast<int *>(g_native_memory + 0xe1da20))
-#define g_held_particle_index (*reinterpret_cast<int *>(g_native_memory + 0xe1da24))
-#define g_pixel_is_held (*reinterpret_cast<char *>(g_native_memory + 0xe1da28))
-#define g_held_material_id (*reinterpret_cast<char *>(g_native_memory + 0xe1da29))
-#define g_search_direction (*reinterpret_cast<char *>(g_native_memory + 0xe1da30))
-#define g_search_remaining (*reinterpret_cast<char *>(g_native_memory + 0xe1da31))
-#define g_search_step (*reinterpret_cast<char *>(g_native_memory + 0xe1da32))
-#define g_found_x (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1da38))
-#define g_found_y (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1da3a))
-#define g_particle_state_lists (*reinterpret_cast<__int128 *>(g_native_memory + 0xe1da40))
-#define g_particle_state_lists_block_1 (*reinterpret_cast<__int128 *>(g_native_memory + 0xe1da50))
-#define g_particle_state_lists_block_2 (*reinterpret_cast<__int128 *>(g_native_memory + 0xe1da60))
-#define g_preserve_box_on_next_resize (*reinterpret_cast<char *>(g_native_memory + 0xe1da70))
-#define g_surface_height (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1da72))
-#define g_jni_env (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1da78))
-#define g_surface_global_ref (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1da80))
-#define g_native_window (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1da88))
-#define g_surface_width (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1da90))
-#define g_cell_state_allocated (*reinterpret_cast<char *>(g_native_memory + 0xe1da92))
-#define g_particle_update_phase (*reinterpret_cast<char *>(g_native_memory + 0xe1da93))
-#define g_particle_counter_reset_value (*reinterpret_cast<char *>(g_native_memory + 0xe1da94))
-#define g_particle_counter_threshold (*reinterpret_cast<char *>(g_native_memory + 0xe1da95))
-#define g_gas_motion_enabled (*reinterpret_cast<char *>(g_native_memory + 0xe1da96))
-#define g_gas_search_radius (*reinterpret_cast<char *>(g_native_memory + 0xe1da97))
-#define g_next_particle_index (*reinterpret_cast<int *>(g_native_memory + 0xe1da98))
-#define g_drag_tool_origin_x (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1daa0))
-#define g_drag_tool_origin_y (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1daa2))
-#define g_native_window_buffer_storage (*reinterpret_cast<_BYTE (*)[1108]>(g_native_memory + 0xe1daa4))
-#define g_native_window_stride (*reinterpret_cast<int *>(g_native_memory + 0xe1dab0))
-#define g_native_window_pixels (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dab8))
-#define g_restore_simulation_box_on_next_surface (*reinterpret_cast<char *>(g_native_memory + 0xe1dad8))
-#define g_engine_class_global_ref (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dae0))
-#define g_init_callback_method (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dae8))
-#define g_requested_direction (*reinterpret_cast<char *>(g_native_memory + 0xe1daf0))
-#define g_previous_direction (*reinterpret_cast<char *>(g_native_memory + 0xe1daf1))
-#define g_brush_radius (*reinterpret_cast<char *>(g_native_memory + 0xe1daf2))
-#define g_last_touch_pixel_x (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1daf8))
-#define g_last_touch_pixel_y (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1dafa))
-#define g_gas_field_enabled (*reinterpret_cast<char *>(g_native_memory + 0xe1dafc))
-#define g_frame_rate_adaptation_counter (*reinterpret_cast<char *>(g_native_memory + 0xe1dafd))
-#define g_touch_drawing_active (*reinterpret_cast<char *>(g_native_memory + 0xe1dafe))
-#define g_drag_tool_active (*reinterpret_cast<char *>(g_native_memory + 0xe1daff))
-#define g_command_queue_read_index (*reinterpret_cast<char *>(g_native_memory + 0xe1db00))
-#define g_command_queue_write_index (*reinterpret_cast<char *>(g_native_memory + 0xe1db01))
-#define g_command_queue (*reinterpret_cast<_BYTE (*)[300]>(g_native_memory + 0xe1db08))
-#define g_simulation_tick_counter (*reinterpret_cast<int *>(g_native_memory + 0xe1dc34))
-#define g_previous_frame_timestamp (*reinterpret_cast<__int16 *>(g_native_memory + 0xe1dc38))
-#define g_particle_state_list_sync_pending (*reinterpret_cast<char *>(g_native_memory + 0xe1dc3a))
-#define g_native_runtime_reserved_slot_1 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dc40))
-#define g_native_runtime_reserved_slot_2 (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1dc48))
-#define g_native_runtime_reserved_slot_3 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dc50))
-#define g_native_runtime_reserved_slot_4 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dc58))
-#define g_native_runtime_reserved_slot_5 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dc60))
-#define stru_E50C68 (*reinterpret_cast<pthread_mutex_t *>(g_native_memory + 0xe1dc68))
-#define g_native_runtime_reserved_slot_6 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dc90))
-#define g_native_runtime_reserved_slot_7 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dc98))
-#define g_native_runtime_reserved_slot_8 (*reinterpret_cast<int *>(g_native_memory + 0xe1dca0))
-#define g_native_runtime_reserved_bytes_1 (*reinterpret_cast<char (*)[31]>(g_native_memory + 0xe1dcb0))
-#define g_native_runtime_reserved_flag_1 (*reinterpret_cast<char *>(g_native_memory + 0xe1dccf))
-#define g_native_runtime_reserved_flag_2 (*reinterpret_cast<char *>(g_native_memory + 0xe1dcf0))
-#define g_native_runtime_alignment_padding (*reinterpret_cast<_BYTE (*)[15]>(g_native_memory + 0xe1dd11))
-#define g_native_runtime_reserved_slot_9 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dd20))
-#define g_native_runtime_reserved_slot_10 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dd28))
-#define g_native_runtime_reserved_slot_11 (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1dd30))
-#define g_native_runtime_reserved_slot_12 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dea8))
-#define g_native_runtime_reserved_slot_13 (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1deb0))
-#define g_native_runtime_reserved_slot_14 (*reinterpret_cast<_UNKNOWN *>(g_native_memory + 0xe1deb8))
-#define stru_E50EC0 (*reinterpret_cast<pthread_mutex_t *>(g_native_memory + 0xe1dec0))
-#define g_native_runtime_reserved_slot_15 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1dee8))
-#define g_native_runtime_reserved_slot_16 (*reinterpret_cast<__int64 *>(g_native_memory + 0xe1def0))
+static inline _BYTE &particle_material_id(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).material_flags_word); }
+static inline _BYTE &particle_flags(__int64 index) { return reinterpret_cast<_BYTE *>(&particle_record_at(index).material_flags_word)[1]; }
+static inline _BYTE &particle_status_flag(__int64 index) { return reinterpret_cast<_BYTE *>(&particle_record_at(index).auxiliary_status_word)[1]; }
+static inline _BYTE &particle_packed_state(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).packed_state_word); }
+static inline _BYTE &particle_counter(__int64 index) { return reinterpret_cast<_BYTE &>(particle_record_at(index).counter_word); }
+#define g_engine_resume_response_token (*reinterpret_cast<_UNKNOWN *>(native_memory_bytes() + 0xe1cd10))
+#define g_engine_state_response_token (*reinterpret_cast<_UNKNOWN *>(native_memory_bytes() + 0xe1d000))
+#define g_lookup_particle_index (g_native_runtime_globals.lookup_particle_index)
+#define g_framebuffer_pixels (g_native_runtime_globals.framebuffer_pixels)
+#define g_cell_state_grid (g_native_runtime_globals.cell_state_grid)
+#define g_direction_index (g_native_runtime_globals.direction_index)
+#define g_held_pixel_coordinates (g_native_runtime_globals.held_pixel_coordinates)
+#define g_held_particle_index (g_native_runtime_globals.held_particle_index)
+#define g_pixel_is_held (g_native_runtime_globals.pixel_is_held)
+#define g_held_material_id (g_native_runtime_globals.held_material_id)
+#define g_search_direction (g_native_runtime_globals.search_direction)
+#define g_search_remaining (g_native_runtime_globals.search_remaining)
+#define g_search_step (g_native_runtime_globals.search_step)
+#define g_found_x (g_native_runtime_globals.found_x)
+#define g_found_y (g_native_runtime_globals.found_y)
+#define g_particle_state_lists (*reinterpret_cast<__int128 *>(native_memory_bytes() + 0xe1da40))
+#define g_particle_state_lists_block_1 (*reinterpret_cast<__int128 *>(native_memory_bytes() + 0xe1da50))
+#define g_particle_state_lists_block_2 (*reinterpret_cast<__int128 *>(native_memory_bytes() + 0xe1da60))
+#define g_preserve_box_on_next_resize (g_native_runtime_globals.preserve_box_on_next_resize)
+#define g_surface_height (g_native_runtime_globals.surface_height)
+#define g_jni_env (g_native_runtime_globals.jni_env)
+#define g_surface_global_ref (g_native_runtime_globals.surface_global_ref)
+#define g_native_window (g_native_runtime_globals.native_window)
+#define g_surface_width (g_native_runtime_globals.surface_width)
+#define g_cell_state_allocated (g_native_runtime_globals.cell_state_allocated)
+#define g_particle_update_phase (g_native_runtime_globals.particle_update_phase)
+#define g_particle_counter_reset_value (g_native_runtime_globals.particle_counter_reset_value)
+#define g_particle_counter_threshold (g_native_runtime_globals.particle_counter_threshold)
+#define g_gas_motion_enabled (g_native_runtime_globals.gas_motion_enabled)
+#define g_gas_search_radius (g_native_runtime_globals.gas_search_radius)
+#define g_next_particle_index (g_native_runtime_globals.next_particle_index)
+#define g_drag_tool_origin_x (g_native_runtime_globals.drag_tool_origin_x)
+#define g_drag_tool_origin_y (g_native_runtime_globals.drag_tool_origin_y)
+#define g_native_window_buffer_storage (g_native_runtime_globals.window_buffer_region.storage)
+#define g_native_window_stride (g_native_runtime_globals.window_buffer_region.stride())
+#define g_native_window_pixels (g_native_runtime_globals.window_buffer_region.pixels())
+#define g_restore_simulation_box_on_next_surface (g_native_runtime_globals.restore_simulation_box_on_next_surface)
+#define g_engine_class_global_ref (g_native_runtime_globals.engine_class_global_ref)
+#define g_init_callback_method (g_native_runtime_globals.init_callback_method)
+#define g_requested_direction (g_native_runtime_globals.requested_direction)
+#define g_previous_direction (g_native_runtime_globals.previous_direction)
+#define g_brush_radius (g_native_runtime_globals.brush_radius)
+#define g_last_touch_pixel_x (g_native_runtime_globals.last_touch_pixel_x)
+#define g_last_touch_pixel_y (g_native_runtime_globals.last_touch_pixel_y)
+#define g_gas_field_enabled (g_native_runtime_globals.gas_field_enabled)
+#define g_frame_rate_adaptation_counter (g_native_runtime_globals.frame_rate_adaptation_counter)
+#define g_touch_drawing_active (g_native_runtime_globals.touch_drawing_active)
+#define g_drag_tool_active (g_native_runtime_globals.drag_tool_active)
+#define g_command_queue_read_index (g_native_runtime_globals.command_queue_read_index)
+#define g_command_queue_write_index (g_native_runtime_globals.command_queue_write_index)
+#define g_command_queue (g_native_runtime_globals.command_queue)
+#define g_simulation_tick_counter (g_native_runtime_globals.simulation_tick_counter)
+#define g_previous_frame_timestamp (g_native_runtime_globals.previous_frame_timestamp)
+#define g_particle_state_list_sync_pending (g_native_runtime_globals.particle_state_list_sync_pending)
+#define g_native_runtime_alignment_padding (*reinterpret_cast<_BYTE (*)[15]>(native_memory_bytes() + 0xe1dd11))
 // extern _UNKNOWN _sF; weak
 
 
@@ -1408,8 +1391,8 @@ __int64 __fastcall draw_particle()
   {
     case 1:
       particle_index = g_current_particle_index;
-      material_table_offset = LOBYTE(g_particle_records[10 * g_current_particle_index + 4]);
-      material_properties_record = (char *)&g_material_properties + 12 * material_table_offset;
+      material_table_offset = LOBYTE(particle_record_at(g_current_particle_index).material_flags_word);
+      material_properties_record = (char *)native_data_region().material_properties() + 12 * material_table_offset;
       if ( (*((_WORD *)material_properties_record + 4) & 8) != 0 )
       {
         motion_class = hx_cast<unsigned __int8>(material_properties_record[10]);
@@ -1473,7 +1456,7 @@ LABEL_47:
         goto LABEL_47;
       }
       render_color = 12678;
-      material_variant_index = LOBYTE(g_particle_records[10 * g_current_particle_index + 8]);
+      material_variant_index = LOBYTE(particle_record_at(g_current_particle_index).counter_word);
       if ( material_variant_index > 4 )
       {
         render_color = 30720;
@@ -1494,11 +1477,11 @@ LABEL_47:
         }
       }
 LABEL_23:
-      *(_WORD *)(g_framebuffer_pixels + 2LL * (g_particle_records[10 * g_current_particle_index] + g_particle_records[10 * g_current_particle_index + 1] * g_framebuffer_stride)) = render_color;
+      *(_WORD *)(g_framebuffer_pixels + 2LL * (particle_record_at(g_current_particle_index).x + particle_record_at(g_current_particle_index).y * g_framebuffer_stride)) = render_color;
 LABEL_3:
       framebuffer_bank_index = (unsigned __int8)g_framebuffer_bank_index;
       dirty_pixel_read_index = g_framebuffer_state_banks[150003 * (unsigned __int8)g_framebuffer_bank_index + 2];
-      particle_record = &g_particle_records[10 * particle_index];
+      particle_record = &particle_record_at(particle_index).x;
       dirty_pixel_write_index = 300006LL * (unsigned __int8)g_framebuffer_bank_index + dirty_pixel_read_index + 4;
       dirty_pixel_next_index = dirty_pixel_read_index + 1;
       buffer_slot = (char *)g_framebuffer_state_banks + 4 * dirty_pixel_write_index;
@@ -1519,8 +1502,8 @@ LABEL_3:
     case 2:
       packed_material_flags = -27470;
       particle_index = g_current_particle_index;
-      material_id = LOBYTE(g_particle_records[10 * g_current_particle_index + 8]);
-      if ( LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) != 0 )
+      material_id = LOBYTE(particle_record_at(g_current_particle_index).counter_word);
+      if ( LOBYTE(particle_record_at(g_current_particle_index).counter_word) != 0 )
       {
         if ( material_id == 1 )
         {
@@ -1542,35 +1525,35 @@ LABEL_3:
           }
         }
       }
-      *(_WORD *)(g_framebuffer_pixels + 2LL * (g_particle_records[10 * g_current_particle_index] + g_particle_records[10 * g_current_particle_index + 1] * g_framebuffer_stride)) = packed_material_flags;
+      *(_WORD *)(g_framebuffer_pixels + 2LL * (particle_record_at(g_current_particle_index).x + particle_record_at(g_current_particle_index).y * g_framebuffer_stride)) = packed_material_flags;
       goto LABEL_3;
     case 3:
       particle_index = g_current_particle_index;
-      *(_WORD *)(g_framebuffer_pixels + 2LL * (g_particle_records[10 * g_current_particle_index] + g_particle_records[10 * g_current_particle_index + 1] * g_framebuffer_stride)) = *(_WORD *)&g_material_properties_lut[2 * ((LOBYTE(g_particle_records[10 * g_current_particle_index + 6]) >> 3) & 7) + 208];
+      *(_WORD *)(g_framebuffer_pixels + 2LL * (particle_record_at(g_current_particle_index).x + particle_record_at(g_current_particle_index).y * g_framebuffer_stride)) = *(_WORD *)&g_material_properties_lut[2 * ((LOBYTE(particle_record_at(g_current_particle_index).packed_state_word) >> 3) & 7) + 208];
       goto LABEL_3;
     case 4:
       particle_index = g_current_particle_index;
-      if ( HIBYTE(g_particle_records[10 * g_current_particle_index + 4]) != 0 )
+      if ( HIBYTE(particle_record_at(g_current_particle_index).material_flags_word) != 0 )
       {
-        if ( (g_particle_records[10 * g_current_particle_index + 4] & 0x100) != 0 )
+        if ( (particle_record_at(g_current_particle_index).material_flags_word & 0x100) != 0 )
           packed_color_components = 2016;
         else
           packed_color_components = 0;
-        if ( (g_particle_records[10 * g_current_particle_index + 4] & 0x200) != 0 )
+        if ( (particle_record_at(g_current_particle_index).material_flags_word & 0x200) != 0 )
           packed_color_components |= 0x1Fu;
-        if ( (g_particle_records[10 * g_current_particle_index + 5] & 1) != 0 )
+        if ( (particle_record_at(g_current_particle_index).auxiliary_status_word & 1) != 0 )
         {
           LOWORD(packed_color_components) = -1;
-          if ( g_shared_engine_data[12 * LOBYTE(g_particle_records[10 * g_current_particle_index + 4]) + 20] == 2 )
+          if ( g_shared_engine_data[12 * LOBYTE(particle_record_at(g_current_particle_index).material_flags_word) + 20] == 2 )
           {
-            if ( LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) != 0 )
+            if ( LOBYTE(particle_record_at(g_current_particle_index).counter_word) != 0 )
               LOWORD(packed_color_components) = 31;
             else
               LOWORD(packed_color_components) = -1;
           }
         }
-        else if ( g_shared_engine_data[12 * LOBYTE(g_particle_records[10 * g_current_particle_index + 4]) + 20] == 2
-               && LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) != 0 )
+        else if ( g_shared_engine_data[12 * LOBYTE(particle_record_at(g_current_particle_index).material_flags_word) + 20] == 2
+               && LOBYTE(particle_record_at(g_current_particle_index).counter_word) != 0 )
         {
           LOWORD(packed_color_components) = 31;
         }
@@ -1579,12 +1562,12 @@ LABEL_3:
           LOWORD(packed_color_components) = -27470;
         }
         *(_WORD *)(g_framebuffer_pixels + 2LL
-                                * (g_particle_records[10 * g_current_particle_index] + g_particle_records[10 * g_current_particle_index + 1] * g_framebuffer_stride)) = packed_color_components;
+                                * (particle_record_at(g_current_particle_index).x + particle_record_at(g_current_particle_index).y * g_framebuffer_stride)) = packed_color_components;
       }
       goto LABEL_3;
     default:
       particle_index = g_current_particle_index;
-      *(_WORD *)(g_framebuffer_pixels + 2LL * (g_particle_records[10 * g_current_particle_index] + g_particle_records[10 * g_current_particle_index + 1] * g_framebuffer_stride)) = *(_WORD *)&g_shared_engine_data[12 * LOBYTE(g_particle_records[10 * g_current_particle_index + 4]) + 18];
+      *(_WORD *)(g_framebuffer_pixels + 2LL * (particle_record_at(g_current_particle_index).x + particle_record_at(g_current_particle_index).y * g_framebuffer_stride)) = *(_WORD *)&g_shared_engine_data[12 * LOBYTE(particle_record_at(g_current_particle_index).material_flags_word) + 18];
       goto LABEL_3;
   }
 }
@@ -1597,7 +1580,6 @@ LABEL_3:
 // 33516: using guessed type char g_framebuffer_bank_index;
 // 33518: using guessed type __int64 g_framebuffer_state_banks[];
 // 4C7378: using guessed type char g_visualization_material_mode;
-// 4C7380: using guessed type __int16[72];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 
@@ -1750,7 +1732,7 @@ __int64 __fastcall suspend_particle(__int64 particle_index_or_result)
   __int64 framebuffer_pixel_offset; // x3
   __int16 *particle_state_record; // x2
 
-  particle_record = &g_particle_records[10 * hx_cast<int>(particle_index_or_result)];
+  particle_record = &particle_record_at(hx_cast<int>(particle_index_or_result)).x;
   framebuffer_bank_count = (unsigned __int8)g_shared_engine_data[0];
   particle_y = particle_record[1];
   particle_x = *particle_record;
@@ -1773,7 +1755,7 @@ __int64 __fastcall suspend_particle(__int64 particle_index_or_result)
   }
   if ( hx_cast<_DWORD>(particle_index_or_result) != -2 )
   {
-    particle_state_record = &g_particle_records[10 * hx_cast<int>(particle_index_or_result)];
+    particle_state_record = &particle_record_at(hx_cast<int>(particle_index_or_result)).x;
     particle_index_or_result = *((_BYTE *)particle_state_record + 9) & 0xFC | 1u;
     *((_BYTE *)particle_state_record + 12) = particle_state_record[6] & 0xC7 | 0x20;
     *((_BYTE *)particle_state_record + 9) = particle_index_or_result;
@@ -1788,7 +1770,6 @@ __int64 __fastcall suspend_particle(__int64 particle_index_or_result)
 // 1584B0: using guessed type __int64 g_framebuffer_bank1_pixels;
 // 27D448: using guessed type __int64 g_framebuffer_bank2_pixels;
 // 3A23E0: using guessed type __int64 g_framebuffer_bank3_pixels;
-// 4C7380: using guessed type __int16 g_particle_records[72];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (0000000000006BC8) ----------------------------------------------------
@@ -1848,8 +1829,8 @@ LABEL_9:
       case 9:
         particle_index_or_record = (__int16 *)hx_cast<int>(particle_index_or_record);
         particle_record_offset = 10LL * hx_cast<int>(particle_index_or_record);
-        particle_x = g_particle_records[particle_record_offset];
-        particle_y = g_particle_records[particle_record_offset + 1];
+        particle_x = particle_word_at(particle_record_offset);
+        particle_y = particle_word_at(particle_record_offset + 1);
         if ( particle_x > 1 && particle_y > 1 && particle_y < g_view_height - 2 && particle_x < g_view_width[0] - 2 )
           *(_BYTE *)(g_cell_state_grid + 8LL * (particle_x + particle_y * g_view_width[0])) = 0;
 LABEL_22:
@@ -1871,7 +1852,7 @@ LABEL_22:
         packed_state_index = 0;
         flag_bit_one = 0;
 LABEL_7:
-        particle_index_or_record = &g_particle_records[10 * (_QWORD)particle_index_or_record];
+        particle_index_or_record = &particle_record_at((_QWORD)particle_index_or_record).x;
         updated_particle_flags = *((_BYTE *)particle_index_or_record + 9) & 0xFC | flag_bit_zero & 1 | (2 * (flag_bit_one & 1));
         *((_BYTE *)particle_index_or_record + 12) = particle_index_or_record[6] & 0xC7 | (8 * (packed_state_index & 7));
         *((_BYTE *)particle_index_or_record + 9) = updated_particle_flags;
@@ -1882,8 +1863,6 @@ LABEL_7:
 }
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (0000000000006D70) ----------------------------------------------------
@@ -2125,7 +2104,6 @@ LABEL_31:
 // 3A23EC: using guessed type int g_framebuffer_ring3_read_index;
 // 3A23F0: using guessed type int g_framebuffer_ring3_write_index;
 // 4C7374: using guessed type char g_framebuffer_ring3_write_available;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A20: using guessed type int g_held_pixel_coordinates;
 // E50A24: using guessed type int g_held_particle_index;
@@ -2176,7 +2154,7 @@ __int64 __fastcall release_pixel(int packed_coordinates)
     }
     else
     {
-      particle_record_for_flags = &g_particle_records[10 * particle_index];
+      particle_record_for_flags = &particle_record_at(particle_index).x;
       if ( (*((_BYTE *)particle_record_for_flags + 9) & 4) != 0 )
       {
         if ( *((_BYTE *)particle_record_for_flags + 16) != 0 )
@@ -2184,7 +2162,7 @@ __int64 __fastcall release_pixel(int packed_coordinates)
         else
           *((_BYTE *)particle_record_for_flags + 16) = 1;
       }
-      particle_record_for_coordinates = &g_particle_records[10 * particle_index];
+      particle_record_for_coordinates = &particle_record_at(particle_index).x;
       *particle_record_for_coordinates = x;
       particle_record_for_coordinates[1] = y;
     }
@@ -2202,8 +2180,6 @@ __int64 __fastcall release_pixel(int packed_coordinates)
 // 1584B0: using guessed type __int64 g_framebuffer_bank1_pixels;
 // 27D448: using guessed type __int64 g_framebuffer_bank2_pixels;
 // 3A23E0: using guessed type __int64 g_framebuffer_bank3_pixels;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A24: using guessed type int g_held_particle_index;
 // E50A28: using guessed type char g_pixel_is_held;
@@ -2294,7 +2270,7 @@ __int64 __fastcall release_and_hold(__int64 x, __int16 y)
               }
               else
               {
-                held_particle_record = &g_particle_records[10 * saved_particle_index];
+                held_particle_record = &particle_record_at(saved_particle_index).x;
                 if ( (*((_BYTE *)held_particle_record + 9) & 4) != 0 )
                 {
                   if ( *((_BYTE *)held_particle_record + 16) != 0 )
@@ -2302,8 +2278,8 @@ __int64 __fastcall release_and_hold(__int64 x, __int16 y)
                   else
                     *((_BYTE *)held_particle_record + 16) = 1;
                 }
-                x = (__int64)g_particle_records;
-                released_particle_record = &g_particle_records[10 * saved_particle_index];
+                x = (__int64)particle_records_data();
+                released_particle_record = &particle_record_at(saved_particle_index).x;
                 *released_particle_record = x_copy;
                 released_particle_record[1] = y_copy;
               }
@@ -2335,8 +2311,6 @@ __int64 __fastcall release_and_hold(__int64 x, __int16 y)
 // 1584B0: using guessed type __int64 g_framebuffer_bank1_pixels;
 // 27D448: using guessed type __int64 g_framebuffer_bank2_pixels;
 // 3A23E0: using guessed type __int64 g_framebuffer_bank3_pixels;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A20: using guessed type int g_held_pixel_coordinates;
 // E50A24: using guessed type int g_held_particle_index;
@@ -2655,13 +2629,12 @@ LABEL_4:
     goto LABEL_4;
   }
 LABEL_5:
-  particle_record = &g_particle_records[10 * particle_index];
+  particle_record = &particle_record_at(particle_index).x;
   *((_BYTE *)particle_record + 12) = particle_record[6] & 0xF8 | direction_x & 7;
   return particle_record;
 }
 // 78C8: conditional instruction was optimized away because w1.4 is in (1..7FFF|FFFF8000..FFFFFFFE)
 // 334D8: using guessed type __int64 g_random_state;
-// 4C7380: using guessed type __int16 g_particle_records[72];
 
 //----- (0000000000007994) ----------------------------------------------------
 __int64 __fastcall configure_neighbor_search(__int64 search_radius, char initial_step_direction, char search_direction_offset)
@@ -2744,7 +2717,7 @@ __int64 __fastcall scan_line(__int16 start_x, __int16 start_y, __int16 step_x, _
           break;
       }
     }
-    particle_record = &g_particle_records[10 * hx_cast<int>(found_particle_index)];
+    particle_record = &particle_record_at(hx_cast<int>(found_particle_index)).x;
     if ( (*((_BYTE *)particle_record + 9) & 4) == 0 )
       goto LABEL_12;
     if ( *((_BYTE *)particle_record + 16) == 0 )
@@ -2767,7 +2740,7 @@ LABEL_13:
       goto LABEL_17;
     }
 LABEL_34:
-    particle_state_record = &g_particle_records[10 * hx_cast<int>(found_particle_index)];
+    particle_state_record = &particle_record_at(hx_cast<int>(found_particle_index)).x;
     if ( (*((_BYTE *)particle_state_record + 9) & 1) == 0 )
     {
       particle_state_byte = *((_BYTE *)particle_state_record + 12);
@@ -2810,8 +2783,6 @@ LABEL_25:
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
 // E50A3A: using guessed type __int16 g_found_y;
@@ -2947,9 +2918,8 @@ bool __fastcall can_sleep(__int16 x, __int16 y)
 //----- (00000000000080D8) ----------------------------------------------------
 bool __fastcall can_sleep(int particle_index)
 {
-  return can_sleep(g_particle_records[10 * particle_index], g_particle_records[10 * particle_index + 1]);
+  return can_sleep(particle_record_at(particle_index).x, particle_record_at(particle_index).y);
 }
-// 4C7380: using guessed type __int16 g_particle_records[72];
 
 //----- (0000000000008100) ----------------------------------------------------
 bool __fastcall has_neighbor_with_density(__int16 center_x, __int16 center_y, char density_to_match)
@@ -3020,7 +2990,7 @@ __int64 __fastcall append_particle_state_list(unsigned __int8 source_list_index,
   {
     for ( particle_index = *((_DWORD *)&g_particle_state_lists + 3 * source_list_index); particle_index != -1; *((_BYTE *)particle_record + 12) = particle_record[6] & 0x3F | ((destination_list_index & 3) << 6) )
     {
-      particle_record = &g_particle_records[10 * particle_index];
+      particle_record = &particle_record_at(particle_index).x;
       particle_index = *((_DWORD *)particle_record + 1);
     }
   }
@@ -3035,8 +3005,6 @@ __int64 __fastcall append_particle_state_list(unsigned __int8 source_list_index,
   source_list_state[2] = 0;
   return updated_particle_list_result;
 }
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A40: using guessed type __int128 g_particle_state_lists;
 
 //----- (00000000000083B8) ----------------------------------------------------
@@ -3087,11 +3055,11 @@ char *__fastcall restore_box()
     particle_index = -2;
     while ( particle_state_list_cursor != -2 )
     {
-      particle_index = *(_DWORD *)&g_particle_records[10 * particle_state_list_cursor + 2];
+      particle_index = particle_next_link(particle_state_list_cursor);
       if ( particle_index == -1 )
         goto LABEL_17;
 LABEL_10:
-      particle_record = &g_particle_records[10 * particle_index];
+      particle_record = &particle_record_at(particle_index).x;
       particle_x = *particle_record;
       particle_y = particle_record[1];
       if ( particle_state_list_index != 0 )
@@ -3100,7 +3068,7 @@ LABEL_10:
         {
           if ( particle_index != -2 )
           {
-            particle_record_copy = &g_particle_records[10 * particle_index];
+            particle_record_copy = &particle_record_at(particle_index).x;
             updated_particle_flags = *((_BYTE *)particle_record_copy + 9) & 0xFC | 1;
             *((_BYTE *)particle_record_copy + 12) = particle_record_copy[6] & 0xC7 | 0x20;
             *((_BYTE *)particle_record_copy + 9) = updated_particle_flags;
@@ -3171,8 +3139,6 @@ LABEL_17:
 // 1584B0: using guessed type __int64 g_framebuffer_bank1_pixels;
 // 27D448: using guessed type __int64 g_framebuffer_bank2_pixels;
 // 3A23E0: using guessed type __int64 g_framebuffer_bank3_pixels;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 g_particle_state_lists;
 
@@ -3197,7 +3163,7 @@ __int16 *__fastcall synchronize_particle_state_list()
 
   current_particle_index = g_current_particle_index;
   particle_state_list_result = (__int16 *)g_current_particle_index;
-  current_particle_record = &g_particle_records[10 * g_current_particle_index];
+  current_particle_record = &particle_record_at(g_current_particle_index).x;
   packed_particle_state = *((unsigned __int8 *)current_particle_record + 12);
   material_state_id = (packed_particle_state >> 3) & 7;
   source_list_index = hx_cast<unsigned __int8>(packed_particle_state) >> 6;
@@ -3221,13 +3187,13 @@ __int16 *__fastcall synchronize_particle_state_list()
       {
         previous_particle_index = g_particle_list_previous_index;
         source_list_header[1] = g_particle_list_previous_index;
-        *(_DWORD *)&g_particle_records[10 * previous_particle_index + 2] = -1;
+        particle_next_link(previous_particle_index) = -1;
       }
       else
       {
-        *(_DWORD *)&g_particle_records[10 * g_particle_list_previous_index + 2] = *((_DWORD *)current_particle_record + 1);
+        particle_next_link(g_particle_list_previous_index) = *((_DWORD *)current_particle_record + 1);
       }
-      source_particle_record = &g_particle_records[10 * (_QWORD)particle_state_list_result];
+      source_particle_record = &particle_record_at((_QWORD)particle_state_list_result).x;
       source_packed_state = *((_BYTE *)source_particle_record + 12);
       --*((_DWORD *)&g_particle_state_lists + 3 * source_list_index + 2);
       *((_BYTE *)source_particle_record + 12) = source_packed_state & 0x3F;
@@ -3247,7 +3213,7 @@ __int16 *__fastcall synchronize_particle_state_list()
       if ( current_particle_index == destination_list_head )
         g_particle_list_previous_index = current_particle_index;
     }
-    particle_state_list_result = &g_particle_records[10 * (_QWORD)particle_state_list_result];
+    particle_state_list_result = &particle_record_at((_QWORD)particle_state_list_result).x;
     destination_packed_state = *((_BYTE *)particle_state_list_result + 12);
     ++*((_DWORD *)&g_particle_state_lists + 3 * destination_list_index + 2);
     *((_BYTE *)particle_state_list_result + 12) = destination_packed_state & 0x3F | ((destination_list_index & 3) << 6);
@@ -3258,8 +3224,6 @@ __int16 *__fastcall synchronize_particle_state_list()
 // 1C960: using guessed type unsigned __int8 g_particle_state_lut[16];
 // 33014: using guessed type int g_current_particle_index;
 // 334E0: using guessed type int g_particle_list_previous_index;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A40: using guessed type __int128 g_particle_state_lists;
 
 //----- (00000000000087C0) ----------------------------------------------------
@@ -3292,7 +3256,7 @@ char *__fastcall reconcile_particle_states()
       g_particle_list_previous_index = -1;
 LABEL_7:
       particle_index_value = hx_cast<int>(current_particle_index);
-      particle_record_bytes = (unsigned __int8 *)&g_particle_records[10 * hx_cast<int>(current_particle_index)];
+      particle_record_bytes = (unsigned __int8 *)&particle_record_at(hx_cast<int>(current_particle_index)).x;
       particle_state_id = (hx_cast<unsigned __int64>(particle_record_bytes[12]) >> 3) & 7;
       if ( hx_cast<_DWORD>(particle_state_id) == 4 || (particle_record_bytes[9] & 1) != 0 )
         continue;
@@ -3329,14 +3293,14 @@ LABEL_22:
         }
         particle_index_value = hx_cast<int>(current_particle_index);
         updated_particle_state_id = target_state_id;
-        particle_state_id = ((unsigned __int64)LOBYTE(g_particle_records[10 * hx_cast<int>(current_particle_index) + 6]) >> 3) & 7;
+        particle_state_id = ((unsigned __int64)LOBYTE(particle_record_at(hx_cast<int>(current_particle_index)).packed_state_word) >> 3) & 7;
       }
 LABEL_14:
       if ( hx_cast<_DWORD>(particle_state_id) == target_state_id )
         continue;
-      LOBYTE(g_particle_records[10 * particle_index_value + 6]) = g_particle_records[10 * particle_index_value + 6] & 0xC7 | (8 * (updated_particle_state_id & 7));
+      LOBYTE(particle_record_at(particle_index_value).packed_state_word) = particle_record_at(particle_index_value).packed_state_word & 0xC7 | (8 * (updated_particle_state_id & 7));
     }
-    current_particle_record = &g_particle_records[10 * hx_cast<int>(current_particle_index)];
+    current_particle_record = &particle_record_at(hx_cast<int>(current_particle_index)).x;
     next_particle_index = *((_DWORD *)current_particle_record + 1);
     if ( g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)current_particle_record + 12) >> 3) & 7] == i )
     {
@@ -3367,8 +3331,6 @@ LABEL_19:
 // 1C960: using guessed type unsigned __int8 g_particle_state_lut[16];
 // 33014: using guessed type int g_current_particle_index;
 // 334E0: using guessed type int g_particle_list_previous_index;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A40: using guessed type __int128 g_particle_state_lists;
 
 //----- (00000000000089CC) ----------------------------------------------------
@@ -3435,7 +3397,6 @@ _BYTE *__fastcall initialize_viewport_and_cell_grid()
 // 334E4: using guessed type char g_zoom_factor;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A70: using guessed type char g_preserve_box_on_next_resize;
 // E50A72: using guessed type __int16 g_surface_height;
@@ -3558,7 +3519,7 @@ __int64 __fastcall delete_pixel(__int16 x, __int16 y)
     {
       goto LABEL_7;
     }
-    particle_record = &g_particle_records[10 * particle_index_copy];
+    particle_record = &particle_record_at(particle_index_copy).x;
     updated_particle_flags = *((_BYTE *)particle_record + 9) & 0xFC | 1;
     *((_BYTE *)particle_record + 12) = particle_record[6] & 0xC7 | 0x20;
     *((_BYTE *)particle_record + 9) = updated_particle_flags;
@@ -3596,8 +3557,6 @@ LABEL_7:
 // 1584B0: using guessed type __int64 g_framebuffer_bank1_pixels;
 // 27D448: using guessed type __int64 g_framebuffer_bank2_pixels;
 // 3A23E0: using guessed type __int64 g_framebuffer_bank3_pixels;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
@@ -3843,7 +3802,7 @@ __int64 __fastcall pixel_custom_predicate(__int16 x, __int16 y, char custom_filt
       else
       {
         particle_id = get_particle_id(x, y);
-        matched_particle_record = &g_particle_records[10 * particle_id];
+        matched_particle_record = &particle_record_at(particle_id).x;
         if ( (*((_BYTE *)matched_particle_record + 11) & 1) == g_particle_update_phase )
           return !(matched_particle_record[5] & 1);
         else
@@ -3906,8 +3865,6 @@ LABEL_13:
 // 33014: using guessed type int g_current_particle_index;
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 33510: using guessed type __int16 g_view_width[];
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -4043,7 +4000,6 @@ LABEL_7:
 // D20: using guessed type Elf64_Sym;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
 // E50A3A: using guessed type __int16 g_found_y;
@@ -4104,7 +4060,6 @@ LABEL_7:
 // 0: using guessed type int g_native_image_magic;
 // 1C858: using guessed type _WORD g_direction_lut[132];
 // 334D8: using guessed type __int64 g_random_state;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A30: using guessed type char g_search_direction;
 // E50A31: using guessed type char g_search_remaining;
 // E50A32: using guessed type char g_search_step;
@@ -4166,7 +4121,7 @@ __int64 __fastcall init_particle(int particle_index, __int16 x, __int16 y, unsig
   particle_index_value = particle_index;
   material_properties_record = &g_material_properties[12 * material_id];
   particle_x = x;
-  particle_record = &g_particle_records[10 * particle_index];
+  particle_record = &particle_record_at(particle_index).x;
   material_has_special_init = material_properties_record[5] == 12;
   *particle_record = x;
   initial_packed_state = *((_BYTE *)particle_record + 12);
@@ -4196,7 +4151,7 @@ __int64 __fastcall init_particle(int particle_index, __int16 x, __int16 y, unsig
           goto LABEL_5;
         }
 LABEL_17:
-        neighbor_particle_record = &g_particle_records[10 * particle_index_value];
+        neighbor_particle_record = &particle_record_at(particle_index_value).x;
         if ( (*((_BYTE *)neighbor_particle_record + 9) & 1) == 0 )
         {
           neighbor_particle_flags = *((_BYTE *)neighbor_particle_record + 12);
@@ -4216,11 +4171,11 @@ LABEL_17:
 LABEL_36:
       grid_width = g_view_width[0];
       cell_grid_base = g_cell_state_grid;
-      HIBYTE(g_particle_records[10 * particle_index_value + 4]) |= 1u;
+      HIBYTE(particle_record_at(particle_index_value).material_flags_word) |= 1u;
       goto LABEL_37;
     }
 LABEL_34:
-    final_particle_record = &g_particle_records[10 * particle_index_value];
+    final_particle_record = &particle_record_at(particle_index_value).x;
     if ( (*((_BYTE *)final_particle_record + 9) & 1) == 0 )
     {
       neighbor_packed_state = *((_BYTE *)final_particle_record + 12);
@@ -4238,13 +4193,13 @@ LABEL_34:
 LABEL_13:
         grid_width = g_view_width[0];
         cell_grid_base = g_cell_state_grid;
-        HIBYTE(g_particle_records[10 * particle_index_value + 4]) &= ~4u;
+        HIBYTE(particle_record_at(particle_index_value).material_flags_word) &= ~4u;
 LABEL_14:
         particle_counter(particle_index_value) = g_particle_counter_reset_value;
         goto LABEL_15;
       }
 LABEL_11:
-      neighbor_existing_particle_record = &g_particle_records[10 * particle_index_value];
+      neighbor_existing_particle_record = &particle_record_at(particle_index_value).x;
       if ( (*((_BYTE *)neighbor_existing_particle_record + 9) & 1) == 0 )
       {
         neighbor_state_byte = *((_BYTE *)neighbor_existing_particle_record + 12);
@@ -4275,7 +4230,7 @@ LABEL_5:
         {
           if ( hx_cast<_DWORD>(particle_index_value) != -2 )
           {
-            occupied_particle_record = &g_particle_records[10 * particle_index_value];
+            occupied_particle_record = &particle_record_at(particle_index_value).x;
             if ( (*((_BYTE *)occupied_particle_record + 9) & 1) == 0 )
             {
               occupied_particle_flags = *((_BYTE *)occupied_particle_record + 12);
@@ -4292,7 +4247,7 @@ LABEL_38:
         }
       }
     }
-    if ( hx_cast<_DWORD>(particle_index_value) == -2 || (*((_BYTE *)(current_particle_record = &g_particle_records[10 * particle_index_value]) + 9) & 1) != 0 )
+    if ( hx_cast<_DWORD>(particle_index_value) == -2 || (*((_BYTE *)(current_particle_record = &particle_record_at(particle_index_value).x) + 9) & 1) != 0 )
     {
       cell_grid_base = g_cell_state_grid;
     }
@@ -4309,7 +4264,7 @@ LABEL_38:
     goto LABEL_17;
 LABEL_19:
   random_state_snapshot = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-  initialized_particle_record = &g_particle_records[10 * particle_index_value];
+  initialized_particle_record = &particle_record_at(particle_index_value).x;
   initialized_particle_flags = *((_BYTE *)initialized_particle_record + 9);
   g_random_state = (random_state_snapshot - 0x61C8864680B583EBLL) ^ ((random_state_snapshot - 0x61C8864680B583EBLL) >> 27);
   if ( (g_random_state & 1) != 0 )
@@ -4419,8 +4374,8 @@ LABEL_28:
 LABEL_65:
   direction_next_random_state = g_random_state;
 LABEL_29:
-  particle_state_record = &g_particle_records[10 * particle_index_value];
-  source_particle_record = &g_particle_records[10 * g_current_particle_index];
+  particle_state_record = &particle_record_at(particle_index_value).x;
+  source_particle_record = &particle_record_at(g_current_particle_index).x;
   particle_state_byte = particle_state_record[6] & 0xF8 | neighbor_delta_x & 7;
   *((_BYTE *)particle_state_record + 9) &= ~4u;
   *((_BYTE *)particle_state_record + 12) = particle_state_byte;
@@ -4436,7 +4391,7 @@ LABEL_29:
   if ( (particle_flags(particle_index_value) & 4) != 0 )
     goto LABEL_38;
 LABEL_15:
-  particle_initialization_result = cell_grid_base + 8LL * (g_particle_records[10 * particle_index_value] + g_particle_records[10 * particle_index_value + 1] * grid_width);
+  particle_initialization_result = cell_grid_base + 8LL * (particle_record_at(particle_index_value).x + particle_record_at(particle_index_value).y * grid_width);
   *(_BYTE *)particle_initialization_result = material_id;
   *(_DWORD *)(particle_initialization_result + 4) = particle_index_value;
   return particle_initialization_result;
@@ -4453,8 +4408,6 @@ LABEL_15:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 // E50A30: using guessed type char g_search_direction;
@@ -4499,7 +4452,7 @@ __int64 __fastcall resume_particle(__int16 x, __int16 y)
   if ( (allocated_particle_index & 0x80000000) == 0 )
   {
     init_particle(allocated_particle_index, particle_x, particle_y, *(_BYTE *)(g_cell_state_grid + 8LL * (particle_x + particle_y * g_view_width[0])));
-    new_particle_record = &g_particle_records[10 * particle_index];
+    new_particle_record = &particle_record_at(particle_index).x;
     state_list_index = g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)new_particle_record + 12) >> 3) & 7];
     state_list_tag = g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)new_particle_record + 12) >> 3) & 7];
     state_list_head = *((_DWORD *)&g_particle_state_lists + 3 * state_list_index);
@@ -4516,7 +4469,7 @@ __int64 __fastcall resume_particle(__int16 x, __int16 y)
       if ( state_list_head == g_current_particle_index )
         g_particle_list_previous_index = particle_index;
     }
-    particle_record = &g_particle_records[10 * particle_index];
+    particle_record = &particle_record_at(particle_index).x;
     framebuffer_bank_count = (unsigned __int8)g_shared_engine_data[0];
     packed_state_byte = *((_BYTE *)particle_record + 12);
     ++*((_DWORD *)&g_particle_state_lists + 3 * state_list_index + 2);
@@ -4616,8 +4569,6 @@ __int64 __fastcall resume_particle(__int16 x, __int16 y)
 // 3A23EC: using guessed type int g_framebuffer_ring3_read_index;
 // 3A23F0: using guessed type int g_framebuffer_ring3_write_index;
 // 4C7374: using guessed type char g_framebuffer_ring3_write_available;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 g_particle_state_lists;
 
@@ -4652,7 +4603,6 @@ bool __fastcall lookup_particle_at_cell(__int16 x, __int16 y, char class_filter,
 }
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
@@ -4727,7 +4677,7 @@ bool __fastcall pixel_predicate(__int16 x, __int16 y, char predicate_code)
       }
       return predicate_result;
     case 7:
-      current_particle_record = &g_particle_records[10 * g_current_particle_index];
+      current_particle_record = &particle_record_at(g_current_particle_index).x;
       if ( (*((_BYTE *)current_particle_record + 9) & 4) == 0 || *((unsigned __int8 *)current_particle_record + 16) < (unsigned int)(unsigned __int8)g_particle_counter_threshold )
         goto LABEL_45;
       return 0;
@@ -4756,7 +4706,7 @@ LABEL_45:
 LABEL_9:
       if ( lookup_particle_at_cell(x_coordinate, y, 0, 1) )
       {
-        neighbor_particle_record = &g_particle_records[10 * g_lookup_particle_index];
+        neighbor_particle_record = &particle_record_at(g_lookup_particle_index).x;
         if ( (*((_BYTE *)neighbor_particle_record + 9) & 4) == 0 && *((_BYTE *)neighbor_particle_record + 16) != 0 )
           return 1;
       }
@@ -4764,7 +4714,7 @@ LABEL_9:
     case 11:
       if ( !lookup_particle_at_cell(x_coordinate, y, 0, 1) )
         return 0;
-      current_neighbor_record = &g_particle_records[10 * g_lookup_particle_index];
+      current_neighbor_record = &particle_record_at(g_lookup_particle_index).x;
       return (*((_BYTE *)current_neighbor_record + 9) & 4) == 0 && *((_BYTE *)current_neighbor_record + 16) == 0;
     case 12:
     case 14:
@@ -4801,7 +4751,7 @@ LABEL_9:
       }
       if ( !lookup_particle_at_cell(x_coordinate, y, 0, 1) )
         return 0;
-      return LOBYTE(g_particle_records[10 * g_lookup_particle_index + 8]) > LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) + 1;
+      return LOBYTE(particle_record_at(g_lookup_particle_index).counter_word) > LOBYTE(particle_record_at(g_current_particle_index).counter_word) + 1;
     case 13:
       material_properties_record = &g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (x_coordinate + y * g_view_width[0]))];
       neighbor_material_id_first = hx_cast<unsigned __int8>(material_properties_record[5]);
@@ -4832,7 +4782,7 @@ LABEL_9:
       }
       if ( !lookup_particle_at_cell(x_coordinate, y, 0, 1) )
         return 0;
-      return LOBYTE(g_particle_records[10 * g_lookup_particle_index + 8]) < (unsigned int)LOBYTE(g_particle_records[10 * g_current_particle_index + 8]);
+      return LOBYTE(particle_record_at(g_lookup_particle_index).counter_word) < (unsigned int)LOBYTE(particle_record_at(g_current_particle_index).counter_word);
     default:
       return predicate_result;
   }
@@ -4845,8 +4795,6 @@ LABEL_9:
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A95: using guessed type char g_particle_counter_threshold;
@@ -4867,7 +4815,7 @@ unsigned __int64 __fastcall drop_interrupted_particle(__int16 x, __int16 y)
     neighbor_lookup_result = (unsigned int)g_lookup_particle_index;
     if ( g_lookup_particle_index != -2 )
     {
-      neighbor_lookup_result = (unsigned __int64)&g_particle_records[10 * g_lookup_particle_index];
+      neighbor_lookup_result = (unsigned __int64)&particle_record_at(g_lookup_particle_index).x;
       if ( (*(_BYTE *)(neighbor_lookup_result + 9) & 1) == 0 )
       {
         neighbor_particle_flags = *(_BYTE *)(neighbor_lookup_result + 12);
@@ -4879,7 +4827,6 @@ unsigned __int64 __fastcall drop_interrupted_particle(__int16 x, __int16 y)
   return neighbor_lookup_result;
 }
 // 1C858: using guessed type _WORD g_direction_lut[132];
-// 4C7380: using guessed type __int16 g_particle_records[72];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A18: using guessed type char g_direction_index;
 
@@ -4914,7 +4861,7 @@ __int64 __fastcall wake_particle(__int64 x, __int16 y)
           }
           else
           {
-            x = (__int64)&g_particle_records[10 * particle_index];
+            x = (__int64)&particle_record_at(particle_index).x;
             packed_particle_state = *(_BYTE *)(x + 12);
             if ( packed_particle_state >> 6 == 2 && (*(_BYTE *)(x + 9) & 1) == 0 && (*(_BYTE *)(x + 9) & 2) == 0 )
             {
@@ -4933,8 +4880,6 @@ __int64 __fastcall wake_particle(__int64 x, __int16 y)
 }
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (000000000000B1A4) ----------------------------------------------------
@@ -5001,7 +4946,7 @@ bool __fastcall pull_surface_particles(int particle_index, unsigned __int8 side_
 
   side_variant_value = side_variant;
   pull_direction_mode = side_variant;
-  particle_record = &g_particle_records[10 * particle_index];
+  particle_record = &particle_record_at(particle_index).x;
   particle_x = *particle_record;
   particle_y = particle_record[1];
   particle_density = (unsigned __int8)g_shared_engine_data[12 * *((unsigned __int8 *)particle_record + 8) + 17];
@@ -5062,13 +5007,13 @@ LABEL_24:
           {
             scan_particle_index = g_lookup_particle_index;
             scan_particle_index_value = g_lookup_particle_index;
-            candidate_particle_record = &g_particle_records[10 * g_lookup_particle_index];
+            candidate_particle_record = &particle_record_at(g_lookup_particle_index).x;
             if ( (*((_BYTE *)candidate_particle_record + 9) & 4) != 0
               && *((unsigned __int8 *)candidate_particle_record + 16) >= (unsigned int)(unsigned __int8)g_particle_counter_threshold )
             {
               break;
             }
-            candidate_particle_bytes = (unsigned __int8 *)&g_particle_records[10 * g_lookup_particle_index];
+            candidate_particle_bytes = (unsigned __int8 *)&particle_record_at(g_lookup_particle_index).x;
             if ( g_material_properties[12 * candidate_particle_bytes[8] + 4] != 4 )
               break;
             if ( pull_direction_mode != 0 )
@@ -5096,7 +5041,7 @@ LABEL_24:
                 candidate_particle_bytes[9] &= ~2u;
                 candidate_particle_bytes[12] = candidate_status_byte & 0xC7 | 8;
               }
-              LOBYTE(g_particle_records[10 * scan_particle_index_value + 6]) = g_particle_records[10 * scan_particle_index_value + 6] & 0xF8 | 3;
+              LOBYTE(particle_record_at(scan_particle_index_value).packed_state_word) = particle_record_at(scan_particle_index_value).packed_state_word & 0xF8 | 3;
             }
             particle_x_copy = hx_cast<unsigned __int16>(scan_candidate_x);
             particle_x = scan_candidate_x;
@@ -5148,8 +5093,6 @@ LABEL_8:
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -5281,7 +5224,7 @@ LABEL_30:
 LABEL_31:
     if ( first_release_pass != 0 )
     {
-      density_threshold_value = (unsigned __int8)g_shared_engine_data[12 * LOBYTE(g_particle_records[10 * g_lookup_particle_index + 4]) + 17];
+      density_threshold_value = (unsigned __int8)g_shared_engine_data[12 * LOBYTE(particle_record_at(g_lookup_particle_index).material_flags_word) + 17];
       goto LABEL_33;
     }
     if ( candidate_y >= g_view_height - 2
@@ -5292,7 +5235,7 @@ LABEL_31:
         goto LABEL_61;
       return 0;
     }
-    candidate_particle_record = &g_particle_records[10 * g_lookup_particle_index];
+    candidate_particle_record = &particle_record_at(g_lookup_particle_index).x;
     if ( (*((_BYTE *)candidate_particle_record + 9) & 4) != 0 )
     {
       first_release_pass = 0;
@@ -5377,8 +5320,6 @@ LABEL_61:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -5447,7 +5388,6 @@ __int64 __fastcall open_displacement_gap(__int16 x, __int16 y)
 // D08: using guessed type Elf64_Sym;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A20: using guessed type int g_held_pixel_coordinates;
 // E50A24: using guessed type int g_held_particle_index;
@@ -5514,7 +5454,7 @@ __int64 __fastcall shift_line(__int16 source_x, __int16 source_y, __int16 line_d
 LABEL_35:
       set_state((__int16 *)destination_particle_value, 1);
 LABEL_24:
-    wake_neighbors(g_particle_records[10 * destination_particle_index_value], g_particle_records[10 * destination_particle_index_value + 1]);
+    wake_neighbors(particle_record_at(destination_particle_index_value).x, particle_record_at(destination_particle_index_value).y);
   }
   found_x = g_found_x;
   found_y = g_found_y;
@@ -5527,7 +5467,7 @@ LABEL_24:
   }
   if ( current_particle_index != -2 )
   {
-    current_particle_record = &g_particle_records[10 * current_particle_index];
+    current_particle_record = &particle_record_at(current_particle_index).x;
     if ( (*((_BYTE *)current_particle_record + 9) & 1) == 0 )
     {
       saved_state_byte = *((_BYTE *)current_particle_record + 12);
@@ -5627,8 +5567,6 @@ LABEL_17:
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // 4C7375: using guessed type char g_framebuffer_ring3_read_available;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A20: using guessed type int g_held_pixel_coordinates;
 // E50A24: using guessed type int g_held_particle_index;
@@ -5718,8 +5656,6 @@ LABEL_14:
 // 1C858: using guessed type _WORD g_direction_lut[132];
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 
@@ -5892,8 +5828,6 @@ LABEL_12:
 // 1C858: using guessed type _WORD g_direction_lut[132];
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 
@@ -5939,12 +5873,12 @@ __int64 __fastcall shift_drop(__int16 source_x, __int16 source_y)
       if ( candidate_y > 1 && candidate_y < g_view_height - 2 && candidate_x < g_view_width[0] - 2 )
         interrupted_particle_index = *(_DWORD *)(g_cell_state_grid + 8LL * (candidate_x + candidate_y * g_view_width[0]) + 4);
     }
-    wake_neighbors(g_particle_records[10 * interrupted_particle_index], g_particle_records[10 * interrupted_particle_index + 1]);
+    wake_neighbors(particle_record_at(interrupted_particle_index).x, particle_record_at(interrupted_particle_index).y);
   }
   found_x = g_found_x;
   found_y = g_found_y;
   hold_pixel(g_found_x, g_found_y);
-  if ( g_held_particle_index == -2 || (*((_BYTE *)(current_particle_record = &g_particle_records[10 * g_held_particle_index]) + 9) & 1) != 0 )
+  if ( g_held_particle_index == -2 || (*((_BYTE *)(current_particle_record = &particle_record_at(g_held_particle_index).x) + 9) & 1) != 0 )
   {
     if ( destination_x > 1 )
       goto LABEL_5;
@@ -6048,8 +5982,6 @@ LABEL_15:
 // 1C858: using guessed type _WORD g_direction_lut[132];
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 // E50A20: using guessed type int g_held_pixel_coordinates;
@@ -6126,7 +6058,7 @@ __int64 __fastcall process_particle_motion()
   active_particle_index = g_current_particle_index;
   direction_index = (unsigned __int8)g_direction_index;
   direction_entry = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-  current_particle_record = &g_particle_records[10 * g_current_particle_index];
+  current_particle_record = &particle_record_at(g_current_particle_index).x;
   direction_delta_y = direction_entry[5];
   particle_x = *current_particle_record;
   direction_delta_x = direction_entry[4];
@@ -6149,10 +6081,10 @@ __int64 __fastcall process_particle_motion()
     saved_density_for_scan = g_material_properties[12 * *((unsigned __int8 *)current_particle_record + 8) + 1];
     target_particle_found = lookup_particle_at_cell(adjacent_x, adjacent_y, 1, 0);
     LOBYTE(particle_density) = saved_density_for_scan;
-    if ( !target_particle_found || ((operation_result = HIBYTE(g_particle_records[10 * g_lookup_particle_index + 4])) & 2) == 0 )
+    if ( !target_particle_found || ((operation_result = HIBYTE(particle_record_at(g_lookup_particle_index).material_flags_word)) & 2) == 0 )
     {
       direction_index = (unsigned __int8)g_direction_index;
-      retry_particle_record = &g_particle_records[10 * g_current_particle_index];
+      retry_particle_record = &particle_record_at(g_current_particle_index).x;
       retry_particle_x = *retry_particle_record;
       retry_particle_y = retry_particle_record[1];
 LABEL_51:
@@ -6162,7 +6094,7 @@ LABEL_51:
       working_particle_index = g_current_particle_index;
 LABEL_19:
       working_index_copy = working_particle_index;
-      working_particle_record = &g_particle_records[10 * working_particle_index];
+      working_particle_record = &particle_record_at(working_particle_index).x;
       operation_result = working_particle_record[6] & 7;
       if ( hx_cast<_DWORD>(operation_result) == 3 )
       {
@@ -6176,20 +6108,20 @@ LABEL_19:
         material_motion_type = (unsigned __int8)g_shared_engine_data[12 * particle_material_id_value + 20];
         if ( material_motion_type == 3 )
         {
-          powder_move_result = (unsigned __int8)slide_powder(g_particle_records[10 * working_particle_index], g_particle_records[10 * working_particle_index + 1], working_particle_index, slide_variant, particle_density);
+          powder_move_result = (unsigned __int8)slide_powder(particle_record_at(working_particle_index).x, particle_record_at(working_particle_index).y, working_particle_index, slide_variant, particle_density);
           goto LABEL_28;
         }
         if ( material_motion_type != 4 )
         {
 LABEL_30:
-          transition_particle_record = &g_particle_records[10 * working_index_copy];
+          transition_particle_record = &particle_record_at(working_index_copy).x;
           operation_result = hx_cast<_BYTE>(transition_particle_record[6]) & 0xF8;
           *((_BYTE *)transition_particle_record + 12) = operation_result;
           return operation_result;
         }
         saved_density_for_liquid = particle_density;
         minimum_powder_progress = 0;
-        liquid_move_succeeded = slide_liquid(g_particle_records[10 * working_particle_index], working_particle_record[1], working_particle_index, slide_variant, particle_density);
+        liquid_move_succeeded = slide_liquid(particle_record_at(working_particle_index).x, working_particle_record[1], working_particle_index, slide_variant, particle_density);
         LOBYTE(particle_density) = saved_density_for_liquid;
       }
       else
@@ -6205,11 +6137,11 @@ LABEL_30:
           minimum_powder_progress = 1;
 LABEL_26:
           saved_density_for_powder = particle_density;
-          powder_move_result = (unsigned __int8)slide_powder(g_particle_records[10 * working_index_copy], g_particle_records[10 * working_index_copy + 1], working_particle_index, slide_variant, particle_density);
+          powder_move_result = (unsigned __int8)slide_powder(particle_record_at(working_index_copy).x, particle_record_at(working_index_copy).y, working_particle_index, slide_variant, particle_density);
           if ( hx_cast<unsigned __int8>(powder_move_result) < minimum_powder_progress )
             powder_move_result = (unsigned __int8)slide_powder(
-                                     g_particle_records[10 * g_current_particle_index],
-                                     g_particle_records[10 * g_current_particle_index + 1],
+                                     particle_record_at(g_current_particle_index).x,
+                                     particle_record_at(g_current_particle_index).y,
                                      g_current_particle_index,
                                      slide_variant ^ 1u,
                                      saved_density_for_powder);
@@ -6225,13 +6157,13 @@ LABEL_28:
           goto LABEL_30;
         saved_density_for_retry = particle_density;
         minimum_powder_progress = 1;
-        liquid_move_succeeded = slide_liquid(g_particle_records[10 * working_particle_index], working_particle_record[1], working_particle_index, slide_variant, particle_density);
+        liquid_move_succeeded = slide_liquid(particle_record_at(working_particle_index).x, working_particle_record[1], working_particle_index, slide_variant, particle_density);
         LOBYTE(particle_density) = saved_density_for_retry;
         if ( !liquid_move_succeeded )
         {
           liquid_move_succeeded = slide_liquid(
-                  g_particle_records[10 * g_current_particle_index],
-                  g_particle_records[10 * g_current_particle_index + 1],
+                  particle_record_at(g_current_particle_index).x,
+                  particle_record_at(g_current_particle_index).y,
                   g_current_particle_index,
                   slide_variant ^ 1,
                   saved_density_for_retry);
@@ -6253,9 +6185,9 @@ LABEL_77:
   {
     if ( adjacent_x <= 1 || (scan_counter = adjacent_y <= 1) != 0 || (lower_y_bound = g_view_height - 2, adjacent_y >= lower_y_bound) || adjacent_x >= g_view_width[0] - 2 )
     {
-      if ( (g_particle_records[10 * g_current_particle_index + 4] & 0x200) != 0 )
+      if ( (particle_record_at(g_current_particle_index).material_flags_word & 0x200) != 0 )
       {
-        drop_interrupted_particle(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
+        drop_interrupted_particle(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y);
         active_particle_index = g_current_particle_index;
       }
       if ( g_gas_motion_enabled == 0 )
@@ -6265,8 +6197,8 @@ LABEL_77:
         return (__int64)set_state((__int16 *)state_particle_index, next_particle_state);
       }
       scan_line(
-        g_particle_records[10 * active_particle_index],
-        g_particle_records[10 * active_particle_index + 1],
+        particle_record_at(active_particle_index).x,
+        particle_record_at(active_particle_index).y,
         g_direction_lut[16 * (unsigned __int8)g_direction_index],
         g_direction_lut[16 * (unsigned __int8)g_direction_index + 1],
         0,
@@ -6308,7 +6240,7 @@ LABEL_53:
     {
       if ( (active_particle_index & 0x80000000) == 0 )
       {
-        moving_particle_record = &g_particle_records[10 * active_particle_index];
+        moving_particle_record = &particle_record_at(active_particle_index).x;
         if ( (*((_BYTE *)moving_particle_record + 9) & 4) != 0 )
         {
           if ( *((_BYTE *)moving_particle_record + 16) != 0 )
@@ -6316,7 +6248,7 @@ LABEL_53:
           else
             *((_BYTE *)moving_particle_record + 16) = scan_distance;
         }
-        moving_state_record = &g_particle_records[10 * active_particle_index];
+        moving_state_record = &particle_record_at(active_particle_index).x;
         if ( (*((_BYTE *)moving_state_record + 9) & 1) == 0 )
         {
           packed_state_byte = *((_BYTE *)moving_state_record + 12);
@@ -6329,7 +6261,7 @@ LABEL_53:
       next_x = (__int16)(particle_x + displacement_x);
       if ( next_x <= 1 || (next_y = (__int16)(particle_y + displacement_y)) <= 1 || next_y >= g_view_height - 2 || next_x >= g_view_width[0] - 2 )
       {
-        drop_interrupted_particle(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
+        drop_interrupted_particle(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y);
         set_state((__int16 *)active_particle_index, 9);
       }
       else
@@ -6341,7 +6273,7 @@ LABEL_53:
         if ( target_particle_found_again )
         {
           target_particle_index = g_lookup_particle_index;
-          target_particle_record = &g_particle_records[10 * g_lookup_particle_index];
+          target_particle_record = &particle_record_at(g_lookup_particle_index).x;
           if ( (*((_BYTE *)target_particle_record + 9) & 4) != 0 )
           {
             if ( *((_BYTE *)target_particle_record + 16) != 0 )
@@ -6350,7 +6282,7 @@ LABEL_53:
               *((_BYTE *)target_particle_record + 16) = 1;
           }
           grid_width = g_view_width[0];
-          target_record_slot = &g_particle_records[10 * target_particle_index];
+          target_record_slot = &particle_record_at(target_particle_index).x;
           cell_grid_base = g_cell_state_grid;
           *target_record_slot = target_x;
           target_cell = cell_grid_base + 8LL * (target_x + target_y * grid_width);
@@ -6387,8 +6319,6 @@ LABEL_53:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -6431,7 +6361,7 @@ __int64 __fastcall new_particle(char allow_recycle)
   if ( g_next_particle_index <= 499999 )
   {
     ++g_next_particle_index;
-    LOBYTE(g_particle_records[10 * particle_index_result + 6]) &= 0x3Fu;
+    LOBYTE(particle_record_at(particle_index_result).packed_state_word) &= 0x3Fu;
     return particle_index_result;
   }
   particle_index_result = DWORD1(g_particle_state_lists_block_2);
@@ -6459,16 +6389,16 @@ __int64 __fastcall new_particle(char allow_recycle)
             reclaimed_particle_index_value = SHIDWORD(g_particle_state_lists);
             particle_list_head = particle_next_link(SHIDWORD(g_particle_state_lists));
           }
-          reclaimed_particle_record = &g_particle_records[10 * reclaimed_particle_index_value];
+          reclaimed_particle_record = &particle_record_at(reclaimed_particle_index_value).x;
           reclaimed_particle_state = *((_BYTE *)reclaimed_particle_record + 12);
           HIDWORD(g_particle_state_lists) = particle_list_head;
           --DWORD1(g_particle_state_lists_block_1);
           *((_BYTE *)reclaimed_particle_record + 12) = reclaimed_particle_state & 0x3F;
         }
         framebuffer_bank_count = (unsigned __int8)g_shared_engine_data[0];
-        *(_BYTE *)(g_cell_state_grid + 8LL * (g_particle_records[10 * reclaimed_particle_index_value] + g_particle_records[10 * reclaimed_particle_index_value + 1] * g_view_width[0])) = 0;
-        reclaimed_particle_x = g_particle_records[10 * reclaimed_particle_index_value];
-        reclaimed_particle_y = g_particle_records[10 * reclaimed_particle_index_value + 1];
+        *(_BYTE *)(g_cell_state_grid + 8LL * (particle_record_at(reclaimed_particle_index_value).x + particle_record_at(reclaimed_particle_index_value).y * g_view_width[0])) = 0;
+        reclaimed_particle_x = particle_record_at(reclaimed_particle_index_value).x;
+        reclaimed_particle_y = particle_record_at(reclaimed_particle_index_value).y;
         if ( framebuffer_bank_count != 0 )
         {
           dirty_ring_end = g_framebuffer_ring0_read_index;
@@ -6535,8 +6465,8 @@ __int64 __fastcall new_particle(char allow_recycle)
         }
         wake_particle(
           (unsigned __int16)g_direction_lut[16 * (unsigned __int8)g_direction_index]
-        + (unsigned int)(unsigned __int16)g_particle_records[10 * reclaimed_particle_index_value],
-          g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + g_particle_records[10 * reclaimed_particle_index_value + 1]);
+        + (unsigned int)(unsigned __int16)particle_record_at(reclaimed_particle_index_value).x,
+          g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + particle_record_at(reclaimed_particle_index_value).y);
         return reclaimed_particle_index;
       }
       return particle_index_result;
@@ -6551,7 +6481,7 @@ __int64 __fastcall new_particle(char allow_recycle)
       particle_list_next = SDWORD2(g_particle_state_lists_block_1);
       particle_index_result = particle_next_link(SDWORD2(g_particle_state_lists_block_1));
     }
-    particle_list_record = &g_particle_records[10 * particle_list_next];
+    particle_list_record = &particle_record_at(particle_list_next).x;
     particle_list_state = *((_BYTE *)particle_list_record + 12);
     DWORD2(g_particle_state_lists_block_1) = particle_index_result;
     LODWORD(g_particle_state_lists_block_2) = g_particle_state_lists_block_2 - 1;
@@ -6574,7 +6504,7 @@ __int64 __fastcall new_particle(char allow_recycle)
       recycled_particle_index = SDWORD1(g_particle_state_lists_block_2);
       next_particle_link = particle_next_link(SDWORD1(g_particle_state_lists_block_2));
     }
-    free_particle_record = &g_particle_records[10 * recycled_particle_index];
+    free_particle_record = &particle_record_at(recycled_particle_index).x;
     DWORD1(g_particle_state_lists_block_2) = next_particle_link;
     free_particle_state = *((_BYTE *)free_particle_record + 12);
     --HIDWORD(g_particle_state_lists_block_2);
@@ -6614,8 +6544,6 @@ __int64 __fastcall new_particle(char allow_recycle)
 // 3A23EC: using guessed type int g_framebuffer_ring3_read_index;
 // 3A23F0: using guessed type int g_framebuffer_ring3_write_index;
 // 4C7374: using guessed type char g_framebuffer_ring3_write_available;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 // E50A40: using guessed type __int128 g_particle_state_lists;
@@ -6742,7 +6670,7 @@ LABEL_14:
       return 0;
   }
   init_particle(existing_particle_index, target_x, target_y, requested_material_id);
-  new_particle_record = &g_particle_records[10 * existing_particle_index];
+  new_particle_record = &particle_record_at(existing_particle_index).x;
   new_particle_packed_state = *((unsigned __int8 *)new_particle_record + 12);
   if ( hx_cast<unsigned __int8>(new_particle_packed_state) >> 6 != 0 )
     return 1;
@@ -6761,7 +6689,7 @@ LABEL_14:
     if ( state_group_tail_index == g_current_particle_index )
       g_particle_list_previous_index = existing_particle_index;
   }
-  state_group_particle_record = &g_particle_records[10 * existing_particle_index];
+  state_group_particle_record = &particle_record_at(existing_particle_index).x;
   state_group_packed_state = *((_BYTE *)state_group_particle_record + 12);
   ++*((_DWORD *)&g_particle_state_lists + 3 * particle_state_group + 2);
   *((_BYTE *)state_group_particle_record + 12) = state_group_packed_state & 0x3F | ((particle_state_group & 3) << 6);
@@ -6783,8 +6711,6 @@ LABEL_14:
 // 1584B0: using guessed type __int64 g_framebuffer_bank1_pixels;
 // 27D448: using guessed type __int64 g_framebuffer_bank2_pixels;
 // 3A23E0: using guessed type __int64 g_framebuffer_bank3_pixels;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 g_particle_state_lists;
@@ -6830,10 +6756,10 @@ __int64 __fastcall transform_particle_material(int particle_index, int target_ma
   }
   target_motion_class = (unsigned __int8)g_shared_engine_data[12 * target_material_or_tool_id + 20];
   if ( target_motion_class == 1 )
-    return add_type(g_particle_records[10 * particle_index], g_particle_records[10 * particle_index + 1], target_material_or_tool_id, 1);
+    return add_type(particle_record_at(particle_index).x, particle_record_at(particle_index).y, target_material_or_tool_id, 1);
   particle_index_value = particle_index;
   is_new_particle = particle_index == -2;
-  particle_record = &g_particle_records[10 * particle_index];
+  particle_record = &particle_record_at(particle_index).x;
   grid_width = g_view_width[0];
   *((_BYTE *)particle_record + 8) = target_material_or_tool_id;
   material_transition_result = 8LL * (*particle_record + particle_record[1] * grid_width);
@@ -6851,12 +6777,12 @@ __int64 __fastcall transform_particle_material(int particle_index, int target_ma
   }
   if ( target_motion_class == 6 )
   {
-    particle_transition_record = &g_particle_records[10 * particle_index_value];
+    particle_transition_record = &particle_record_at(particle_index_value).x;
     particle_packed_state = *((_BYTE *)particle_transition_record + 12);
     particle_flags_byte = *((_BYTE *)particle_transition_record + 9);
     g_random_state = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
     transition_random_state = g_random_state;
-    transition_source_material_id = LOBYTE(g_particle_records[10 * g_current_particle_index + 4]);
+    transition_source_material_id = LOBYTE(particle_record_at(g_current_particle_index).material_flags_word);
     *((_BYTE *)particle_transition_record + 9) = particle_flags_byte & 0xFB;
     *((_BYTE *)particle_transition_record + 12) = particle_packed_state & 0xF8 | transition_random_state & 7;
     is_new_particle = g_shared_engine_data[12 * transition_source_material_id + 26] == 5;
@@ -6875,7 +6801,6 @@ __int64 __fastcall transform_particle_material(int particle_index, int target_ma
 // 33014: using guessed type int g_current_particle_index;
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
-// 4C7380: using guessed type __int16 g_particle_records[72];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (000000000000E020) ----------------------------------------------------
@@ -6915,9 +6840,9 @@ LABEL_13:
             selected_material_id = (((next_random_state + 21) ^ ((unsigned __int64)(next_random_state - 0x61C8864680B583EBLL) >> 27)) & 1) + 55;
             return add_type(x, y, selected_material_id, 1);
           }
-          if ( (g_particle_records[10 * g_current_particle_index + 5] & 0x100) != 0 )
+          if ( (particle_record_at(g_current_particle_index).auxiliary_status_word & 0x100) != 0 )
             return 0;
-          replacement_material_entry = &g_material_properties_lut[3 * (unsigned __int8)g_material_properties[12 * LOBYTE(g_particle_records[10 * g_lookup_particle_index + 4]) + 6]];
+          replacement_material_entry = &g_material_properties_lut[3 * (unsigned __int8)g_material_properties[12 * LOBYTE(particle_record_at(g_lookup_particle_index).material_flags_word) + 6]];
           transform_particle_material(g_lookup_particle_index, *replacement_material_entry, replacement_material_entry[2]);
           return particle_lookup_succeeded;
         case 3:
@@ -6965,8 +6890,6 @@ LABEL_8:
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
@@ -7016,7 +6939,7 @@ __int64 __fastcall add_grouptype(__int16 x, __int16 y, unsigned __int8 tool_id, 
                 add_type(x_position, y_position, 0x59u, 0);
                 add_type(paired_material_x, paired_material_y, 0x59u, 0);
                 if ( lookup_particle_at_cell(paired_material_x, paired_material_y, 0, 1) )
-                  HIBYTE(g_particle_records[10 * g_lookup_particle_index + 5]) |= 1u;
+                  HIBYTE(particle_record_at(g_lookup_particle_index).auxiliary_status_word) |= 1u;
               }
             }
           }
@@ -7125,8 +7048,6 @@ LABEL_40:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
@@ -7170,9 +7091,9 @@ __int64 __fastcall process_flames()
   direction_table_offset = 16LL * (unsigned __int8)g_direction_index;
   current_particle_record_offset = 10LL * g_current_particle_index;
   gravity_delta_x = g_direction_lut[direction_table_offset];
-  particle_x = g_particle_records[current_particle_record_offset];
+  particle_x = particle_word_at(current_particle_record_offset);
   gravity_delta_y = g_direction_lut[direction_table_offset + 1];
-  particle_y = g_particle_records[current_particle_record_offset + 1];
+  particle_y = particle_word_at(current_particle_record_offset + 1);
   upper_flame_x = (__int16)(particle_x + 2 * gravity_delta_x);
   if ( upper_flame_x <= 1
     || (upper_flame_y = (__int16)(particle_y + 2 * gravity_delta_y)) <= 1
@@ -7199,7 +7120,7 @@ __int64 __fastcall process_flames()
     add_type(upper_flame_x, upper_flame_y, (((random_state_snapshot + 21) ^ ((random_state_snapshot - 0x61C8864680B583EBLL) >> 27)) & 1) + 59, 1);
     gravity_direction_index = (unsigned __int8)g_direction_index;
     random_state_snapshot = g_random_state;
-    particle_record_for_upper_flame = &g_particle_records[10 * g_current_particle_index];
+    particle_record_for_upper_flame = &particle_record_at(g_current_particle_index).x;
     particle_x = *particle_record_for_upper_flame;
     final_direction_entry = reinterpret_cast<__int16 *>(g_direction_lut + (16 * (unsigned __int8)g_direction_index));
     gravity_delta_x = *final_direction_entry;
@@ -7223,7 +7144,7 @@ LABEL_4:
         add_type(forward_flame_x, forward_flame_y, (((random_state_snapshot + 21) ^ ((random_state_snapshot - 0x61C8864680B583EBLL) >> 27)) & 1) + 59, 1);
         random_state_snapshot = g_random_state;
         gravity_direction_index = (unsigned __int8)g_direction_index;
-        particle_record_for_forward = &g_particle_records[10 * g_current_particle_index];
+        particle_record_for_forward = &particle_record_at(g_current_particle_index).x;
         particle_x = *particle_record_for_forward;
         particle_y = particle_record_for_forward[1];
       }
@@ -7246,7 +7167,7 @@ LABEL_4:
         add_type(diagonal_flame_x, diagonal_flame_y, (((random_state_snapshot + 21) ^ ((random_state_snapshot - 0x61C8864680B583EBLL) >> 27)) & 1) + 59, 1);
         random_state_snapshot = g_random_state;
         gravity_direction_index = (unsigned __int8)g_direction_index;
-        particle_record_for_diagonal = &g_particle_records[10 * g_current_particle_index];
+        particle_record_for_diagonal = &particle_record_at(g_current_particle_index).x;
         particle_x = *particle_record_for_diagonal;
         particle_y = particle_record_for_diagonal[1];
       }
@@ -7276,8 +7197,8 @@ LABEL_4:
   {
     current_particle_record_offset_copy = 10LL * g_current_particle_index;
     forward_direction_entry = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-    particle_x_copy = g_particle_records[current_particle_record_offset_copy];
-    particle_y_copy = g_particle_records[current_particle_record_offset_copy + 1];
+    particle_x_copy = particle_word_at(current_particle_record_offset_copy);
+    particle_y_copy = particle_word_at(current_particle_record_offset_copy + 1);
     flame_result = (unsigned int)(__int16)(forward_direction_entry[4] + particle_x_copy);
     if ( hx_cast<int>(flame_result) > 1 )
     {
@@ -7309,8 +7230,6 @@ LABEL_4:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 
@@ -7371,18 +7290,18 @@ LABEL_7:
         g_particle_list_previous_index = -1;
 LABEL_11:
         particle_record_offset = 10LL * particle_index;
-        particle_x = g_particle_records[particle_record_offset];
-        particle_record_for_bounds = &g_particle_records[particle_record_offset];
+        particle_x = particle_word_at(particle_record_offset);
+        particle_record_for_bounds = &particle_word_at(particle_record_offset);
         if ( particle_x < requested_box_width && particle_record_for_bounds[1] < hx_cast<int>(requested_box_height) )
           goto LABEL_7;
       }
       while ( particle_index == -2 );
-      particle_record_for_suspend = &g_particle_records[10 * particle_index];
+      particle_record_for_suspend = &particle_record_at(particle_index).x;
       suspended_particle_flags = *((_BYTE *)particle_record_for_suspend + 9) & 0xFC | 1;
       *((_BYTE *)particle_record_for_suspend + 12) = particle_record_for_suspend[6] & 0xC7 | 0x20;
       *((_BYTE *)particle_record_for_suspend + 9) = suspended_particle_flags;
     }
-    particle_record = &g_particle_records[10 * particle_index];
+    particle_record = &particle_record_at(particle_index).x;
     next_particle_index = *((_DWORD *)particle_record + 1);
     if ( g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)particle_record + 12) >> 3) & 7] == particle_state_list_index )
     {
@@ -7481,7 +7400,7 @@ LABEL_27:
     if ( (allocated_particle_index & 0x80000000) == 0 )
     {
       particle_state_list_head = g_particle_state_lists;
-      new_particle_record = &g_particle_records[10 * allocated_particle_index];
+      new_particle_record = &particle_record_at(allocated_particle_index).x;
       *new_particle_record = box_scan_x;
       new_particle_record[1] = box_scan_y;
       *((_BYTE *)new_particle_record + 8) = cell_material_id;
@@ -7499,7 +7418,7 @@ LABEL_27:
           g_particle_list_previous_index = allocated_particle_index;
       }
       ++DWORD2(g_particle_state_lists);
-      LOBYTE(g_particle_records[10 * allocated_particle_index + 6]) &= 0x3Fu;
+      LOBYTE(particle_record_at(allocated_particle_index).packed_state_word) &= 0x3Fu;
     }
     goto LABEL_27;
   }
@@ -7541,8 +7460,6 @@ LABEL_27:
 // 3A23F0: using guessed type int g_framebuffer_ring3_write_index;
 // 4C7374: using guessed type char g_framebuffer_ring3_write_available;
 // 4C7375: using guessed type char g_framebuffer_ring3_read_available;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 g_particle_state_lists;
 
@@ -7652,7 +7569,7 @@ __int64 __fastcall wake_particles_at_boundary()
             else
             {
               particle_index_copy = hx_cast<int>(particle_index_left_or_right);
-              particle_record_before_wake = &g_particle_records[10 * particle_index_left_or_right];
+              particle_record_before_wake = &particle_record_at(particle_index_left_or_right).x;
               if ( (*((_BYTE *)particle_record_before_wake + 9) & 2) != 0 )
               {
                 saved_particle_index_left_or_right = *((_DWORD *)cell_record_left_or_right + 1);
@@ -7660,7 +7577,7 @@ __int64 __fastcall wake_particles_at_boundary()
                 particle_index_left_or_right = saved_particle_index_left_or_right;
                 *((_BYTE *)particle_record_before_wake + 9) &= ~2u;
               }
-              particle_record_for_state = &g_particle_records[10 * particle_index_copy];
+              particle_record_for_state = &particle_record_at(particle_index_copy).x;
               if ( *((_BYTE *)particle_record_for_state + 12) >> 6 != 2
                 || (*((_BYTE *)particle_record_for_state + 9) & 1) != 0
                 || (was_particle_already_awake = (*((_BYTE *)particle_record_for_state + 9) & 2) != 0, (*((_BYTE *)particle_record_for_state + 9) & 2) != 0)
@@ -7698,13 +7615,13 @@ __int64 __fastcall wake_particles_at_boundary()
               right_boundary = boundary_scan_result - 2;
               goto LABEL_16;
             }
-            mirrored_edge_particle_record = &g_particle_records[10 * mirrored_edge_particle_index];
+            mirrored_edge_particle_record = &particle_record_at(mirrored_edge_particle_index).x;
             if ( (*((_BYTE *)mirrored_edge_particle_record + 9) & 2) != 0 )
             {
               drop_interrupted_particle(scan_x_copy, mirrored_y);
               *((_BYTE *)mirrored_edge_particle_record + 9) &= ~2u;
             }
-            mirrored_edge_particle_record_for_state = &g_particle_records[10 * mirrored_edge_particle_index];
+            mirrored_edge_particle_record_for_state = &particle_record_at(mirrored_edge_particle_index).x;
             if ( *((_BYTE *)mirrored_edge_particle_record_for_state + 12) >> 6 == 2 && (*((_BYTE *)mirrored_edge_particle_record_for_state + 9) & 1) == 0 )
             {
               was_particle_interrupted = (*((_BYTE *)mirrored_edge_particle_record_for_state + 9) & 2) != 0;
@@ -7764,15 +7681,15 @@ LABEL_19:
             else
             {
               opposite_edge_particle_index_copy = hx_cast<int>(opposite_edge_particle_index);
-              if ( (g_particle_records[10 * opposite_edge_particle_index + 4] & 0x200) != 0 )
+              if ( (particle_record_at(opposite_edge_particle_index).material_flags_word & 0x200) != 0 )
               {
-                mirrored_boundary_particle_record = &g_particle_records[10 * opposite_edge_particle_index];
+                mirrored_boundary_particle_record = &particle_record_at(opposite_edge_particle_index).x;
                 saved_particle_index_copy = *((_DWORD *)opposite_edge_cell_record + 1);
                 drop_interrupted_particle(i, scan_y_copy);
                 opposite_edge_particle_index = saved_particle_index_copy;
                 *((_BYTE *)mirrored_boundary_particle_record + 9) &= ~2u;
               }
-              opposite_edge_particle_record = &g_particle_records[10 * opposite_edge_particle_index_copy];
+              opposite_edge_particle_record = &particle_record_at(opposite_edge_particle_index_copy).x;
               if ( *((_BYTE *)opposite_edge_particle_record + 12) >> 6 != 2 || (*((_BYTE *)opposite_edge_particle_record + 9) & 1) != 0 || (*((_BYTE *)opposite_edge_particle_record + 9) & 2) != 0 )
               {
                 viewport_width = g_view_width[0];
@@ -7806,13 +7723,13 @@ LABEL_19:
           bottom_boundary_copy = g_view_height - 2;
           goto LABEL_40;
         }
-        opposite_edge_particle_record_for_flags = &g_particle_records[10 * opposite_edge_particle_index_value];
+        opposite_edge_particle_record_for_flags = &particle_record_at(opposite_edge_particle_index_value).x;
         if ( (*((_BYTE *)opposite_edge_particle_record_for_flags + 9) & 2) != 0 )
         {
           drop_interrupted_particle(mirrored_boundary_offset + viewport_width, scan_y_copy);
           *((_BYTE *)opposite_edge_particle_record_for_flags + 9) &= ~2u;
         }
-        opposite_edge_particle_record_for_state = &g_particle_records[10 * opposite_edge_particle_index_value];
+        opposite_edge_particle_record_for_state = &particle_record_at(opposite_edge_particle_index_value).x;
         if ( *((_BYTE *)opposite_edge_particle_record_for_state + 12) >> 6 != 2
           || (*((_BYTE *)opposite_edge_particle_record_for_state + 9) & 1) != 0
           || (was_mirrored_particle_interrupted = (*((_BYTE *)opposite_edge_particle_record_for_state + 9) & 2) != 0, (*((_BYTE *)opposite_edge_particle_record_for_state + 9) & 2) != 0)
@@ -7841,7 +7758,6 @@ LABEL_40:
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (000000000000F6E0) ----------------------------------------------------
@@ -7927,7 +7843,7 @@ LABEL_5:
             return restore_result;
           restored_particle_index = restore_result;
           init_particle(restore_result, scan_x, scan_y, cell_material_id);
-          particle_record = &g_particle_records[10 * restored_particle_index];
+          particle_record = &particle_record_at(restored_particle_index).x;
           particle_state_list_index = g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)particle_record + 12) >> 3) & 7];
           destination_state_list_index = g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)particle_record + 12) >> 3) & 7];
           destination_state_list_head = *((_DWORD *)&g_particle_state_lists + 3 * particle_state_list_index);
@@ -7946,7 +7862,7 @@ LABEL_5:
               g_particle_list_previous_index = restored_particle_index;
           }
           grid_width = g_view_width[0];
-          new_particle_record = &g_particle_records[10 * restored_particle_index];
+          new_particle_record = &particle_record_at(restored_particle_index).x;
           updated_packed_state = *((_BYTE *)new_particle_record + 12);
           ++*((_DWORD *)&g_particle_state_lists + 3 * particle_state_list_index + 2);
           *((_BYTE *)new_particle_record + 12) = updated_packed_state & 0x3F | ((destination_state_list_index & 3) << 6);
@@ -8141,8 +8057,6 @@ LABEL_10:
 // 3A23EC: using guessed type int g_framebuffer_ring3_read_index;
 // 3A23F0: using guessed type int g_framebuffer_ring3_write_index;
 // 4C7374: using guessed type char g_framebuffer_ring3_write_available;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A28: using guessed type char g_pixel_is_held;
 // E50A40: using guessed type __int128 g_particle_state_lists;
@@ -8230,7 +8144,6 @@ LABEL_4:
 // 33010: using guessed type char g_engine_mode;
 // 33516: using guessed type char g_framebuffer_bank_index;
 // 33518: using guessed type __int64 g_framebuffer_state_banks[];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 // E50A18: using guessed type char g_direction_index;
 // E50A70: using guessed type char g_preserve_box_on_next_resize;
@@ -8248,10 +8161,10 @@ __int64 __fastcall current_particle_can_sleep()
   __int64 can_sleep_result; // x0
 
   can_sleep_result = 0;
-  if ( (g_particle_records[10 * g_current_particle_index + 4] & 0x100) == 0 )
+  if ( (particle_record_at(g_current_particle_index).material_flags_word & 0x100) == 0 )
     return (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               6u,
                               10,
                               1)
@@ -8259,7 +8172,6 @@ __int64 __fastcall current_particle_can_sleep()
   return can_sleep_result;
 }
 // 33014: using guessed type int g_current_particle_index;
-// 4C7380: using guessed type __int16 g_particle_records[72];
 
 //----- (000000000000FF68) ----------------------------------------------------
 __int64 __fastcall count_matching_neighbors(__int16 x, __int16 y, unsigned __int8 material_filter, unsigned __int8 custom_filter_code, char step_direction_mode)
@@ -8325,8 +8237,8 @@ __int64 __fastcall process_gas_motion()
   if ( g_gas_motion_enabled != 0 )
   {
     if ( (unsigned __int8)near_point(
-                            (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                            g_particle_records[10 * g_current_particle_index + 1],
+                            (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                            particle_record_at(g_current_particle_index).y,
                             0,
                             9,
                             3) == 0 )
@@ -8335,12 +8247,12 @@ LABEL_6:
       g_search_direction = 6;
       g_search_remaining = 3;
       g_search_step = 1;
-      return near_point((unsigned int)g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1], 0, 16, 3);
+      return near_point((unsigned int)particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y, 0, 16, 3);
     }
     current_particle_index = g_current_particle_index;
     found_x = g_found_x;
     found_y = g_found_y;
-    current_particle_record = &g_particle_records[10 * g_current_particle_index];
+    current_particle_record = &particle_record_at(g_current_particle_index).x;
     if ( (*((_BYTE *)current_particle_record + 9) & 4) != 0 )
     {
       if ( *((_BYTE *)current_particle_record + 16) != 0 )
@@ -8349,10 +8261,10 @@ LABEL_6:
         *((_BYTE *)current_particle_record + 16) = 1;
     }
     gas_motion_result = 10LL * current_particle_index;
-    destination_record_slot = &g_particle_records[gas_motion_result];
+    destination_record_slot = &particle_word_at(gas_motion_result);
     destination_cell = g_cell_state_grid + 8LL * (found_x + g_view_width[0] * found_y);
-    *(_BYTE *)(g_cell_state_grid + 8LL * (g_particle_records[gas_motion_result] + g_particle_records[gas_motion_result + 1] * g_view_width[0])) = 0;
-    *(_BYTE *)destination_cell = g_particle_records[gas_motion_result + 4];
+    *(_BYTE *)(g_cell_state_grid + 8LL * (particle_word_at(gas_motion_result) + particle_word_at(gas_motion_result + 1) * g_view_width[0])) = 0;
+    *(_BYTE *)destination_cell = particle_word_at(gas_motion_result + 4);
     *(_DWORD *)(destination_cell + 4) = current_particle_index;
     *destination_record_slot = found_x;
     destination_record_slot[1] = found_y;
@@ -8360,8 +8272,8 @@ LABEL_6:
   else
   {
     if ( (unsigned __int8)near_point(
-                            (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                            g_particle_records[10 * g_current_particle_index + 1],
+                            (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                            particle_record_at(g_current_particle_index).y,
                             0,
                             10,
                             3) == 0 )
@@ -8382,7 +8294,7 @@ LABEL_6:
     else
     {
       particle_index = g_current_particle_index;
-      source_particle_record = &g_particle_records[10 * g_current_particle_index];
+      source_particle_record = &particle_record_at(g_current_particle_index).x;
       if ( (*((_BYTE *)source_particle_record + 9) & 4) != 0 )
       {
         if ( *((_BYTE *)source_particle_record + 16) != 0 )
@@ -8391,11 +8303,11 @@ LABEL_6:
           *((_BYTE *)source_particle_record + 16) = 1;
       }
       gas_motion_result = 10LL * particle_index;
-      destination_particle_record = &g_particle_records[gas_motion_result];
+      destination_particle_record = &particle_word_at(gas_motion_result);
       destination_cell_offset = 8LL * (destination_x + destination_y * grid_width);
       cell_state_grid_base = g_cell_state_grid;
-      *(_BYTE *)(g_cell_state_grid + 8LL * (g_particle_records[gas_motion_result] + grid_width * g_particle_records[gas_motion_result + 1])) = 0;
-      *(_BYTE *)(cell_state_grid_base + destination_cell_offset) = g_particle_records[gas_motion_result + 4];
+      *(_BYTE *)(g_cell_state_grid + 8LL * (particle_word_at(gas_motion_result) + grid_width * particle_word_at(gas_motion_result + 1))) = 0;
+      *(_BYTE *)(cell_state_grid_base + destination_cell_offset) = particle_word_at(gas_motion_result + 4);
       *(_DWORD *)(cell_state_grid_base + destination_cell_offset + 4) = particle_index;
       *destination_particle_record = destination_x;
       destination_particle_record[1] = destination_y;
@@ -8411,8 +8323,6 @@ LABEL_6:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
 // E50A30: using guessed type char g_search_direction;
@@ -8452,8 +8362,8 @@ __int64 __fastcall tap_particle(unsigned __int8 material_id)
 
   material_id_value = material_id;
   if ( (unsigned __int8)near_point(
-                          (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                          g_particle_records[10 * g_current_particle_index + 1],
+                          (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                          particle_record_at(g_current_particle_index).y,
                           6u,
                           1,
                           2) != 0 )
@@ -8533,8 +8443,8 @@ LABEL_13:
   else
   {
     tap_result = (unsigned __int8)near_point(
-                                (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                                g_particle_records[10 * g_current_particle_index + 1],
+                                (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                                particle_record_at(g_current_particle_index).y,
                                 4u,
                                 6,
                                 2);
@@ -8558,8 +8468,6 @@ LABEL_13:
 // 33512: using guessed type __int16 g_view_height;
 // 33516: using guessed type char g_framebuffer_bank_index;
 // 33518: using guessed type __int64 g_framebuffer_state_banks[];
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A18: using guessed type char g_direction_index;
@@ -8601,8 +8509,8 @@ __int64 __fastcall extinguish_fire(__int16 x, __int16 y, char allow_fire_spread)
         if ( allow_fire_spread != 0 )
         {
           while ( (unsigned __int8)near_point(
-                                     (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                                     g_particle_records[10 * g_current_particle_index + 1],
+                                     (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                                     particle_record_at(g_current_particle_index).y,
                                      7u,
                                      1,
                                      1) != 0 )
@@ -8648,8 +8556,6 @@ LABEL_2:
 // 33014: using guessed type int g_current_particle_index;
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
@@ -8680,8 +8586,8 @@ __int64 __fastcall process_material_heat(__int64 heat_category)
     if ( hx_cast<unsigned __int8>(heat_category) != 3 )
       return heat_category;
     if ( (unsigned __int8)near_point(
-                            (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                            g_particle_records[10 * g_current_particle_index + 1],
+                            (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                            particle_record_at(g_current_particle_index).y,
                             5u,
                             0,
                             2) != 0 )
@@ -8692,8 +8598,8 @@ __int64 __fastcall process_material_heat(__int64 heat_category)
     }
   }
   if ( (unsigned __int8)near_point(
-                          (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                          g_particle_records[10 * g_current_particle_index + 1],
+                          (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                          particle_record_at(g_current_particle_index).y,
                           1u,
                           0,
                           2) != 0 )
@@ -8708,11 +8614,11 @@ __int64 __fastcall process_material_heat(__int64 heat_category)
     surface_material_mode = (unsigned __int8)g_surface_material_selector;
     if ( g_surface_material_selector == 1 )
     {
-      add_type(g_particle_records[10 * neighbor_particle_index], g_particle_records[10 * neighbor_particle_index + 1], 0x3Fu, 1);
+      add_type(particle_record_at(neighbor_particle_index).x, particle_record_at(neighbor_particle_index).y, 0x3Fu, 1);
     }
     else
     {
-      neighbor_particle_record = &g_particle_records[10 * neighbor_particle_index];
+      neighbor_particle_record = &particle_record_at(neighbor_particle_index).x;
       *((_BYTE *)neighbor_particle_record + 8) = 63;
       *(_BYTE *)(g_cell_state_grid + 8LL * (*neighbor_particle_record + neighbor_particle_record[1] * g_view_width[0])) = 63;
       if ( neighbor_particle_index == -2 )
@@ -8731,13 +8637,13 @@ __int64 __fastcall process_material_heat(__int64 heat_category)
         if ( surface_material_mode != 6 )
           goto LABEL_12;
       }
-      heated_particle_record = &g_particle_records[10 * neighbor_particle_index];
+      heated_particle_record = &particle_record_at(neighbor_particle_index).x;
       heated_particle_flags = *((_BYTE *)heated_particle_record + 9);
       heated_particle_packed_state = *((_BYTE *)heated_particle_record + 12);
       g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                   ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
       random_state_value = g_random_state;
-      source_material_id = LOBYTE(g_particle_records[10 * g_current_particle_index + 4]);
+      source_material_id = LOBYTE(particle_record_at(g_current_particle_index).material_flags_word);
       *((_BYTE *)heated_particle_record + 9) = heated_particle_flags & 0xFB;
       *((_BYTE *)heated_particle_record + 12) = heated_particle_packed_state & 0xF8 | random_state_value & 7;
       source_has_randomized_heat = g_shared_engine_data[12 * source_material_id + 26] == 5;
@@ -8751,7 +8657,7 @@ __int64 __fastcall process_material_heat(__int64 heat_category)
     if ( neighbor_particle_index != -2 )
     {
 LABEL_12:
-      neighbor_particle_record_copy = &g_particle_records[10 * neighbor_particle_index];
+      neighbor_particle_record_copy = &particle_record_at(neighbor_particle_index).x;
       if ( (*((_BYTE *)neighbor_particle_record_copy + 9) & 1) == 0 )
       {
         neighbor_packed_state = *((_BYTE *)neighbor_particle_record_copy + 12);
@@ -8762,13 +8668,13 @@ LABEL_12:
 LABEL_14:
     neighbor_x = g_found_x;
     neighbor_y = g_found_y;
-    HIBYTE(g_particle_records[10 * neighbor_particle_index + 4]) |= 1u;
+    HIBYTE(particle_record_at(neighbor_particle_index).material_flags_word) |= 1u;
     wake_neighbors(neighbor_x, neighbor_y);
-    return extinguish_fire(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1], 1);
+    return extinguish_fire(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y, 1);
   }
   heat_category = (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               8u,
                               1,
                               1);
@@ -8784,8 +8690,6 @@ LABEL_14:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
 // E50A3A: using guessed type __int16 g_found_y;
@@ -9051,15 +8955,15 @@ __int64 __fastcall process_material_transition(char transition_period, unsigned 
       goto LABEL_63;
     case 2:
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               0,
                               1,
                               2) != 0 )
         return transform_particle_material(g_current_particle_index, 16, 1);
       transition_state_record = 10LL * g_current_particle_index;
-      transition_particle_record_for_flags = &g_particle_records[transition_state_record];
-      if ( g_shared_engine_data[12 * LOBYTE(g_particle_records[transition_state_record + 4]) + 26] == 4 )
+      transition_particle_record_for_flags = &particle_word_at(transition_state_record);
+      if ( g_shared_engine_data[12 * LOBYTE(particle_word_at(transition_state_record + 4)) + 26] == 4 )
       {
         configure_neighbor_search(1, 1, 0);
         transition_flag_150 = g_material_properties_lut[3 * current_particle_index + 1];
@@ -9068,49 +8972,49 @@ __int64 __fastcall process_material_transition(char transition_period, unsigned 
                     ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
         if ( (unsigned __int16)g_random_state % transition_flag_150 != 0 )
         {
-          if ( (unsigned __int8)near_point((unsigned __int16)g_particle_records[transition_state_record], transition_particle_record_for_flags[1], 1u, 12, 3) != 0 )
-            add_type(g_found_x, g_found_y, g_particle_records[10 * g_current_particle_index + 4], 1);
+          if ( (unsigned __int8)near_point((unsigned __int16)particle_word_at(transition_state_record), transition_particle_record_for_flags[1], 1u, 12, 3) != 0 )
+            add_type(g_found_x, g_found_y, particle_record_at(g_current_particle_index).material_flags_word, 1);
         }
         else
         {
           add_type(
-            g_direction_lut[16 * (unsigned __int8)g_direction_index + 8] + g_particle_records[transition_state_record],
+            g_direction_lut[16 * (unsigned __int8)g_direction_index + 8] + particle_word_at(transition_state_record),
             g_direction_lut[16 * (unsigned __int8)g_direction_index + 9] + transition_particle_record_for_flags[1],
             *((_BYTE *)transition_particle_record_for_flags + 8),
             1);
           add_type(
-            g_direction_lut[16 * (unsigned __int8)g_direction_index + 10] + g_particle_records[10 * g_current_particle_index],
-            g_direction_lut[16 * (unsigned __int8)g_direction_index + 11] + g_particle_records[10 * g_current_particle_index + 1],
-            g_particle_records[10 * g_current_particle_index + 4],
+            g_direction_lut[16 * (unsigned __int8)g_direction_index + 10] + particle_record_at(g_current_particle_index).x,
+            g_direction_lut[16 * (unsigned __int8)g_direction_index + 11] + particle_record_at(g_current_particle_index).y,
+            particle_record_at(g_current_particle_index).material_flags_word,
             1);
         }
         while ( (unsigned __int8)near_point(
-                                   (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                                   g_particle_records[10 * g_current_particle_index + 1],
+                                   (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                                   particle_record_at(g_current_particle_index).y,
                                    1u,
                                    12,
                                    1) != 0 )
-          add_type(g_found_x, g_found_y, LOBYTE(g_particle_records[10 * g_current_particle_index + 4]) + 1, 0);
+          add_type(g_found_x, g_found_y, LOBYTE(particle_record_at(g_current_particle_index).material_flags_word) + 1, 0);
 LABEL_197:
         transform_particle_material(g_current_particle_index, g_material_properties_lut[3 * current_particle_index], g_material_properties_lut[3 * current_particle_index + 2]);
         current_particle_index_copy = g_current_particle_index;
       }
       else
       {
-        if ( (unsigned __int8)count_matching_neighbors(g_particle_records[10 * g_current_particle_index], transition_particle_record_for_flags[1], 0xBu, 0, 0) == 5 )
+        if ( (unsigned __int8)count_matching_neighbors(particle_record_at(g_current_particle_index).x, transition_particle_record_for_flags[1], 0xBu, 0, 0) == 5 )
         {
           transition_flag_218 = g_material_properties_lut[3 * current_particle_index + 1];
           g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                       ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
           if ( (unsigned __int16)g_random_state % transition_flag_218 == 0
             && (unsigned __int8)near_point(
-                                  (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                                  g_particle_records[10 * g_current_particle_index + 1],
+                                  (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                                  particle_record_at(g_current_particle_index).y,
                                   0xBu,
                                   1,
                                   1) != 0 )
           {
-            add_type(g_found_x, g_found_y, LOBYTE(g_particle_records[10 * g_current_particle_index + 4]) + 1, 1);
+            add_type(g_found_x, g_found_y, LOBYTE(particle_record_at(g_current_particle_index).material_flags_word) + 1, 1);
           }
         }
         transform_particle_material(g_current_particle_index, (unsigned __int8)particle_material_id(g_current_particle_index) - 1, 0);
@@ -9119,8 +9023,8 @@ LABEL_197:
       goto LABEL_3;
     case 3:
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               1u,
                               0,
                               1) != 0 )
@@ -9141,8 +9045,8 @@ LABEL_197:
       goto LABEL_116;
     case 4:
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               0,
                               1,
                               0) != 0 )
@@ -9155,11 +9059,11 @@ LABEL_197:
       goto LABEL_55;
     case 5:
 LABEL_116:
-      transition_flag_93 = near_point((unsigned __int16)g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1], 4u, 9, 0);
+      transition_flag_93 = near_point((unsigned __int16)particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y, 4u, 9, 0);
       current_particle_index_copy = g_current_particle_index;
       if ( transition_flag_93 != 0 )
       {
-        transition_pointer_94 = &g_particle_records[10 * g_current_particle_index];
+        transition_pointer_94 = &particle_record_at(g_current_particle_index).x;
         transition_index_95 = *transition_pointer_94;
         transition_index_96 = transition_pointer_94[1];
         hold_pixel(*transition_pointer_94, transition_pointer_94[1]);
@@ -9170,8 +9074,8 @@ LABEL_116:
     case 6:
       configure_neighbor_search(1, 1, 4);
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               5u,
                               1,
                               3) == 0 )
@@ -9182,19 +9086,19 @@ LABEL_116:
       if ( (unsigned __int16)g_random_state % transition_flag_97 != 0 )
         delete_pixel(g_found_x, g_found_y);
       else
-        process_material_heat((unsigned __int8)g_shared_engine_data[12 * LOBYTE(g_particle_records[10 * g_current_particle_index + 4]) + 26]);
+        process_material_heat((unsigned __int8)g_shared_engine_data[12 * LOBYTE(particle_record_at(g_current_particle_index).material_flags_word) + 26]);
       current_particle_index_copy = g_current_particle_index;
       goto LABEL_3;
     case 8:
       current_particle_index_copy = g_current_particle_index;
-      transition_record_c = &g_particle_records[10 * g_current_particle_index];
+      transition_record_c = &particle_record_at(g_current_particle_index).x;
       if ( ((*((_BYTE *)transition_record_c + 12) >> 3) & 7) == 3 )
       {
         if ( *((_BYTE *)transition_record_c + 16) == 0 )
           goto LABEL_3;
         goto LABEL_99;
       }
-      if ( (unsigned __int8)near_point((unsigned __int16)g_particle_records[10 * g_current_particle_index], transition_record_c[1], 3u, 0, 1) != 0 )
+      if ( (unsigned __int8)near_point((unsigned __int16)particle_record_at(g_current_particle_index).x, transition_record_c[1], 3u, 0, 1) != 0 )
       {
         transition_index_107 = (unsigned __int8)g_shared_engine_data[12
                                          * *(unsigned __int8 *)(g_cell_state_grid
@@ -9202,11 +9106,11 @@ LABEL_116:
                                          + 26];
         if ( transition_index_107 == 2 )
         {
-          LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) = -106;
+          LOBYTE(particle_record_at(g_current_particle_index).counter_word) = -106;
         }
         else
         {
-          transition_pointer_108 = &g_particle_records[10 * g_current_particle_index];
+          transition_pointer_108 = &particle_record_at(g_current_particle_index).x;
           if ( transition_index_107 != 3 )
           {
             *((_BYTE *)transition_pointer_108 + 16) = 20;
@@ -9218,15 +9122,15 @@ LABEL_116:
       else
       {
         current_particle_index_copy = g_current_particle_index;
-        transition_index_136 = LOBYTE(g_particle_records[10 * g_current_particle_index + 8]);
+        transition_index_136 = LOBYTE(particle_record_at(g_current_particle_index).counter_word);
         if ( transition_index_136 <= 0x95 )
         {
           if ( transition_index_136 <= 0x13 )
           {
 LABEL_99:
             if ( (unsigned __int8)near_point(
-                                    (unsigned __int16)g_particle_records[10 * current_particle_index_copy],
-                                    g_particle_records[10 * current_particle_index_copy + 1],
+                                    (unsigned __int16)particle_record_at(current_particle_index_copy).x,
+                                    particle_record_at(current_particle_index_copy).y,
                                     0xDu,
                                     9,
                                     1) != 0 )
@@ -9237,8 +9141,8 @@ LABEL_99:
               if ( transition_index_126 == -2 )
                 transition_index_126 = resume_particle(transition_index_124, transition_index_125);
               current_particle_index_copy = g_current_particle_index;
-              transition_pointer_127 = &g_particle_records[10 * transition_index_126];
-              transition_pointer_128 = &g_particle_records[10 * g_current_particle_index];
+              transition_pointer_127 = &particle_record_at(transition_index_126).x;
+              transition_pointer_128 = &particle_record_at(g_current_particle_index).x;
               transition_index_129 = (*((unsigned __int8 *)transition_pointer_128 + 16) + (unsigned int)*((unsigned __int8 *)transition_pointer_127 + 16)) >> 1;
               *((_BYTE *)transition_pointer_128 + 16) = transition_index_129;
               *((_BYTE *)transition_pointer_127 + 16) = transition_index_129;
@@ -9247,7 +9151,7 @@ LABEL_99:
             {
               current_particle_index_copy = g_current_particle_index;
             }
-            transition_record_d = &g_particle_records[10 * current_particle_index_copy];
+            transition_record_d = &particle_record_at(current_particle_index_copy).x;
             transition_state_byte = *((_BYTE *)transition_record_d + 16);
             if ( transition_state_byte != 0 )
             {
@@ -9283,11 +9187,11 @@ LABEL_166:
         current_particle_index_copy = g_current_particle_index;
         goto LABEL_3;
       }
-      extinguish_fire(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1], 0);
+      extinguish_fire(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y, 0);
       goto LABEL_35;
     case 10:
       current_particle_index_copy = g_current_particle_index;
-      transition_neighbor_record_copy = &g_particle_records[10 * g_current_particle_index];
+      transition_neighbor_record_copy = &particle_record_at(g_current_particle_index).x;
       if ( g_shared_engine_data[12 * *((unsigned __int8 *)transition_neighbor_record_copy + 8) + 26] == 3 )
       {
         transition_random_state_copy = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
@@ -9299,7 +9203,7 @@ LABEL_166:
           transition_value_145 = 16LL * (unsigned __int8)g_direction_index;
           transition_index_146 = g_direction_lut[transition_value_145];
           transition_index_147 = g_direction_lut[transition_value_145 + 1];
-          transition_index_148 = (__int16)(transition_index_146 + g_particle_records[10 * g_current_particle_index]);
+          transition_index_148 = (__int16)(transition_index_146 + particle_record_at(g_current_particle_index).x);
           if ( transition_index_148 > 1 )
           {
             transition_index_149 = (__int16)(transition_index_144 + transition_index_147);
@@ -9326,32 +9230,32 @@ LABEL_63:
       g_random_state = transition_random_value ^ (transition_random_value >> 27);
       if ( (unsigned __int16)(transition_random_value ^ (transition_random_value >> 27)) % transition_source_material_id != 0 )
         goto LABEL_3;
-      if ( (unsigned __int8)near_point((unsigned __int16)g_particle_records[10 * current_particle_index_copy], g_particle_records[10 * current_particle_index_copy + 1], 1u, 10, 2) == 0 )
+      if ( (unsigned __int8)near_point((unsigned __int16)particle_record_at(current_particle_index_copy).x, particle_record_at(current_particle_index_copy).y, 1u, 10, 2) == 0 )
         goto LABEL_25;
       transform_particle_material(g_current_particle_index, g_material_properties_lut[transition_material_properties_pointer], g_material_properties_lut[transition_material_properties_pointer + 2]);
       current_particle_index_copy = g_current_particle_index;
       goto LABEL_3;
     case 11:
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               1u,
                               0,
                               1) != 0 )
       {
         current_particle_index_copy = g_current_particle_index;
-        LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) = 0;
+        LOBYTE(particle_record_at(g_current_particle_index).counter_word) = 0;
       }
       else if ( (unsigned __int8)near_point(
-                                   (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                                   g_particle_records[10 * g_current_particle_index + 1],
+                                   (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                                   particle_record_at(g_current_particle_index).y,
                                    2u,
                                    10,
                                    1) != 0 )
       {
         transition_index_137 = g_current_particle_index;
         current_particle_index_copy = g_current_particle_index;
-        transition_pointer_138 = &g_particle_records[10 * g_current_particle_index];
+        transition_pointer_138 = &particle_record_at(g_current_particle_index).x;
         transition_index_139 = *((unsigned __int8 *)transition_pointer_138 + 16);
         if ( transition_index_139 == 127 )
         {
@@ -9363,7 +9267,7 @@ LABEL_63:
           transition_flag_228 = (unsigned __int16)g_random_state % transition_flag_227;
           if ( (unsigned __int16)g_random_state % transition_flag_227 == 0 )
           {
-            transition_pointer_229 = &g_particle_records[10 * g_current_particle_index];
+            transition_pointer_229 = &particle_record_at(g_current_particle_index).x;
             if ( g_shared_engine_data[12 * *((unsigned __int8 *)transition_pointer_229 + 8) + 20] == 4 )
             {
               LOBYTE(transition_index_230) = (unsigned __int16)g_random_state % transition_flag_227;
@@ -9372,8 +9276,8 @@ LABEL_63:
               do
               {
                 transition_value_242 = 10LL * transition_index_137;
-                transition_index_243 = g_particle_records[transition_value_242];
-                transition_index_244 = g_particle_records[transition_value_242 + 1];
+                transition_index_243 = particle_word_at(transition_value_242);
+                transition_index_244 = particle_word_at(transition_value_242 + 1);
                 transition_index_245 = new_particle(0);
                 g_lookup_particle_index = transition_index_245;
                 if ( transition_index_245 < 0 )
@@ -9382,7 +9286,7 @@ LABEL_63:
                 }
                 else
                 {
-                  transition_pointer_233 = &g_particle_records[10 * transition_index_245];
+                  transition_pointer_233 = &particle_record_at(transition_index_245).x;
                   *transition_pointer_233 = transition_index_243;
                   transition_flag_234 = *((_BYTE *)transition_pointer_233 + 12);
                   *((_BYTE *)transition_pointer_233 + 8) = transition_flag_231;
@@ -9396,7 +9300,7 @@ LABEL_63:
                     *((_BYTE *)transition_pointer_233 + 9) = 0;
                     *((_BYTE *)transition_pointer_233 + 12) = transition_flag_235 & 0xC7;
                   }
-                  transition_pointer_236 = &g_particle_records[10 * transition_index_245];
+                  transition_pointer_236 = &particle_record_at(transition_index_245).x;
                   transition_value_237 = ((unsigned __int64)*((unsigned __int8 *)transition_pointer_236 + 12) >> 3) & 7;
                   *((_BYTE *)transition_pointer_236 + 9) |= 1u;
                   transition_value_238 = g_particle_state_lut[transition_value_237];
@@ -9406,7 +9310,7 @@ LABEL_63:
                     transition_index_137 = g_current_particle_index;
                     transition_pointer_246 = (int *)&g_particle_state_lists + 3 * transition_value_238;
                     *transition_pointer_246 = transition_index_245;
-                    *(_DWORD *)&g_particle_records[10 * transition_index_245 + 2] = -1;
+                    particle_next_link(transition_index_245) = -1;
                     transition_pointer_246[1] = transition_index_245;
                   }
                   else
@@ -9417,7 +9321,7 @@ LABEL_63:
                     if ( transition_index_239 == transition_index_137 )
                       g_particle_list_previous_index = transition_index_245;
                   }
-                  transition_pointer_240 = &g_particle_records[10 * transition_index_245];
+                  transition_pointer_240 = &particle_record_at(transition_index_245).x;
                   transition_flag_241 = *((_BYTE *)transition_pointer_240 + 12);
                   ++*((_DWORD *)&g_particle_state_lists + 3 * transition_value_238 + 2);
                   *((_BYTE *)transition_pointer_240 + 12) = transition_flag_241 & 0x3F | ((transition_value_238 & 3) << 6);
@@ -9434,7 +9338,7 @@ LABEL_63:
               transition_flag_248 = transition_pointer_226[2];
               *((_BYTE *)transition_pointer_229 + 16) = transition_flag_228;
               transform_particle_material(transition_index_137, transition_index_247, transition_flag_248);
-              wake_neighbors(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
+              wake_neighbors(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y);
               current_particle_index_copy = g_current_particle_index;
             }
           }
@@ -9452,12 +9356,12 @@ LABEL_25:
       goto LABEL_3;
     case 12:
       transition_result = 20LL * g_current_particle_index;
-      if ( (*((_BYTE *)&g_particle_records[5] + transition_result + 1) & 1) == g_particle_update_phase )
+      if ( (*((_BYTE *)&particle_word_at(5) + transition_result + 1) & 1) == g_particle_update_phase )
         return transition_result;
-      transition_state_value = count_matching_neighbors(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1], 0xCu, 2u, 0);
+      transition_state_value = count_matching_neighbors(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y, 0xCu, 2u, 0);
       transition_particle_number = g_current_particle_index;
       current_particle_index_copy = g_current_particle_index;
-      transition_particle_record_value = &g_particle_records[10 * g_current_particle_index];
+      transition_particle_record_value = &particle_record_at(g_current_particle_index).x;
       if ( *((_BYTE *)transition_particle_record_value + 8) == 43 )
       {
         transition_index_217 = (unsigned __int8)(8 - transition_state_value);
@@ -9477,12 +9381,12 @@ LABEL_109:
           current_particle_index_copy = g_current_particle_index;
         }
       }
-      HIBYTE(g_particle_records[10 * current_particle_index_copy + 5]) = HIBYTE(g_particle_records[10 * current_particle_index_copy + 5]) & 0xFE | g_particle_update_phase & 1;
+      HIBYTE(particle_record_at(current_particle_index_copy).auxiliary_status_word) = HIBYTE(particle_record_at(current_particle_index_copy).auxiliary_status_word) & 0xFE | g_particle_update_phase & 1;
       goto LABEL_3;
     case 13:
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               1u,
                               1,
                               2) != 0 )
@@ -9498,11 +9402,11 @@ LABEL_109:
       {
         transition_mode = (g_direction_index + 4) & 7;
       }
-      transition_particle_record_for_update = &g_particle_records[10 * g_current_particle_index];
+      transition_particle_record_for_update = &particle_record_at(g_current_particle_index).x;
       if ( *((_BYTE *)transition_particle_record_for_update + 16) == 0 )
       {
         transition_particle_x_copy = transition_particle_record_for_update[1];
-        transition_result_value = (unsigned __int16)g_particle_records[10 * g_current_particle_index];
+        transition_result_value = (unsigned __int16)particle_record_at(g_current_particle_index).x;
         g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                     ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
         if ( (g_random_state & 1) != 0 )
@@ -9520,8 +9424,8 @@ LABEL_109:
           if ( transition_particle_index_value == -2 )
             transition_particle_index_value = resume_particle(transition_candidate_x_copy, transition_candidate_y_copy);
           current_particle_index_copy = g_current_particle_index;
-          transition_candidate_record = &g_particle_records[10 * transition_particle_index_value];
-          LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) = *((_BYTE *)transition_candidate_record + 16);
+          transition_candidate_record = &particle_record_at(transition_particle_index_value).x;
+          LOBYTE(particle_record_at(g_current_particle_index).counter_word) = *((_BYTE *)transition_candidate_record + 16);
           *((_BYTE *)transition_candidate_record + 16) = 0;
         }
         else
@@ -9529,7 +9433,7 @@ LABEL_109:
           g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                       ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
           g_search_remaining = 3;
-          transition_pointer_130 = &g_particle_records[10 * g_current_particle_index];
+          transition_pointer_130 = &particle_record_at(g_current_particle_index).x;
           transition_value_131 = (unsigned __int16)*transition_pointer_130;
           if ( (g_random_state & 1) != 0 )
             transition_flag_132 = -1;
@@ -9542,7 +9446,7 @@ LABEL_109:
           {
             transition_index_134 = g_found_x;
             transition_index_135 = g_found_y;
-            LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) = *(_BYTE *)(g_cell_state_grid
+            LOBYTE(particle_record_at(g_current_particle_index).counter_word) = *(_BYTE *)(g_cell_state_grid
                                                                  + 8LL * (g_found_x + g_found_y * g_view_width[0]));
             delete_pixel(transition_index_134, transition_index_135);
             wake_neighbors(g_found_x, g_found_y);
@@ -9551,7 +9455,7 @@ LABEL_109:
         }
         goto LABEL_3;
       }
-      transition_value_140 = (unsigned __int16)g_particle_records[10 * g_current_particle_index];
+      transition_value_140 = (unsigned __int16)particle_record_at(g_current_particle_index).x;
       transition_index_141 = transition_particle_record_for_update[1];
       transition_flag_142 = transition_mode + 2;
       g_search_remaining = 3;
@@ -9563,8 +9467,8 @@ LABEL_109:
       g_search_step = 1;
       g_search_direction = transition_flag_142;
       transition_result = (unsigned __int8)near_point(
-                                  (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                                  g_particle_records[10 * g_current_particle_index + 1],
+                                  (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                                  particle_record_at(g_current_particle_index).y,
                                   1u,
                                   5,
                                   3);
@@ -9572,7 +9476,7 @@ LABEL_109:
       {
         if ( transition_scan_index == 7 )
         {
-          tap_particle(g_particle_records[10 * g_current_particle_index + 8]);
+          tap_particle(particle_record_at(g_current_particle_index).counter_word);
           goto LABEL_182;
         }
 LABEL_181:
@@ -9585,8 +9489,8 @@ LABEL_182:
       if ( transition_scan_index == 8 )
       {
         transition_result = (unsigned __int8)near_point(
-                                    (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                                    g_particle_records[10 * g_current_particle_index + 1],
+                                    (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                                    particle_record_at(g_current_particle_index).y,
                                     4u,
                                     6,
                                     1);
@@ -9599,8 +9503,8 @@ LABEL_182:
       return transition_result;
     case 15:
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               0xEu,
                               9,
                               1) != 0 )
@@ -9611,8 +9515,8 @@ LABEL_182:
         if ( transition_particle_state_index == -2 )
           transition_particle_state_index = resume_particle(transition_target_x, transition_target_y);
         if ( (unsigned __int8)near_point(
-                                (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                                g_particle_records[10 * g_current_particle_index + 1],
+                                (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                                particle_record_at(g_current_particle_index).y,
                                 4u,
                                 6,
                                 1) != 0 )
@@ -9625,20 +9529,20 @@ LABEL_182:
         {
           current_particle_index_copy = g_current_particle_index;
           transition_result_code = transition_particle_state_index;
-          transition_material_class = (LOBYTE(g_particle_records[10 * transition_particle_state_index + 8]) + (unsigned int)LOBYTE(g_particle_records[10 * g_current_particle_index + 8])) >> 1;
+          transition_material_class = (LOBYTE(particle_record_at(transition_particle_state_index).counter_word) + (unsigned int)LOBYTE(particle_record_at(g_current_particle_index).counter_word)) >> 1;
         }
-        transition_record_a = &g_particle_records[10 * transition_result_code];
-        transition_record_b = &g_particle_records[10 * current_particle_index_copy];
+        transition_record_a = &particle_record_at(transition_result_code).x;
+        transition_record_b = &particle_record_at(current_particle_index_copy).x;
         *((_BYTE *)transition_record_a + 16) = transition_material_class;
         *((_BYTE *)transition_record_b + 16) = transition_material_class;
         *((_BYTE *)transition_record_b + 11) = *((_BYTE *)transition_record_b + 11) & 0xFE | *((_BYTE *)transition_record_a + 11) & 1;
         goto LABEL_3;
       }
       current_particle_index_copy = g_current_particle_index;
-      transition_pointer_116 = &g_particle_records[10 * g_current_particle_index];
+      transition_pointer_116 = &particle_record_at(g_current_particle_index).x;
       if ( *((unsigned __int8 *)transition_pointer_116 + 16) > 0x1Du )
         goto LABEL_3;
-      if ( (unsigned __int8)near_point((unsigned __int16)g_particle_records[10 * g_current_particle_index], transition_pointer_116[1], 4u, 6, 1) == 0 )
+      if ( (unsigned __int8)near_point((unsigned __int16)particle_record_at(g_current_particle_index).x, transition_pointer_116[1], 4u, 6, 1) == 0 )
         goto LABEL_60;
       transition_index_117 = g_found_x;
       transition_index_118 = g_found_y;
@@ -9647,7 +9551,7 @@ LABEL_182:
                   ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
       current_particle_index_copy = g_current_particle_index;
       transition_value_120 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (g_found_x + g_found_y * g_view_width[0]));
-      transition_pointer_121 = &g_particle_records[10 * g_current_particle_index];
+      transition_pointer_121 = &particle_record_at(g_current_particle_index).x;
       transition_flag_122 = *((_BYTE *)transition_pointer_121 + 11);
       *((_BYTE *)transition_pointer_121 + 16) = 60;
       transition_index_123 = *(unsigned __int16 *)&g_shared_engine_data[12 * transition_value_120 + 24];
@@ -9668,7 +9572,7 @@ LABEL_182:
         transition_target_particle_index_value = g_current_particle_index;
         current_particle_index_copy = g_current_particle_index;
       }
-      transition_particle_state_record = &g_particle_records[10 * current_particle_index_copy];
+      transition_particle_state_record = &particle_record_at(current_particle_index_copy).x;
       transition_status_value = *((_BYTE *)transition_particle_state_record + 16);
       if ( transition_status_value != 0 )
       {
@@ -9685,7 +9589,7 @@ LABEL_182:
       if ( transition_random_state_value != 10 * (transition_random_state_value / 0xA) )
         goto LABEL_3;
       set_state((__int16 *)transition_target_particle_index_value, 9);
-      transition_random_sample_value = g_particle_records[10 * current_particle_index_copy];
+      transition_random_sample_value = particle_record_at(current_particle_index_copy).x;
       transition_x_value = transition_particle_state_record[1];
       return wake_neighbors(transition_random_sample_value, transition_x_value);
     case 17:
@@ -9693,7 +9597,7 @@ LABEL_182:
       transition_index_99 = g_current_particle_index;
       transition_particle_index = g_current_particle_index;
       transition_index_100 = g_material_properties_lut[transition_value_98 + 1];
-      transition_pointer_101 = &g_particle_records[10 * g_current_particle_index];
+      transition_pointer_101 = &particle_record_at(g_current_particle_index).x;
       transition_index_102 = (unsigned __int8)(*((_BYTE *)transition_pointer_101 + 16) + 1);
       *((_BYTE *)transition_pointer_101 + 16) = transition_index_102;
       if ( transition_index_100 < transition_index_102 )
@@ -9704,24 +9608,24 @@ LABEL_182:
       goto LABEL_14;
     case 18:
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               1u,
                               1,
                               2) == 0 )
         goto LABEL_12;
       transform_particle_material(g_current_particle_index, g_material_properties_lut[3 * current_particle_index], g_material_properties_lut[3 * current_particle_index + 2]);
       transition_particle_record_copy = (__int16 *)(unsigned int)g_current_particle_index;
-      transition_source_record = &g_particle_records[10 * g_current_particle_index];
+      transition_source_record = &particle_record_at(g_current_particle_index).x;
       *((_BYTE *)transition_source_record + 9) = 0;
       set_state(transition_particle_record_copy, 3);
       *((_BYTE *)transition_source_record + 9) |= 1u;
       extinguish_fire(g_found_x, g_found_y, 1);
-      wake_neighbors(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
+      wake_neighbors(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y);
       goto LABEL_60;
     case 19:
       current_particle_index_copy = g_current_particle_index;
-      if ( ((LOBYTE(g_particle_records[10 * g_current_particle_index + 6]) >> 3) & 7) == 4 )
+      if ( ((LOBYTE(particle_record_at(g_current_particle_index).packed_state_word) >> 3) & 7) == 4 )
         goto LABEL_3;
       while ( 1 )
       {
@@ -9731,7 +9635,7 @@ LABEL_182:
           break;
         LODWORD(current_particle_index) = (unsigned __int8)(current_particle_index + 1);
         current_particle_index_copy = g_current_particle_index;
-        if ( ((LOBYTE(g_particle_records[10 * g_current_particle_index + 6]) >> 3) & 7) == 4 )
+        if ( ((LOBYTE(particle_record_at(g_current_particle_index).packed_state_word) >> 3) & 7) == 4 )
           goto LABEL_3;
       }
 LABEL_12:
@@ -9739,23 +9643,23 @@ LABEL_12:
       goto LABEL_3;
     case 21:
       add_type(
-        g_direction_lut[16 * (unsigned __int8)g_direction_index] + g_particle_records[10 * g_current_particle_index],
-        g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + g_particle_records[10 * g_current_particle_index + 1],
+        g_direction_lut[16 * (unsigned __int8)g_direction_index] + particle_record_at(g_current_particle_index).x,
+        g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + particle_record_at(g_current_particle_index).y,
         g_material_properties_lut[3 * transition_material_or_effect_id],
         0);
       current_particle_index_copy = g_current_particle_index;
       goto LABEL_3;
     case 22:
-      transition_particle_counter = (unsigned __int8)count_matching_neighbors(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1], 3u, 9u, 0);
+      transition_particle_counter = (unsigned __int8)count_matching_neighbors(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y, 3u, 9u, 0);
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               0,
                               1,
                               2) == 0
         && (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               0xDu,
                               0,
                               0) == 0 )
@@ -9769,7 +9673,7 @@ LABEL_12:
           goto LABEL_12;
       }
       transform_particle_material(g_current_particle_index, g_material_properties_lut[3 * current_particle_index], g_material_properties_lut[3 * current_particle_index + 2]);
-      transition_neighbor_record = &g_particle_records[10 * g_current_particle_index];
+      transition_neighbor_record = &particle_record_at(g_current_particle_index).x;
       transition_material_variant = *transition_neighbor_record;
       transition_variant_count = transition_neighbor_record[1];
       *((_BYTE *)transition_neighbor_record + 9) = 0;
@@ -9784,8 +9688,8 @@ LABEL_55:
                   ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
       if ( (unsigned __int16)g_random_state % transition_cell_offset != 0
         || (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               1u,
                               0,
                               0) == 0 )
@@ -9802,7 +9706,7 @@ LABEL_55:
         if ( (unsigned __int16)g_random_state == 100 * ((unsigned __int16)g_random_state / 0x64uLL) )
         {
           transform_particle_material(g_current_particle_index, transition_candidate_x, transition_particle_y[2]);
-          wake_neighbors(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
+          wake_neighbors(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y);
         }
         current_particle_index_copy = g_current_particle_index;
       }
@@ -9820,7 +9724,7 @@ LABEL_55:
         if ( (unsigned __int16)((transition_particle_state + 31765) ^ ((unsigned __int64)(transition_particle_state - 0x61C8864680B583EBLL) >> 27)) == 3 * ((unsigned __int16)((transition_particle_state + 31765) ^ ((unsigned __int64)(transition_particle_state - 0x61C8864680B583EBLL) >> 27)) / 3uLL) )
         {
           transform_particle_material(g_current_particle_index, transition_cell_material_id, transition_particle_flags);
-          wake_neighbors(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
+          wake_neighbors(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y);
         }
         current_particle_index_copy = g_current_particle_index;
       }
@@ -9846,13 +9750,13 @@ LABEL_50:
       }
       transition_index_151 = g_current_particle_index;
       set_state((__int16 *)(unsigned int)g_current_particle_index, 9);
-      transition_pointer_152 = (unsigned __int16 *)&g_particle_records[10 * transition_index_151];
+      transition_pointer_152 = (unsigned __int16 *)&particle_record_at(transition_index_151).x;
       transition_random_sample_value = *transition_pointer_152;
       transition_x_value = transition_pointer_152[1];
       return wake_neighbors(transition_random_sample_value, transition_x_value);
     case 26:
       current_particle_index_copy = g_current_particle_index;
-      transition_cell_record = &g_particle_records[10 * g_current_particle_index];
+      transition_cell_record = &particle_record_at(g_current_particle_index).x;
       transition_state_flags = *((_BYTE *)transition_cell_record + 10);
       transition_neighbor_index = transition_state_flags & 1;
       if ( (transition_state_flags & 1) != 0 )
@@ -9867,9 +9771,9 @@ LABEL_50:
       if ( transition_index_111 < 0 )
         goto LABEL_150;
       transition_value_112 = 10LL * transition_index_111;
-      transition_index_113 = g_particle_records[transition_value_112];
-      transition_pointer_114 = &g_particle_records[transition_value_112];
-      transition_index_115 = g_particle_records[transition_value_112 + 1];
+      transition_index_113 = particle_word_at(transition_value_112);
+      transition_pointer_114 = &particle_word_at(transition_value_112);
+      transition_index_115 = particle_word_at(transition_value_112 + 1);
       if ( transition_index_113 <= 1 || transition_index_115 <= 1 || transition_index_115 >= g_view_height - 2 || transition_index_113 >= g_view_width[0] - 2 )
         goto LABEL_150;
       transition_value_153 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (transition_index_113 + transition_index_115 * g_view_width[0]));
@@ -9878,13 +9782,13 @@ LABEL_50:
         if ( (unsigned __int8)(g_shared_engine_data[12 * transition_value_153 + 20] - 1) > 1u )
         {
 LABEL_150:
-          wake_neighbors(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
+          wake_neighbors(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y);
           current_particle_index_copy = g_current_particle_index;
           set_state((__int16 *)g_current_particle_index, 9);
         }
         goto LABEL_3;
       }
-      transition_index_154 = g_particle_records[10 * g_current_particle_index];
+      transition_index_154 = particle_record_at(g_current_particle_index).x;
       transition_index_155 = transition_cell_record[1];
       g_search_remaining = 0;
       while ( 1 )
@@ -9968,7 +9872,7 @@ LABEL_213:
         lookup_particle_at_cell(transition_index_157, transition_index_158, 0, 1);
         transition_index_159 = g_lookup_particle_index;
         transition_value_160 = g_lookup_particle_index;
-        transition_pointer_161 = &g_particle_records[10 * g_lookup_particle_index];
+        transition_pointer_161 = &particle_record_at(g_lookup_particle_index).x;
         if ( g_shared_engine_data[12 * *((unsigned __int8 *)transition_pointer_161 + 8) + 20] == 6 )
         {
           transition_pointer_211 = reinterpret_cast<__int16 *>(g_direction_lut + (16 * (transition_pointer_161[6] & 7)));
@@ -9978,8 +9882,8 @@ LABEL_213:
         else
         {
           transition_value_162 = 10LL * g_current_particle_index;
-          transition_index_163 = g_particle_records[transition_value_162] - g_found_x;
-          transition_index_164 = g_particle_records[transition_value_162 + 1] - g_found_y;
+          transition_index_163 = particle_word_at(transition_value_162) - g_found_x;
+          transition_index_164 = particle_word_at(transition_value_162 + 1) - g_found_y;
         }
         transition_index_165 = transition_index_163 + *transition_pointer_114;
         transition_index_166 = transition_index_164 + transition_pointer_114[1];
@@ -10007,17 +9911,17 @@ LABEL_213:
 LABEL_259:
           current_particle_index_copy = g_current_particle_index;
 LABEL_258:
-          LOBYTE(g_particle_records[10 * current_particle_index_copy + 5]) |= 1u;
+          LOBYTE(particle_record_at(current_particle_index_copy).auxiliary_status_word) |= 1u;
           goto LABEL_3;
         }
-        transition_pointer_172 = &g_particle_records[10 * g_lookup_particle_index];
+        transition_pointer_172 = &particle_record_at(g_lookup_particle_index).x;
         if ( (*((_BYTE *)transition_pointer_172 + 9) & 2) != 0 )
         {
-          drop_interrupted_particle(g_particle_records[10 * g_lookup_particle_index], transition_pointer_172[1]);
+          drop_interrupted_particle(particle_record_at(g_lookup_particle_index).x, transition_pointer_172[1]);
           transition_index_159 = g_lookup_particle_index;
           transition_value_160 = g_lookup_particle_index;
         }
-        transition_pointer_173 = &g_particle_records[10 * transition_value_160];
+        transition_pointer_173 = &particle_record_at(transition_value_160).x;
         transition_flag_174 = *((_BYTE *)transition_pointer_173 + 12);
         if ( transition_flag_174 >> 6 == 2 )
         {
@@ -10029,17 +9933,17 @@ LABEL_258:
               *((_BYTE *)transition_pointer_173 + 12) = transition_flag_174 & 0xC7;
               *((_BYTE *)transition_pointer_173 + 9) = transition_flag_212 & 0xFD;
             }
-            transition_pointer_213 = &g_particle_records[10 * transition_value_160];
+            transition_pointer_213 = &particle_record_at(transition_value_160).x;
             if ( (*((_BYTE *)transition_pointer_213 + 9) & 4) != 0 )
               *((_BYTE *)transition_pointer_213 + 16) = 0;
           }
         }
-        wake_neighbors(g_particle_records[10 * transition_value_160], g_particle_records[10 * transition_value_160 + 1]);
+        wake_neighbors(particle_record_at(transition_value_160).x, particle_record_at(transition_value_160).y);
         transition_index_175 = (unsigned __int8)g_shared_engine_data[0];
         transition_index_176 = g_lookup_particle_index;
         transition_value_177 = 10LL * g_lookup_particle_index;
-        transition_index_178 = g_particle_records[transition_value_177];
-        transition_index_179 = g_particle_records[transition_value_177 + 1];
+        transition_index_178 = particle_word_at(transition_value_177);
+        transition_index_179 = particle_word_at(transition_value_177 + 1);
         if ( g_shared_engine_data[0] != 0 )
         {
           transition_index_180 = g_framebuffer_ring0_read_index;
@@ -10104,20 +10008,20 @@ LABEL_258:
             }
           }
         }
-        transition_pointer_192 = &g_particle_records[10 * transition_index_176];
+        transition_pointer_192 = &particle_record_at(transition_index_176).x;
         if ( (*((_BYTE *)transition_pointer_192 + 9) & 4) != 0 )
         {
           if ( *((_BYTE *)transition_pointer_192 + 16) != 0 )
             ++*((_BYTE *)transition_pointer_192 + 16);
           else
             *((_BYTE *)transition_pointer_192 + 16) = 1;
-          transition_index_178 = g_particle_records[10 * transition_index_176];
-          transition_index_179 = g_particle_records[transition_value_177 + 1];
+          transition_index_178 = particle_record_at(transition_index_176).x;
+          transition_index_179 = particle_word_at(transition_value_177 + 1);
         }
         transition_index_193 = g_view_width[0];
         transition_value_194 = (unsigned __int8)g_framebuffer_bank_index;
         transition_value_195 = g_cell_state_grid;
-        transition_pointer_196 = &g_particle_records[10 * transition_index_176];
+        transition_pointer_196 = &particle_record_at(transition_index_176).x;
         *(_BYTE *)(g_cell_state_grid + 8LL * (transition_index_178 + transition_index_179 * g_view_width[0])) = 0;
         transition_value_197 = transition_value_195 + 8LL * (transition_index_167 + transition_index_193 * transition_index_168);
         *(_BYTE *)transition_value_197 = *((_BYTE *)transition_pointer_196 + 8);
@@ -10149,8 +10053,8 @@ LABEL_258:
         current_particle_index_copy = g_current_particle_index;
         transition_neighbor_index = (unsigned __int8)g_search_remaining;
         LODWORD(g_framebuffer_state_banks[150003 * transition_value_194 + 2]) = transition_index_205;
-        transition_index_154 = g_particle_records[10 * current_particle_index_copy];
-        transition_index_155 = g_particle_records[10 * current_particle_index_copy + 1];
+        transition_index_154 = particle_record_at(current_particle_index_copy).x;
+        transition_index_155 = particle_record_at(current_particle_index_copy).y;
         if ( transition_neighbor_index == 2 )
           goto LABEL_258;
       }
@@ -10160,8 +10064,8 @@ LABEL_258:
       if ( (next_transition_random_state & 3) != 0 )
         goto LABEL_32;
       if ( (unsigned __int8)pixel_matches_filter(
-                              g_direction_lut[16 * (unsigned __int8)g_direction_index] + g_particle_records[10 * g_current_particle_index],
-                              g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + g_particle_records[10 * g_current_particle_index + 1],
+                              g_direction_lut[16 * (unsigned __int8)g_direction_index] + particle_record_at(g_current_particle_index).x,
+                              g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + particle_record_at(g_current_particle_index).y,
                               1u,
                               0) == 0 )
       {
@@ -10179,8 +10083,8 @@ LABEL_32:
         {
           current_particle_index_copy = g_current_particle_index;
           if ( is_solid(
-                 g_direction_lut[16 * (unsigned __int8)g_direction_index] + g_particle_records[10 * g_current_particle_index],
-                 g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + g_particle_records[10 * g_current_particle_index + 1]) )
+                 g_direction_lut[16 * (unsigned __int8)g_direction_index] + particle_record_at(g_current_particle_index).x,
+                 g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + particle_record_at(g_current_particle_index).y) )
           {
             goto LABEL_34;
           }
@@ -10190,7 +10094,7 @@ LABEL_32:
         {
           set_state((__int16 *)transition_target_index, 9);
           transition_source_particle_index = 20 * current_particle_index_copy;
-          transition_value_106 = (__int64)g_particle_records;
+          transition_value_106 = (__int64)particle_records_data();
 LABEL_133:
           wake_neighbors(*(_WORD *)(transition_value_106 + transition_source_particle_index), *(_WORD *)(transition_value_106 + transition_source_particle_index + 2));
           current_particle_index_copy = g_current_particle_index;
@@ -10203,10 +10107,10 @@ LABEL_34:
       transition_particle_record = 3 * current_particle_index;
       transition_target_particle_index = g_material_properties_lut[transition_particle_record];
       transition_particle_x = g_material_properties_lut[transition_particle_record + 2];
-      HIBYTE(g_particle_records[10 * current_particle_index_copy + 4]) &= ~1u;
+      HIBYTE(particle_record_at(current_particle_index_copy).material_flags_word) &= ~1u;
       transform_particle_material(transition_target_index, transition_target_particle_index, transition_particle_x);
 LABEL_35:
-      wake_neighbors(g_particle_records[10 * g_current_particle_index], g_particle_records[10 * g_current_particle_index + 1]);
+      wake_neighbors(particle_record_at(g_current_particle_index).x, particle_record_at(g_current_particle_index).y);
       current_particle_index_copy = g_current_particle_index;
       goto LABEL_3;
     case 29:
@@ -10216,8 +10120,8 @@ LABEL_35:
                   ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
       if ( (unsigned __int16)g_random_state % transition_material_group != 0
         || (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               4u,
                               1,
                               3) == 0 )
@@ -10233,10 +10137,10 @@ LABEL_35:
       current_particle_index_copy = g_current_particle_index;
       goto LABEL_3;
     case 30:
-      transition_source_particle_index = (__int64)g_particle_records;
+      transition_source_particle_index = (__int64)particle_records_data();
       if ( (unsigned __int8)near_point(
-                              (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                              g_particle_records[10 * g_current_particle_index + 1],
+                              (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                              particle_record_at(g_current_particle_index).y,
                               0,
                               1,
                               2) == 0 )
@@ -10244,7 +10148,7 @@ LABEL_35:
       transform_particle_material(g_current_particle_index, g_material_properties_lut[3 * current_particle_index], g_material_properties_lut[3 * current_particle_index + 2]);
       transition_index_104 = g_found_x;
       transition_index_105 = g_found_y;
-      HIBYTE(g_particle_records[10 * g_current_particle_index + 4]) = 0;
+      HIBYTE(particle_record_at(g_current_particle_index).material_flags_word) = 0;
       extinguish_fire(transition_index_104, transition_index_105, 0);
       transition_value_106 = 20LL * g_current_particle_index;
       goto LABEL_133;
@@ -10264,7 +10168,7 @@ LABEL_14:
       else
         particle_state_code = 1;
       g_search_step = particle_state_code;
-      while ( (unsigned __int8)near_point((unsigned __int16)g_particle_records[10 * transition_particle_index], g_particle_records[10 * transition_particle_index + 1], 8u, 9, 3) != 0 )
+      while ( (unsigned __int8)near_point((unsigned __int16)particle_record_at(transition_particle_index).x, particle_record_at(transition_particle_index).y, 8u, 9, 3) != 0 )
       {
         delete_pixel(g_found_x, g_found_y);
         wake_neighbors(g_found_x, g_found_y);
@@ -10273,14 +10177,14 @@ LABEL_14:
       goto LABEL_12;
     case 32:
       current_particle_index_copy = g_current_particle_index;
-      current_particle_record = &g_particle_records[10 * g_current_particle_index];
+      current_particle_record = &particle_record_at(g_current_particle_index).x;
       current_particle_material_id = *((unsigned __int8 *)current_particle_record + 16);
       if ( *((_BYTE *)current_particle_record + 16) == 0 )
       {
-        if ( (unsigned __int8)near_point((unsigned __int16)g_particle_records[10 * g_current_particle_index], current_particle_record[1], 9u, 1, 1) != 0 )
+        if ( (unsigned __int8)near_point((unsigned __int16)particle_record_at(g_current_particle_index).x, current_particle_record[1], 9u, 1, 1) != 0 )
         {
           current_particle_index_copy = g_current_particle_index;
-          LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) = g_shared_engine_data[12
+          LOBYTE(particle_record_at(g_current_particle_index).counter_word) = g_shared_engine_data[12
                                                                * *(unsigned __int8 *)(g_cell_state_grid
                                                                                     + 8LL
                                                                                     * (g_found_x
@@ -10288,8 +10192,8 @@ LABEL_14:
                                                                + 16];
         }
         else if ( (unsigned __int8)near_point(
-                                     (unsigned __int16)g_particle_records[10 * g_current_particle_index],
-                                     g_particle_records[10 * g_current_particle_index + 1],
+                                     (unsigned __int16)particle_record_at(g_current_particle_index).x,
+                                     particle_record_at(g_current_particle_index).y,
                                      0xAu,
                                      9,
                                      1) != 0 )
@@ -10306,7 +10210,7 @@ LABEL_14:
           }
           transition_value_224 = transition_index_219;
           current_particle_index_copy = transition_index_220;
-          LOBYTE(g_particle_records[10 * transition_value_224 + 8]) = g_particle_records[10 * transition_index_223 + 8];
+          LOBYTE(particle_record_at(transition_value_224).counter_word) = particle_record_at(transition_index_223).counter_word;
         }
         else
         {
@@ -10376,8 +10280,6 @@ LABEL_60:
 // 3A23EC: using guessed type int g_framebuffer_ring3_read_index;
 // 3A23F0: using guessed type int g_framebuffer_ring3_write_index;
 // 4C7374: using guessed type char g_framebuffer_ring3_write_available;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 // E50A10: using guessed type __int64 g_cell_state_grid;
@@ -10420,7 +10322,7 @@ __int16 *__fastcall process_rocket_motion()
   current_particle_index_copy = g_current_particle_index;
   random_state_snapshot = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
   g_random_state = random_state_snapshot;
-  current_particle_record = &g_particle_records[10 * g_current_particle_index];
+  current_particle_record = &particle_record_at(g_current_particle_index).x;
   particle_x = *current_particle_record;
   particle_y = current_particle_record[1];
   explosion_direction_index = current_particle_record[6] & 7;
@@ -10479,7 +10381,7 @@ LABEL_5:
     current_particle_index_copy = g_current_particle_index;
     explosion_target_cell = (unsigned __int8 *)(g_cell_state_grid + 8LL * (explosion_target_x + explosion_target_y * g_view_width[0]));
   }
-  exploded_particle_record = &g_particle_records[10 * current_particle_index_copy];
+  exploded_particle_record = &particle_record_at(current_particle_index_copy).x;
   if ( (*((_BYTE *)exploded_particle_record + 9) & 4) != 0 )
   {
     if ( *((_BYTE *)exploded_particle_record + 16) != 0 )
@@ -10487,7 +10389,7 @@ LABEL_5:
     else
       *((_BYTE *)exploded_particle_record + 16) = 1;
   }
-  exploded_particle_record_copy = &g_particle_records[10 * current_particle_index_copy];
+  exploded_particle_record_copy = &particle_record_at(current_particle_index_copy).x;
   *(_BYTE *)(cell_state_grid_base + 8LL * (*exploded_particle_record_copy + grid_width * exploded_particle_record_copy[1])) = 0;
   *explosion_target_cell = *((_BYTE *)exploded_particle_record_copy + 8);
   *((_DWORD *)explosion_target_cell + 1) = current_particle_index;
@@ -10505,8 +10407,6 @@ LABEL_5:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A30: using guessed type char g_search_direction;
 // E50A31: using guessed type char g_search_remaining;
@@ -10590,7 +10490,7 @@ __int64 __fastcall trace_particle_ray()
 
   current_particle_index = g_current_particle_index;
   current_particle_index_copy = g_current_particle_index;
-  current_particle_record = &g_particle_records[10 * g_current_particle_index];
+  current_particle_record = &particle_record_at(g_current_particle_index).x;
   particle_x = *current_particle_record;
   particle_y = current_particle_record[1];
   cell_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (particle_x + particle_y * g_view_width[0]));
@@ -10617,7 +10517,7 @@ LABEL_4:
       random_state_snapshot = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
       if ( (unsigned __int16)((g_random_state + 31765) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27)) == 10 * ((unsigned __int16)((g_random_state + 31765) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27)) / 0xAuLL) )
       {
-        particle_record_copy = &g_particle_records[10 * current_particle_index_copy];
+        particle_record_copy = &particle_record_at(current_particle_index_copy).x;
         particle_is_moving = (*((_BYTE *)particle_record_copy + 9) & 2) != 0;
         if ( (*((_BYTE *)particle_record_copy + 9) & 2) == 0 )
         {
@@ -10634,7 +10534,7 @@ LABEL_4:
           else
           {
             new_particle_index_value = new_particle_index;
-            new_particle_record = &g_particle_records[10 * new_particle_index];
+            new_particle_record = &particle_record_at(new_particle_index).x;
             *new_particle_record = particle_x;
             new_particle_packed_state = *((_BYTE *)new_particle_record + 12);
             *((_BYTE *)new_particle_record + 8) = particle_material_id;
@@ -10667,18 +10567,18 @@ LABEL_4:
             }
             destination_state_list_header = (char *)&g_particle_state_lists + 12 * particle_state_list_index;
             previous_particle_index = *((_DWORD *)destination_state_list_header + 2);
-            LOBYTE(g_particle_records[10 * new_particle_index + 6]) = g_particle_records[10 * new_particle_index + 6] & 0x3F | ((destination_state_list_index & 3) << 6);
+            LOBYTE(particle_record_at(new_particle_index).packed_state_word) = particle_record_at(new_particle_index).packed_state_word & 0x3F | ((destination_state_list_index & 3) << 6);
             *((_DWORD *)destination_state_list_header + 2) = previous_particle_index + 1;
           }
           current_particle_index_copy = current_particle_index;
-          particle_record_for_retry = &g_particle_records[10 * current_particle_index];
+          particle_record_for_retry = &particle_record_at(current_particle_index).x;
           random_state_snapshot = g_random_state;
           LOWORD(particle_x) = *particle_record_for_retry;
           LOWORD(particle_y) = particle_record_for_retry[1];
-          HIBYTE(g_particle_records[10 * new_particle_index_value + 4]) |= 2u;
+          HIBYTE(particle_record_at(new_particle_index_value).material_flags_word) |= 2u;
         }
       }
-      particle_record_for_motion = &g_particle_records[10 * current_particle_index_copy];
+      particle_record_for_motion = &particle_record_at(current_particle_index_copy).x;
       particle_packed_state = *((_BYTE *)particle_record_for_motion + 12);
       g_random_state = (random_state_snapshot - 0x61C8864680B583EBLL) ^ ((random_state_snapshot - 0x61C8864680B583EBLL) >> 27);
       direction_random_state = reinterpret_cast<__int16 *>(g_direction_lut + (16
@@ -10698,7 +10598,7 @@ LABEL_4:
       {
         if ( current_particle_index != -2 )
         {
-          next_particle_y = &g_particle_records[10 * current_particle_index_copy];
+          next_particle_y = &particle_record_at(current_particle_index_copy).x;
           ray_result = *((_BYTE *)next_particle_y + 9) & 0xFC | 1u;
           *((_BYTE *)next_particle_y + 12) = next_particle_y[6] & 0xC7 | 0x20;
           *((_BYTE *)next_particle_y + 9) = ray_result;
@@ -10716,7 +10616,7 @@ LABEL_43:
         current_particle_index = g_current_particle_index;
 LABEL_44:
         current_particle_index_copy = current_particle_index;
-        source_particle_record = &g_particle_records[10 * current_particle_index];
+        source_particle_record = &particle_record_at(current_particle_index).x;
         LOWORD(particle_x) = *source_particle_record;
         LOWORD(particle_y) = source_particle_record[1];
         goto LABEL_4;
@@ -10731,7 +10631,7 @@ LABEL_31:
     if ( SDWORD1(g_particle_state_lists_block_1) <= 31249 )
     {
       ray_material_class = (g_random_state - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-      ray_particle_index = &g_particle_records[10 * g_current_particle_index];
+      ray_particle_index = &particle_record_at(g_current_particle_index).x;
       g_random_state = ray_material_class;
       ray_particle_record = ray_particle_index[1];
       ray_cell_offset = *ray_particle_index;
@@ -10740,7 +10640,7 @@ LABEL_31:
       g_lookup_particle_index = ray_material_id;
       if ( (ray_material_id & 0x80000000) == 0 )
       {
-        ray_search_counter = &g_particle_records[10 * ray_material_id];
+        ray_search_counter = &particle_record_at(ray_material_id).x;
         *ray_search_counter = ray_cell_offset;
         ray_direction_index = *((_BYTE *)ray_search_counter + 12);
         *((_BYTE *)ray_search_counter + 9) = 0;
@@ -10765,7 +10665,7 @@ LABEL_31:
           if ( ray_transition_code == g_current_particle_index )
             g_particle_list_previous_index = ray_material_id;
         }
-        ray_target_x = &g_particle_records[10 * ray_material_id];
+        ray_target_x = &particle_record_at(ray_material_id).x;
         ray_target_y = *((_BYTE *)ray_target_x + 12);
         ++*((_DWORD *)&g_particle_state_lists + 3 * ray_particle_status + 2);
         *((_BYTE *)ray_target_x + 12) = ray_target_y & 0x3F | ((ray_particle_status & 3) << 6);
@@ -10799,13 +10699,13 @@ LABEL_56:
       target_particle_index = (unsigned __int8)g_surface_material_selector;
       if ( g_surface_material_selector == 1 )
       {
-        add_type(g_particle_records[10 * particle_id], g_particle_records[10 * particle_id + 1], 0x3Fu, 1);
+        add_type(particle_record_at(particle_id).x, particle_record_at(particle_id).y, 0x3Fu, 1);
       }
       else
       {
         target_particle_record = particle_id;
         target_particle_flags = g_view_width[0];
-        target_particle_state = &g_particle_records[10 * particle_id];
+        target_particle_state = &particle_record_at(particle_id).x;
         destination_cell_offset = g_cell_state_grid;
         *((_BYTE *)target_particle_state + 8) = 63;
         *(_BYTE *)(destination_cell_offset + 8LL * (*target_particle_state + target_particle_state[1] * target_particle_flags)) = 63;
@@ -10817,18 +10717,18 @@ LABEL_56:
         }
         if ( target_particle_index == 6 )
         {
-          ray_source_record = &g_particle_records[10 * particle_id];
+          ray_source_record = &particle_record_at(particle_id).x;
           g_random_state = (g_random_state - 0x61C8864680B583EBLL)
                       ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
           ray_source_cell_offset = g_random_state;
-          ray_result_value = LOBYTE(g_particle_records[10 * g_current_particle_index + 4]);
+          ray_result_value = LOBYTE(particle_record_at(g_current_particle_index).material_flags_word);
           ray_state_value = *((_BYTE *)ray_source_record + 12);
           *((_BYTE *)ray_source_record + 9) &= ~4u;
           *((_BYTE *)ray_source_record + 12) = ray_state_value & 0xF8 | ray_source_cell_offset & 7;
           if ( g_shared_engine_data[12 * ray_result_value + 26] == 5 )
           {
             g_random_state = (ray_source_cell_offset - 0x61C8864680B583EBLL) ^ ((unsigned __int64)(ray_source_cell_offset - 0x61C8864680B583EBLL) >> 27);
-            LOBYTE(g_particle_records[10 * target_particle_record + 8]) = (((unsigned __int8)(ray_source_cell_offset + 21)
+            LOBYTE(particle_record_at(target_particle_record).counter_word) = (((unsigned __int8)(ray_source_cell_offset + 21)
                                                 ^ (unsigned __int8)((unsigned __int64)(ray_source_cell_offset - 0x61C8864680B583EBLL) >> 27))
                                                & 1) << 7;
           }
@@ -10886,7 +10786,7 @@ LABEL_69:
   ray_result = (unsigned int)g_current_particle_index;
   if ( g_current_particle_index != -2 )
   {
-    ray_random_state = &g_particle_records[10 * g_current_particle_index];
+    ray_random_state = &particle_record_at(g_current_particle_index).x;
     ray_result = *((_BYTE *)ray_random_state + 9) & 0xFC | 1u;
     *((_BYTE *)ray_random_state + 12) = ray_random_state[6] & 0xC7 | 0x20;
     *((_BYTE *)ray_random_state + 9) = ray_result;
@@ -10908,8 +10808,6 @@ LABEL_69:
 // 334E0: using guessed type int g_particle_list_previous_index;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A38: using guessed type __int16 g_found_x;
@@ -10993,7 +10891,7 @@ LABEL_18:
               add_type(column_x, paint_y, 0x59u, 0);
               add_type(paired_material_x, paired_material_y, 0x59u, 0);
               if ( lookup_particle_at_cell(paired_material_x, paired_material_y, 0, 1) )
-                HIBYTE(g_particle_records[10 * g_lookup_particle_index + 5]) |= 1u;
+                HIBYTE(particle_record_at(g_lookup_particle_index).auxiliary_status_word) |= 1u;
             }
           }
           goto LABEL_17;
@@ -11318,8 +11216,6 @@ LABEL_30:
 // 334D8: using guessed type __int64 g_random_state;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A00: using guessed type int g_lookup_particle_index;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50AA0: using guessed type __int16 g_drag_tool_origin_x;
@@ -11513,7 +11409,6 @@ LABEL_7:
 // 334E5: using guessed type char g_selected_material;
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A18: using guessed type char g_direction_index;
 // E50AF2: using guessed type char g_brush_radius;
 // E50AF8: using guessed type __int16 g_last_touch_pixel_x;
@@ -11605,7 +11500,6 @@ __int64 __fastcall initialize_simulation_state(char reset_simulation_state)
 // 3A23F0: using guessed type int g_framebuffer_ring3_write_index;
 // 4C7374: using guessed type char g_framebuffer_ring3_write_available;
 // 4C7375: using guessed type char g_framebuffer_ring3_read_available;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A28: using guessed type char g_pixel_is_held;
 // E50A40: using guessed type __int128 g_particle_state_lists;
 // E50A50: using guessed type __int128 g_particle_state_lists_block_1;
@@ -11928,7 +11822,6 @@ LABEL_13:
 // 4C7374: using guessed type char g_framebuffer_ring3_write_available;
 // 4C7375: using guessed type char g_framebuffer_ring3_read_available;
 // 4C7378: using guessed type char g_visualization_material_mode;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A28: using guessed type char g_pixel_is_held;
 // E50A40: using guessed type __int128 g_particle_state_lists;
@@ -12242,7 +12135,7 @@ LABEL_91:
             {
               while ( 1 )
               {
-                simulation_particle_record = &g_particle_records[10 * simulation_particle_index];
+                simulation_particle_record = &particle_record_at(simulation_particle_index).x;
                 next_simulation_particle = *((_DWORD *)simulation_particle_record + 1);
                 simulation_particle_state = ((unsigned __int64)*((unsigned __int8 *)simulation_particle_record + 12) >> 3) & 7;
                 if ( g_particle_state_lut[hx_cast<int>(simulation_particle_state)] == 1 )
@@ -12277,17 +12170,17 @@ LABEL_97:
             }
             if ( hx_cast<_DWORD>(simulation_particle_state) != 1 || simulation_substep == 0 )
             {
-              dirty_clear_particle_record = &g_particle_records[10 * simulation_particle_index];
+              dirty_clear_particle_record = &particle_record_at(simulation_particle_index).x;
               if ( (*((_BYTE *)dirty_clear_particle_record + 9) & 4) == 0
                 || *((unsigned __int8 *)dirty_clear_particle_record + 16) < (unsigned int)(unsigned __int8)g_particle_counter_threshold )
               {
-                switch ( g_shared_engine_data[12 * LOBYTE(g_particle_records[10 * simulation_particle_index + 4]) + 20] )
+                switch ( g_shared_engine_data[12 * LOBYTE(particle_record_at(simulation_particle_index).material_flags_word) + 20] )
                 {
                   case 2:
                     if ( (unsigned __int8)current_particle_can_sleep() == 0 )
                       goto LABEL_115;
                     simulation_particle_index = g_current_particle_index;
-                    LOBYTE(g_particle_records[10 * g_current_particle_index + 6]) = g_particle_records[10 * g_current_particle_index + 6] & 0xC7 | 0x18;
+                    LOBYTE(particle_record_at(g_current_particle_index).packed_state_word) = particle_record_at(g_current_particle_index).packed_state_word & 0xC7 | 0x18;
                     break;
                   case 3:
                   case 4:
@@ -12339,7 +12232,7 @@ LABEL_24:
       if ( active_particle_index == -2 )
         goto LABEL_33;
 LABEL_25:
-      active_particle_record = &g_particle_records[10 * active_particle_index];
+      active_particle_record = &particle_record_at(active_particle_index).x;
       next_particle_index = *((_DWORD *)active_particle_record + 1);
       if ( g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)active_particle_record + 12) >> 3) & 7] == particle_state_class )
         g_particle_list_previous_index = active_particle_index;
@@ -12358,7 +12251,7 @@ LABEL_25:
           }
           active_particle_index = g_current_particle_index;
           render_particle_index = g_current_particle_index;
-          transition_particle_record = &g_particle_records[10 * g_current_particle_index];
+          transition_particle_record = &particle_record_at(g_current_particle_index).x;
           transition_material_id = *((unsigned __int8 *)transition_particle_record + 8);
           transition_period = (unsigned __int8)g_shared_engine_data[12 * transition_material_id + 21];
           if ( g_shared_engine_data[12 * transition_material_id + 21] != 0 )
@@ -12377,7 +12270,7 @@ LABEL_25:
             {
               goto LABEL_31;
             }
-            if ( ((LOBYTE(g_particle_records[10 * g_current_particle_index + 6]) >> 3) & 7) != 4 )
+            if ( ((LOBYTE(particle_record_at(g_current_particle_index).packed_state_word) >> 3) & 7) != 4 )
             {
               process_material_transition(transition_period, g_shared_engine_data[12 * transition_material_id + 22]);
               active_particle_index = g_current_particle_index;
@@ -12386,7 +12279,7 @@ LABEL_25:
           }
 LABEL_31:
           draw_particle();
-          render_particle_record = &g_particle_records[10 * render_particle_index];
+          render_particle_record = &particle_record_at(render_particle_index).x;
           if ( (*((_BYTE *)render_particle_record + 9) & 4) == 0 )
             goto LABEL_24;
           *((_BYTE *)render_particle_record + 16) = 0;
@@ -12540,8 +12433,6 @@ LABEL_6:
 // 33514: using guessed type __int16 g_background_color;
 // 33516: using guessed type char g_framebuffer_bank_index;
 // 33518: using guessed type __int64 g_framebuffer_state_banks[];
-// 4C7380: using guessed type __int16 g_particle_records[72];
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 // E50A40: using guessed type __int128 g_particle_state_lists;
@@ -12669,7 +12560,6 @@ extern "C" JNIEXPORT __int64 JNICALL Java_smellymoo_sand_Engine_init(
 // DC8: using guessed type Elf64_Sym;
 // DE0: using guessed type Elf64_Sym;
 // 33010: using guessed type char g_engine_mode;
-// 4C7410: using guessed type _BYTE g_particle_record_bytes[9996544];
 // E50A78: using guessed type __int64 g_jni_env;
 // E50A80: using guessed type __int64 g_surface_global_ref;
 // E50AD8: using guessed type char g_restore_simulation_box_on_next_surface;
