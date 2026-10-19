@@ -708,9 +708,9 @@ def main() -> None:
         draw_to = re.sub(r"\b" + old_name + r"\b", semantic_name, draw_to)
     generated = generated[:start] + draw_to + generated[end:]
 
-    # Name the brush material mapping and variant-selection state. This helper
-    # is called for each sampled point by draw_to(), so preserve its lookup,
-    # random-number, and placement logic exactly.
+    # Name the brush material mapping and variant-selection state. Strokes
+    # should attempt placement at every interpolated cell; the binary's
+    # class-based 1-in-8 emission throttle produced visible holes in brush paths.
     start_marker = "//----- (000000000000E2E4)"
     start = generated.index(start_marker)
     end = generated.index("//-----", start + len(start_marker))
@@ -741,6 +741,20 @@ def main() -> None:
         "v23": "grid_pattern_match",
     }.items():
         add_group_type = re.sub(r"\b" + old_name + r"\b", semantic_name, add_group_type)
+    sparse_emission_gate = """        if ( (unsigned __int8)(g_shared_engine_data[12 * *material_group_entry + 20] - 3) <= 1u )
+        {
+          g_random_state = (g_random_state - 0x61C8864680B583EBLL)
+                      ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
+          if ( (g_random_state & 7) != 0 )
+            return 1;
+        }
+"""
+    if add_group_type.count(sparse_emission_gate) != 1:
+        raise SystemExit("Expected one sparse brush-emission gate")
+    add_group_type = add_group_type.replace(
+        sparse_emission_gate,
+        "        // Continuous placement avoids visible holes in fluid and granular strokes.\n",
+    )
     generated = generated[:start] + add_group_type + generated[end:]
 
     # Name the rectangular brush bounds, material mapping state, and perimeter
@@ -829,6 +843,35 @@ def main() -> None:
         "v18": "eraser_toggle_state",
     }.items():
         run_command = re.sub(r"\b" + old_name + r"\b", semantic_name, run_command)
+    down_stroke_block = """        byte_E50AFE = 1;
+LABEL_16:
+        result = draw_to(touch_x, touch_y);
+        goto LABEL_17;
+"""
+    if run_command.count(down_stroke_block) != 1:
+        raise SystemExit("Expected one touch-down brush block")
+    run_command = run_command.replace(
+        down_stroke_block,
+        """        byte_E50AFE = 1;
+        result = draw_point(touch_x, touch_y);
+        goto LABEL_17;
+LABEL_16:
+        result = draw_to(touch_x, touch_y);
+        goto LABEL_17;
+""",
+    )
+    release_point_call = """        result = draw_point(command_parameter_1 / (unsigned __int8)g_zoom_factor, command_parameter_2 / (unsigned __int8)g_zoom_factor);
+"""
+    if run_command.count(release_point_call) != 1:
+        raise SystemExit("Expected one pointer-release brush dab")
+    run_command = run_command.replace(
+        release_point_call,
+        """        touch_x = command_parameter_1 / (unsigned __int8)g_zoom_factor;
+        touch_y = command_parameter_2 / (unsigned __int8)g_zoom_factor;
+        result = draw_point(touch_x, touch_y);
+        add_grouptype(touch_x, touch_y, g_selected_material, 0);
+""",
+    )
     generated = generated[:start] + run_command + generated[end:]
 
     # Name the frame scheduler's command-queue indices, simulation passes,

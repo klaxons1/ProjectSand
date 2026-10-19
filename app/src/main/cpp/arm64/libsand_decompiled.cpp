@@ -7082,13 +7082,7 @@ LABEL_40:
         material_id = hx_cast<unsigned __int8>(material_id);
         goto LABEL_40;
       default:
-        if ( (unsigned __int8)(g_shared_engine_data[12 * *material_group_entry + 20] - 3) <= 1u )
-        {
-          g_random_state = (g_random_state - 0x61C8864680B583EBLL)
-                      ^ ((unsigned __int64)(g_random_state - 0x61C8864680B583EBLL) >> 27);
-          if ( (g_random_state & 7) != 0 )
-            return 1;
-        }
+        // Continuous placement avoids visible holes in fluid and granular strokes.
         variant_count = g_material_properties_lut[4 * tool_id + 225];
         if ( variant_count == 1 )
         {
@@ -11677,6 +11671,8 @@ __int64 __fastcall run_command(__int64 packed_command)
       if ( g_selected_material != 49 )
       {
         byte_E50AFE = 1;
+        result = draw_point(touch_x, touch_y);
+        goto LABEL_17;
 LABEL_16:
         result = draw_to(touch_x, touch_y);
         goto LABEL_17;
@@ -11716,7 +11712,10 @@ LABEL_17:
       }
       else
       {
-        result = draw_point(command_parameter_1 / (unsigned __int8)g_zoom_factor, command_parameter_2 / (unsigned __int8)g_zoom_factor);
+        touch_x = command_parameter_1 / (unsigned __int8)g_zoom_factor;
+        touch_y = command_parameter_2 / (unsigned __int8)g_zoom_factor;
+        result = draw_point(touch_x, touch_y);
+        add_grouptype(touch_x, touch_y, g_selected_material, 0);
       }
       byte_E50AFE = 0;
       return result;

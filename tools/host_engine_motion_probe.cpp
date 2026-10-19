@@ -4,8 +4,16 @@
 #include "../app/src/main/cpp/arm64/libsand_decompiled.cpp"
 
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+
+static void send_touch_command(unsigned char action, short x, short y) {
+  const std::uint64_t packed = static_cast<std::uint64_t>(action) |
+      (static_cast<std::uint64_t>(static_cast<std::uint16_t>(x)) << 16) |
+      (static_cast<std::uint64_t>(static_cast<std::uint16_t>(y)) << 32);
+  run_command(static_cast<__int64>(packed));
+}
 
 int main() {
   constexpr int width = 64;
@@ -139,6 +147,47 @@ int main() {
     }
     std::printf("tool %d diagonal stroke: %d particles stayed on the stroke\n",
                 stroke[0], particle_count);
+  }
+
+  // Regression: flowing and granular brush strokes must attempt every
+  // interpolated cell, rather than dropping seven of every eight placements.
+  constexpr unsigned char dense_stroke_tools[] = {1, 3, 4, 5};
+  for (const unsigned char tool_id : dense_stroke_tools) {
+    init_all(1);
+    g_view_width[0] = width;
+    g_view_height = height;
+    g_framebuffer_stride = width;
+    g_cell_state_grid = reinterpret_cast<__int64>(
+        std::calloc(static_cast<size_t>(width) * height, 8));
+    if (!g_cell_state_grid) {
+      std::fprintf(stderr, "could not allocate dense-stroke test grid\n");
+      return 1;
+    }
+    g_cell_state_allocated = 1;
+    g_engine_mode = 7;
+    g_zoom_factor = 1;
+    g_selected_material = static_cast<char>(tool_id);
+    byte_E50AF2 = 1;
+    send_touch_command(2, 10, 20);
+    for (short x = 11; x <= 50; ++x) {
+      send_touch_command(3, x, 20);
+    }
+    send_touch_command(4, 50, 20);
+
+    int filled_cells = 0;
+    for (int x = 10; x <= 50; ++x) {
+      const unsigned char material = *reinterpret_cast<unsigned char*>(
+          g_cell_state_grid + 8LL * (x + 20 * width));
+      if (material == 0) {
+        std::fprintf(stderr,
+                     "tool %u left a hole at (%d,20) in a native touch stroke\n",
+                     tool_id, x);
+        return 1;
+      }
+      ++filled_cells;
+    }
+    std::printf("tool %u native touch stroke: %d/41 cells filled\n",
+                tool_id, filled_cells);
   }
 
   // A non-particle wall cell blocks direct gravity; the production liquid

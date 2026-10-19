@@ -8,7 +8,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.View;
-import android.widget.CheckedTextView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
@@ -32,11 +31,6 @@ public class Settings extends Activity {
         finish();
     }
 
-    public void checkbox(View view) {
-        CheckedTextView toggle = (CheckedTextView) view;
-        toggle.toggle();
-    }
-
     @SuppressLint({"NewApi"})
     public void click(View view) {
         int engine_mode;
@@ -51,7 +45,6 @@ public class Settings extends Activity {
                 RadioGroup option_engine = (RadioGroup) findViewById(R.id.option_engine);
                 RadioGroup option_toolbox = (RadioGroup) findViewById(R.id.option_toolbox);
                 RadioGroup option_background = (RadioGroup) findViewById(R.id.option_background);
-                CheckedTextView option_show_pro = (CheckedTextView) findViewById(R.id.option_show_pro);
                 int last_state = prefs.getInt("diagnose", 3);
                 switch (option_engine.getCheckedRadioButtonId()) {
                     case R.id.option_engine_onesim /* 2131034233 */:
@@ -101,7 +94,6 @@ public class Settings extends Activity {
                 prefs_edit.putInt("diagnose", last_state);
                 prefs_edit.putInt("theme", toolbox_theme);
                 prefs_edit.putInt("sim_color", background);
-                prefs_edit.putBoolean("never_unlock", !option_show_pro.isChecked());
                 prefs_edit.commit();
                 if (Build.VERSION.SDK_INT > 10) {
                     Intent intent = new Intent(this, (Class<?>) Main.class);

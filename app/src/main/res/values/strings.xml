@@ -3,10 +3,6 @@
     <string name="app_name">Sand box</string>
     <string name="settings_title">game settings</string>
     <string name="help_title">help</string>
-    <string name="support_dev">support developer</string>
-    <string name="unlock_title">unlock all premium tools:</string>
-    <string name="freemium_desc">Uranium, Fireworks, C4 explosive, Nitroglycerine, Petrol, Thermite, Pump and Teleportation portal.</string>
-    <string name="freemium_desc2">All these are included and also all future premium tools.</string>
     <string name="diag_title">auto-repair</string>
     <string name="diagnostic_explained">problem last run:</string>
     <string name="add_info">please add info, for example a description of the crash</string>
@@ -19,9 +15,7 @@
 so I can fix it.</string>
     <string name="button_fix">Fix</string>
     <string name="button_back">Back</string>
-    <string name="button_never">Never</string>
     <string name="button_exit">Exit</string>
-    <string name="button_unlock">Unlock</string>
     <string name="button_try">Try</string>
     <string name="button_email">Email</string>
     <string name="button_save">Save</string>
@@ -83,12 +77,10 @@ so I can fix it.</string>
     <string name="perm">indestructible wall</string>
     <string name="portal">teleportation portal</string>
     <string name="thermite">thermite</string>
-    <string name="setting_general">general settings</string>
     <string name="setting_toolbox">toolbox type</string>
     <string name="setting_mode">engine mode</string>
     <string name="setting_diag">diagnostic settings</string>
     <string name="setting_background">background colour</string>
-    <string name="setting_show_pro">show premium</string>
     <string name="toolbox_normal">images</string>
     <string name="toolbox_single">one row</string>
     <string name="toolbox_color">colours</string>

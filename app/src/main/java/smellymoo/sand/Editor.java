@@ -8,15 +8,10 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.HorizontalScrollView;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
 /* JADX INFO: loaded from: C:\Users\pashansky2005\Downloads\smellymoo.sand\classes.dex */
 public class Editor extends Activity implements SurfaceHolder.Callback {
-    static final char BUTTON_ENABLED = 1;
-    static final char BUTTON_GREY = 3;
-    static final char BUTTON_INVISIBLE = 4;
-    static final char BUTTON_LOCKED = 2;
     static final char BUTTON_VISIBLE = 0;
     static final char KILL = 1;
     static final char MOUSE_DOWN = 2;
@@ -25,19 +20,21 @@ public class Editor extends Activity implements SurfaceHolder.Callback {
     static final char ROTATE = 6;
     static Toast toasty;
     static final short[] zoom_lookup = {1, 2, 3, 6};
-    static boolean ui_loaded = false;
     static Surface sand_surface = null;
     static short orientation = 0;
     static boolean enable_rotate = true;
     static boolean mouse_down = false;
     static char zoom_factor = 2;
     static int toast_y = 100;
+    private SurfaceView touchSurface;
 
     @Override // android.app.Activity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.editor);
         SurfaceView sand_view = (SurfaceView) findViewById(R.id.sand_view);
+        touchSurface = sand_view;
+        sand_view.setOnTouchListener((view, event) -> handleTouch(event, true));
         SurfaceHolder holder = sand_view.getHolder();
         holder.addCallback(this);
     }
@@ -70,11 +67,9 @@ public class Editor extends Activity implements SurfaceHolder.Callback {
 
     @Override // android.view.SurfaceHolder.Callback
     public void surfaceCreated(SurfaceHolder holder) {
-        ui_loaded = true;
         setRequestedOrientation(5);
         HorizontalScrollView tool_box = (HorizontalScrollView) findViewById(R.id.scroll_tools);
         toast_y = tool_box.getHeight() + 20;
-        premium_lock(false);
         sand_surface = holder.getSurface();
         Engine.init(sand_surface, 3);
     }
@@ -83,20 +78,33 @@ public class Editor extends Activity implements SurfaceHolder.Callback {
     @Override // android.app.Activity
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
-        short x = (short) event.getX();
-        short y = (short) event.getY();
+        return handleTouch(event, false);
+    }
+
+    private boolean handleTouch(MotionEvent event, boolean surfaceLocal) {
+        float x = event.getX();
+        float y = event.getY();
+        if (!surfaceLocal && touchSurface != null) {
+            int[] surfaceLocation = new int[2];
+            touchSurface.getLocationOnScreen(surfaceLocation);
+            x = event.getRawX() - surfaceLocation[0];
+            y = event.getRawY() - surfaceLocation[1];
+        }
+        short surfaceX = (short) x;
+        short surfaceY = (short) y;
         switch (event.getAction()) {
             case 0:
                 mouse_down = true;
-                Engine.enqueue((char) 2, x, y);
+                Engine.enqueue(MOUSE_DOWN, surfaceX, surfaceY);
                 return true;
             case 1:
+            case 3: // ACTION_CANCEL: terminate the in-progress native stroke too.
                 mouse_down = false;
-                Engine.enqueue((char) 4, x, y);
+                Engine.enqueue(MOUSE_UP, surfaceX, surfaceY);
                 return true;
             case 2:
                 if (mouse_down) {
-                    Engine.enqueue((char) 3, x, y);
+                    Engine.enqueue(MOUSE_MOVE, surfaceX, surfaceY);
                 }
                 return true;
             default:
@@ -192,53 +200,8 @@ public class Editor extends Activity implements SurfaceHolder.Callback {
         }
     }
 
-    private void debug_unlock() {
-        set_button_state("debug", 0);
-        set_button_state("save", 0);
-        set_button_state("settings", 0);
-    }
-
-    private void premium_lock(boolean lock) {
-        int lock_state = lock ? 2 : 1;
-        if (ui_loaded) {
-            set_button_state("firework", lock_state);
-            set_button_state("filter", lock_state);
-            set_button_state("gunpowder", lock_state);
-            set_button_state("nuke", lock_state);
-            set_button_state("nitro", lock_state);
-            set_button_state("petrol", lock_state);
-            set_button_state("c4", lock_state);
-            set_button_state("perm", lock_state);
-        }
-    }
-
-    public void set_button_state(String name, int state) {
-        int button_id = getResources().getIdentifier("tool_" + name, "id", getPackageName());
-        String append = "";
-        View button = findViewById(button_id);
-        button.setTag(R.id.button_state, Integer.valueOf(state));
-        switch (state) {
-            case 0:
-                button.setVisibility(0);
-                return;
-            case 2:
-                append = "_locked";
-                break;
-            case 3:
-                append = "_grey";
-                break;
-            case Engine.ONE_SIM /* 4 */:
-                button.setVisibility(8);
-                return;
-        }
-        int res_id = getResources().getIdentifier(String.valueOf(name) + append, "drawable", getPackageName());
-        ((ImageButton) button).setImageResource(res_id);
-    }
-
     public void tool(View view) {
-        Object state = view.getTag(R.id.button_state);
-        if (state == null || ((Integer) state).intValue() != 3) {
-            switch (view.getId()) {
+        switch (view.getId()) {
                 case R.id.tool_rotate /* 2131034136 */:
                     enable_rotate = !enable_rotate;
                     break;
@@ -284,8 +247,7 @@ public class Editor extends Activity implements SurfaceHolder.Callback {
                 toasty.cancel();
             }
             toasty = Toast.makeText(getApplicationContext(), view.getContentDescription(), 0);
-            toasty.setGravity(81, 0, toast_y);
-            toasty.show();
-        }
+        toasty.setGravity(81, 0, toast_y);
+        toasty.show();
     }
 }
