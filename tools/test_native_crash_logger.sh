@@ -6,6 +6,7 @@ trap 'rm -rf "$BUILD_DIR"' EXIT
 
 # The probe terminates child processes with SIGSEGV; keep it separate from ASan.
 "${CXX:-c++}" -std=c++17 -Wall -Wextra \
+  -DSAND_ENGINE_STALL_THRESHOLD_NS=1000000ULL \
   -I"$ROOT/app/src/main/cpp" \
   "$ROOT/tools/test_native_crash_logger.cpp" \
   "$ROOT/app/src/main/cpp/native_crash_logger.cpp" \

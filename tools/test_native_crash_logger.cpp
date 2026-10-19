@@ -21,6 +21,10 @@ static bool run_crash_case(const char *preferred, const char *fallback,
   if (child == 0) {
     if (sand_configure_crash_logging(preferred, fallback) == nullptr)
       _exit(90);
+    sand_log_engine_loop_exit(7, 1234);
+    sand_report_engine_progress(7, 1234);
+    usleep(20000);
+    sand_check_engine_progress();
     raise(SIGSEGV);
     _exit(91);
   }
@@ -54,9 +58,11 @@ static bool run_crash_case(const char *preferred, const char *fallback,
   std::ifstream report(path);
   const std::string contents((std::istreambuf_iterator<char>(report)),
                              std::istreambuf_iterator<char>());
-  for (const char *expected : {"NATIVE FATAL SIGNAL", "signal_name=SIGSEGV",
-                               "signal=11", "fault_address=", "crash_time_epoch_seconds=",
-                               "pc=0x", "sp=0x"}) {
+  for (const char *expected : {"NATIVE ENGINE LOOP RETURNED", "engine_mode=7",
+                               "simulation_ticks=1234", "PROGRESS STALLED",
+                               "stalled_for_ms=", "NATIVE FATAL SIGNAL",
+                               "signal_name=SIGSEGV", "signal=11", "fault_address=",
+                               "crash_time_epoch_seconds=", "pc=0x", "sp=0x"}) {
     if (contents.find(expected) == std::string::npos) {
       std::fprintf(stderr, "crash report is missing '%s'\n", expected);
       return false;

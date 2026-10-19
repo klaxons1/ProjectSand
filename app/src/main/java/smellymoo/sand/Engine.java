@@ -39,6 +39,8 @@ public class Engine {
 
     static native void prepareCrashSignalStack();
 
+    static native void checkNativeEngineProgress();
+
     /* JADX INFO: Access modifiers changed from: private */
     public static native void init(Surface surface2, char c, boolean z, boolean z2);
 

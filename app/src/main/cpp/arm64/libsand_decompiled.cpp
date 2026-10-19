@@ -5,6 +5,7 @@
 */
 
 #include "defs.h"
+#include "native_crash_logger.h"
 
 #include <stdarg.h>
 
@@ -11926,6 +11927,10 @@ void *__fastcall main_loop()
   engine_mode_snapshot = (unsigned __int8)g_engine_mode;
   do
   {
+#if defined(__ANDROID__)
+    sand_report_engine_progress(static_cast<unsigned char>(g_engine_mode),
+                                static_cast<unsigned int>(g_simulation_tick_counter));
+#endif
     switch ( engine_mode_snapshot )
     {
       case 1u:
@@ -12557,7 +12562,12 @@ extern "C" JNIEXPORT __int64 JNICALL Java_smellymoo_sand_Engine_init(
     }
     if ( requested_zoom_value != 0 )
       change_zoom(requested_zoom_value, 1);
-    return (__int64)main_loop();
+    void *loop_result = main_loop();
+#if defined(__ANDROID__)
+    sand_log_engine_loop_exit(static_cast<unsigned char>(g_engine_mode),
+                              static_cast<unsigned int>(g_simulation_tick_counter));
+#endif
+    return (__int64)loop_result;
   }
   return jni_result;
 }

@@ -1,5 +1,6 @@
 #include "native_crash_logger.h"
 
+#include <atomic>
 #include <cerrno>
 #include <csignal>
 #include <cstdint>
@@ -22,6 +23,9 @@ namespace {
 
 constexpr size_t kPathCapacity = 1024;
 constexpr size_t kAlternateStackSize = 64 * 1024;
+#ifndef SAND_ENGINE_STALL_THRESHOLD_NS
+#define SAND_ENGINE_STALL_THRESHOLD_NS (10ULL * 1000000000ULL)
+#endif
 constexpr int kCrashSignals[] = {
     SIGABRT, SIGBUS, SIGFPE, SIGILL, SIGSEGV, SIGTRAP, SIGSYS, SIGXCPU, SIGXFSZ,
     SIGPIPE};
@@ -31,6 +35,10 @@ volatile sig_atomic_t g_inside_crash_handler = 0;
 bool g_handlers_installed = false;
 struct sigaction g_previous_actions[NSIG]{};
 char g_selected_directory[kPathCapacity]{};
+std::atomic<int> g_progress_mode{-1};
+std::atomic<unsigned int> g_progress_tick{0};
+std::atomic<uint64_t> g_progress_time_ns{0};
+std::atomic<bool> g_stall_reported{false};
 thread_local void *g_alternate_stack_memory = nullptr;
 
 void write_all(int fd, const char *data, size_t size) {
@@ -296,6 +304,77 @@ extern "C" const char *sand_configure_crash_logging(
   return g_selected_directory;
 }
 
+extern "C" void sand_report_engine_progress(int engine_mode,
+                                            unsigned int simulation_ticks) {
+  const int previous_mode = g_progress_mode.load(std::memory_order_relaxed);
+  const unsigned int previous_tick = g_progress_tick.load(std::memory_order_relaxed);
+  if (previous_mode == engine_mode &&
+      static_cast<unsigned int>(simulation_ticks - previous_tick) < 16u)
+    return;
+
+  timespec now{};
+  if (clock_gettime(CLOCK_MONOTONIC, &now) != 0)
+    return;
+  g_progress_mode.store(engine_mode, std::memory_order_relaxed);
+  g_progress_tick.store(simulation_ticks, std::memory_order_relaxed);
+  g_progress_time_ns.store(static_cast<uint64_t>(now.tv_sec) * 1000000000ULL +
+                               static_cast<uint64_t>(now.tv_nsec),
+                           std::memory_order_release);
+  g_stall_reported.store(false, std::memory_order_release);
+}
+
+extern "C" void sand_check_engine_progress(void) {
+  const uint64_t last_progress = g_progress_time_ns.load(std::memory_order_acquire);
+  if (last_progress == 0)
+    return;
+  const int mode = g_progress_mode.load(std::memory_order_relaxed);
+  if (mode != 7 && mode != 8)
+    return;
+
+  timespec now{};
+  if (clock_gettime(CLOCK_MONOTONIC, &now) != 0)
+    return;
+  const uint64_t now_ns = static_cast<uint64_t>(now.tv_sec) * 1000000000ULL +
+                          static_cast<uint64_t>(now.tv_nsec);
+  constexpr uint64_t kStallThresholdNs = SAND_ENGINE_STALL_THRESHOLD_NS;
+  if (now_ns <= last_progress || now_ns - last_progress < kStallThresholdNs)
+    return;
+
+  bool expected = false;
+  if (!g_stall_reported.compare_exchange_strong(expected, true,
+                                                 std::memory_order_acq_rel))
+    return;
+  const int fd = g_crash_log_fd;
+  if (fd < 0)
+    return;
+
+  write_all(fd, "=== NATIVE ENGINE PROGRESS STALLED ===\n", 39);
+  write_signed_number(fd, "engine_mode=", mode);
+  write_number(fd, "simulation_ticks=",
+               static_cast<uint64_t>(g_progress_tick.load(std::memory_order_relaxed)));
+  write_number(fd, "stalled_for_ms=",
+               (now_ns - last_progress) / 1000000ULL);
+  fsync(fd);
+}
+
+extern "C" void sand_log_engine_loop_exit(int engine_mode,
+                                          unsigned int simulation_ticks) {
+  const int fd = g_crash_log_fd;
+  if (fd < 0)
+    return;
+
+  write_all(fd, "=== NATIVE ENGINE LOOP RETURNED ===\n", 36);
+  write_signed_number(fd, "engine_mode=", engine_mode);
+  write_number(fd, "simulation_ticks=",
+               static_cast<uint64_t>(simulation_ticks));
+  timespec event_time{};
+  if (clock_gettime(CLOCK_REALTIME, &event_time) == 0) {
+    write_number(fd, "event_time_epoch_seconds=",
+                 static_cast<uint64_t>(event_time.tv_sec));
+  }
+  fsync(fd);
+}
+
 #if defined(__ANDROID__)
 extern "C" JNIEXPORT jstring JNICALL
 Java_smellymoo_sand_Engine_configureCrashLogging(JNIEnv *environment, jclass,
@@ -319,5 +398,10 @@ Java_smellymoo_sand_Engine_configureCrashLogging(JNIEnv *environment, jclass,
 extern "C" JNIEXPORT void JNICALL
 Java_smellymoo_sand_Engine_prepareCrashSignalStack(JNIEnv *, jclass) {
   sand_prepare_crash_signal_stack();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_smellymoo_sand_Engine_checkNativeEngineProgress(JNIEnv *, jclass) {
+  sand_check_engine_progress();
 }
 #endif

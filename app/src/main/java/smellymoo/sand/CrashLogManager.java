@@ -36,6 +36,7 @@ final class CrashLogManager {
     private static boolean nativeLoggerConfigured;
     private static boolean publicAccessAtLastConfiguration;
     private static Thread.UncaughtExceptionHandler previousHandler;
+    private static Thread nativeWatchdogThread;
 
     private CrashLogManager() {}
 
@@ -46,6 +47,27 @@ final class CrashLogManager {
         installJavaHandler();
         if (!nativeLoggerConfigured)
             refreshNativeLogger();
+        startNativeWatchdog();
+    }
+
+    private static void startNativeWatchdog() {
+        if (nativeWatchdogThread != null)
+            return;
+        nativeWatchdogThread = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    Thread.sleep(5000L);
+                    Engine.checkNativeEngineProgress();
+                } catch (InterruptedException stopped) {
+                    Thread.currentThread().interrupt();
+                } catch (Throwable error) {
+                    Log.e(TAG, "Native simulation watchdog stopped", error);
+                    return;
+                }
+            }
+        }, "SandEngineWatchdog");
+        nativeWatchdogThread.setDaemon(true);
+        nativeWatchdogThread.start();
     }
 
     static synchronized void refresh(Context context) {

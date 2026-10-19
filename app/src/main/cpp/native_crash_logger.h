@@ -13,6 +13,11 @@ const char *sand_configure_crash_logging(const char *preferred_directory,
 // per-thread, so every Java/native thread that may run engine code should call it.
 void sand_prepare_crash_signal_stack(void);
 
+// Record a normal native engine-loop return, which is not a fatal signal.
+void sand_log_engine_loop_exit(int engine_mode, unsigned int simulation_ticks);
+void sand_report_engine_progress(int engine_mode, unsigned int simulation_ticks);
+void sand_check_engine_progress(void);
+
 #ifdef __cplusplus
 }
 #endif
