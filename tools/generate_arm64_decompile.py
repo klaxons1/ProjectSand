@@ -29,6 +29,7 @@ FUNCTION_NAMES = {
     "chain_append": "append_particle_state_list",
     "calc_state_all": "reconcile_particle_states",
     "init_group": "initialize_material_group_lookup",
+    "return_particle": "lookup_particle_at_cell",
 }
 
 # Convert address-derived Hex-Rays globals into stable role-based names.
@@ -1159,6 +1160,25 @@ def main() -> None:
         new_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, new_particle)
     generated = generated[:start] + new_particle + generated[end:]
 
+    # Name the coordinate lookup, class filter, and optional resume path used
+    # to resolve a particle handle from a simulation-grid cell.
+    start_marker = "//----- (000000000000A744)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    particle_lookup = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "x",
+        "a2": "y",
+        "a3": "class_filter",
+        "a4": "allow_resume",
+        "v4": "cell_x",
+        "v6": "cell_record",
+        "v7": "material_motion_class",
+        "v8": "particle_index",
+    }.items():
+        particle_lookup = re.sub(r"\b" + old_name + r"\b", semantic_name, particle_lookup)
+    generated = generated[:start] + particle_lookup + generated[end:]
+
     # Clarify the neighbor-wake path used to reactivate particles around a
     # changing cell, without changing its sentinel or packed-state handling.
     start_marker = "//----- (000000000000B080)"
@@ -1293,6 +1313,17 @@ def main() -> None:
         "unsigned __int8 source_list_index, "
         "unsigned __int8 destination_list_index, "
         "char update_particle_list_tags);",
+    )
+    particle_lookup_prototype = (
+        "bool __fastcall lookup_particle_at_cell(__int16 a1, __int16 a2, "
+        "char a3, char a4);"
+    )
+    if generated.count(particle_lookup_prototype) != 1:
+        raise SystemExit("Expected one lookup_particle_at_cell prototype")
+    generated = generated.replace(
+        particle_lookup_prototype,
+        "bool __fastcall lookup_particle_at_cell(__int16 x, __int16 y, "
+        "char class_filter, char allow_resume);",
     )
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)

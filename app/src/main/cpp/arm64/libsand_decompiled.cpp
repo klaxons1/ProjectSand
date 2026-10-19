@@ -81,7 +81,7 @@ __int64 __fastcall pixel_is(__int16 a1, __int16 a2, unsigned __int8 a3, char a4)
 __int64 __fastcall near_point(__int64 result, __int16 a2, unsigned __int8 a3, char a4, char a5);
 __int64 __fastcall init_particle(int a1, __int16 a2, __int16 a3, unsigned __int8 a4); // idb
 __int64 __fastcall resume_particle(__int16 a1, __int16 a2); // idb
-bool __fastcall return_particle(__int16 a1, __int16 a2, char a3, char a4);
+bool __fastcall lookup_particle_at_cell(__int16 x, __int16 y, char class_filter, char allow_resume);
 bool __fastcall pixel_bool(__int16 a1, __int16 a2, char a3);
 unsigned __int64 __fastcall drop_interupted(__int16 a1, __int16 a2);
 __int64 __fastcall wake_particle(__int64 result, __int16 a2);
@@ -3553,7 +3553,7 @@ __int64 __fastcall delete_pixel(__int16 a1, __int16 a2)
 
   v2 = a1;
   v3 = a2;
-  if ( return_particle(a1, a2, 0, 0) )
+  if ( lookup_particle_at_cell(a1, a2, 0, 0) )
   {
     v8 = dword_E50A00;
     v9 = dword_E50A00;
@@ -3682,7 +3682,7 @@ __int64 __fastcall pixel_custom_test(__int16 a1, __int16 a2, char a3)
       {
         return 0;
       }
-      if ( return_particle(a1, a2, 0, 0) && (unsigned __int8)particle_counter(dword_E50A00) > 4u )
+      if ( lookup_particle_at_cell(a1, a2, 0, 0) && (unsigned __int8)particle_counter(dword_E50A00) > 4u )
         goto LABEL_8;
       return 0;
     case 1:
@@ -3719,7 +3719,7 @@ __int64 __fastcall pixel_custom_test(__int16 a1, __int16 a2, char a3)
       {
         return 0;
       }
-      if ( !return_particle(a1, a2, 0, 0) || (unsigned __int8)particle_counter(dword_E50A00) <= 0x13u )
+      if ( !lookup_particle_at_cell(a1, a2, 0, 0) || (unsigned __int8)particle_counter(dword_E50A00) <= 0x13u )
         return 0;
       goto LABEL_8;
     case 2:
@@ -3756,7 +3756,7 @@ __int64 __fastcall pixel_custom_test(__int16 a1, __int16 a2, char a3)
       {
         return 0;
       }
-      if ( !return_particle(a1, a2, 0, 0) || (unsigned __int8)particle_counter(dword_E50A00) <= 0x95u )
+      if ( !lookup_particle_at_cell(a1, a2, 0, 0) || (unsigned __int8)particle_counter(dword_E50A00) <= 0x95u )
         return 0;
       goto LABEL_8;
     case 3:
@@ -4631,30 +4631,30 @@ __int64 __fastcall resume_particle(__int16 x, __int16 y)
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
 //----- (000000000000A744) ----------------------------------------------------
-bool __fastcall return_particle(__int16 a1, __int16 a2, char a3, char a4)
+bool __fastcall lookup_particle_at_cell(__int16 x, __int16 y, char class_filter, char allow_resume)
 {
-  int v4; // w5
+  int cell_x; // w5
   _BOOL8 result; // x0
-  unsigned __int8 *v6; // x8
-  unsigned int v7; // w4
-  int v8; // w0
+  unsigned __int8 *cell_record; // x8
+  unsigned int material_motion_class; // w4
+  int particle_index; // w0
 
-  v4 = a1;
+  cell_x = x;
   result = false;
-  if ( v4 > 1 && a2 > 1 && a2 < g_view_height - 2 && v4 < g_view_width[0] - 2 )
+  if ( cell_x > 1 && y > 1 && y < g_view_height - 2 && cell_x < g_view_width[0] - 2 )
   {
-    v6 = (unsigned __int8 *)(g_cell_state_grid + 8LL * (v4 + a2 * g_view_width[0]));
-    v7 = (unsigned __int8)g_shared_engine_data[12 * *v6 + 20];
-    if ( v7 > 1 && (a3 == 0 || (v7 & 0xFFFFFFFB) != 2) )
+    cell_record = (unsigned __int8 *)(g_cell_state_grid + 8LL * (cell_x + y * g_view_width[0]));
+    material_motion_class = (unsigned __int8)g_shared_engine_data[12 * *cell_record + 20];
+    if ( material_motion_class > 1 && (class_filter == 0 || (material_motion_class & 0xFFFFFFFB) != 2) )
     {
-      v8 = *((_DWORD *)v6 + 1);
-      dword_E50A00 = v8;
-      if ( a4 != 0 && v8 == -2 )
+      particle_index = *((_DWORD *)cell_record + 1);
+      dword_E50A00 = particle_index;
+      if ( allow_resume != 0 && particle_index == -2 )
       {
-        v8 = resume_particle(v4, a2);
-        dword_E50A00 = v8;
+        particle_index = resume_particle(cell_x, y);
+        dword_E50A00 = particle_index;
       }
-      return v8 >= 0;
+      return particle_index >= 0;
     }
   }
   return result;
@@ -4763,7 +4763,7 @@ LABEL_45:
       goto LABEL_9;
     case 10:
 LABEL_9:
-      if ( return_particle(v3, a2, 0, 1) )
+      if ( lookup_particle_at_cell(v3, a2, 0, 1) )
       {
         v5 = &g_particle_records[10 * dword_E50A00];
         if ( (*((_BYTE *)v5 + 9) & 4) == 0 && *((_BYTE *)v5 + 16) != 0 )
@@ -4771,7 +4771,7 @@ LABEL_9:
       }
       return 0;
     case 11:
-      if ( !return_particle(v3, a2, 0, 1) )
+      if ( !lookup_particle_at_cell(v3, a2, 0, 1) )
         return 0;
       v6 = &g_particle_records[10 * dword_E50A00];
       return (*((_BYTE *)v6 + 9) & 4) == 0 && *((_BYTE *)v6 + 16) == 0;
@@ -4808,7 +4808,7 @@ LABEL_9:
       {
         return 0;
       }
-      if ( !return_particle(v3, a2, 0, 1) )
+      if ( !lookup_particle_at_cell(v3, a2, 0, 1) )
         return 0;
       return LOBYTE(g_particle_records[10 * dword_E50A00 + 8]) > LOBYTE(g_particle_records[10 * g_current_particle_index + 8]) + 1;
     case 13:
@@ -4839,7 +4839,7 @@ LABEL_9:
       {
         return 0;
       }
-      if ( !return_particle(v3, a2, 0, 1) )
+      if ( !lookup_particle_at_cell(v3, a2, 0, 1) )
         return 0;
       return LOBYTE(g_particle_records[10 * dword_E50A00 + 8]) < (unsigned int)LOBYTE(g_particle_records[10 * g_current_particle_index + 8]);
     default:
@@ -4866,7 +4866,7 @@ unsigned __int64 __fastcall drop_interupted(__int16 a1, __int16 a2)
   unsigned __int64 result; // x0
   char v3; // w2
 
-  result = return_particle(
+  result = lookup_particle_at_cell(
              g_direction_lut[16 * (unsigned __int8)g_direction_index] + a1,
              g_direction_lut[16 * (unsigned __int8)g_direction_index + 1] + a2,
              1,
@@ -5067,7 +5067,7 @@ LABEL_24:
                                        + 1] == v7 )
         {
           v23 = 0;
-          while ( return_particle(v21, v22, 1, 1) )
+          while ( lookup_particle_at_cell(v21, v22, 1, 1) )
           {
             v24 = dword_E50A00;
             v25 = dword_E50A00;
@@ -5285,7 +5285,7 @@ __int64 __fastcall displace_release(__int16 a1, __int16 a2, unsigned __int8 a3)
     if ( *(_BYTE *)(g_cell_state_grid + 8LL * (v7 + v6 * g_view_width[0])) != 0 )
       break;
 LABEL_30:
-    if ( !return_particle(v7, v6, 1, 1) )
+    if ( !lookup_particle_at_cell(v7, v6, 1, 1) )
       goto LABEL_49;
 LABEL_31:
     if ( v8 != 0 )
@@ -5367,7 +5367,7 @@ LABEL_12:
     }
     goto LABEL_30;
   }
-  if ( return_particle(v7, v6, 1, 1) )
+  if ( lookup_particle_at_cell(v7, v6, 1, 1) )
     goto LABEL_31;
 LABEL_49:
   if ( is_solid(v7, v6) )
@@ -6156,7 +6156,7 @@ __int64 __fastcall seek_particle()
       goto LABEL_51;
     }
     saved_density_for_scan = g_material_properties[12 * *((unsigned __int8 *)v3 + 8) + 1];
-    target_particle_found = return_particle(adjacent_x, adjacent_y, 1, 0);
+    target_particle_found = lookup_particle_at_cell(adjacent_x, adjacent_y, 1, 0);
     LOBYTE(particle_density) = saved_density_for_scan;
     if ( !target_particle_found || ((result = HIBYTE(g_particle_records[10 * dword_E50A00 + 4])) & 2) == 0 )
     {
@@ -6344,7 +6344,7 @@ LABEL_53:
       else
       {
         original_cell_material = *(_BYTE *)(g_cell_state_grid + 8LL * (particle_x + g_view_width[0] * particle_y));
-        target_particle_found_again = return_particle(particle_x, particle_y, 1, 0);
+        target_particle_found_again = lookup_particle_at_cell(particle_x, particle_y, 1, 0);
         target_x = (__int16)(particle_x + displacement_x);
         target_y = (__int16)(particle_y + displacement_y);
         if ( target_particle_found_again )
@@ -6378,7 +6378,7 @@ LABEL_53:
       direction_entry_offset = 16LL * (unsigned __int8)g_direction_index;
       particle_x = (__int16)(particle_x + g_direction_lut[direction_entry_offset]);
       particle_y = (__int16)(particle_y + g_direction_lut[direction_entry_offset + 1]);
-      result = return_particle(previous_x + g_direction_lut[direction_entry_offset], previous_y + g_direction_lut[direction_entry_offset + 1], 1, 1);
+      result = lookup_particle_at_cell(previous_x + g_direction_lut[direction_entry_offset], previous_y + g_direction_lut[direction_entry_offset + 1], 1, 1);
       if ( hx_cast<_BYTE>(result) == 0 )
         break;
       active_particle_index = dword_E50A00;
@@ -6690,7 +6690,7 @@ __int64 __fastcall add_type(__int16 x, __int16 y, unsigned __int8 material_id, c
   }
   if ( (*(_WORD *)&g_material_properties[12 * existing_material_id + 8] & 0x400) != 0 )
     return 0;
-  if ( !return_particle(target_x, target_y, 0, 0) )
+  if ( !lookup_particle_at_cell(target_x, target_y, 0, 0) )
   {
     framebuffer_bank_count = (unsigned __int8)g_shared_engine_data[0];
     if ( g_shared_engine_data[0] != 0 )
@@ -6915,7 +6915,7 @@ __int64 __fastcall set_fire(__int16 a1, __int16 a2)
         case 1:
           goto LABEL_13;
         case 2:
-          if ( g_material_properties[12 * v4 + 5] != 15 || (v14 = return_particle(a1, a2, 0, 1), !(v8 = v14)) )
+          if ( g_material_properties[12 * v4 + 5] != 15 || (v14 = lookup_particle_at_cell(a1, a2, 0, 1), !(v8 = v14)) )
           {
 LABEL_13:
             v12 = g_random_state;
@@ -6957,7 +6957,7 @@ LABEL_8:
     }
     return 0;
   }
-  v11 = return_particle(a1, a2, 0, 1);
+  v11 = lookup_particle_at_cell(a1, a2, 0, 1);
   v8 = v11;
   if ( v11 )
   {
@@ -7024,7 +7024,7 @@ __int64 __fastcall add_grouptype(__int16 x, __int16 y, unsigned __int8 tool_id, 
               {
                 add_type(x_position, y_position, 0x59u, 0);
                 add_type(paired_material_x, paired_material_y, 0x59u, 0);
-                if ( return_particle(paired_material_x, paired_material_y, 0, 1) )
+                if ( lookup_particle_at_cell(paired_material_x, paired_material_y, 0, 1) )
                   HIBYTE(g_particle_records[10 * dword_E50A00 + 5]) |= 1u;
               }
             }
@@ -8600,7 +8600,7 @@ __int64 __fastcall kill_fire(__int16 a1, __int16 a2, char a3)
   switch ( g_shared_engine_data[12 * v5 + 21] )
   {
     case 8:
-      return_particle(a1, a2, 0, 1);
+      lookup_particle_at_cell(a1, a2, 0, 1);
       result = (__int64)&particle_counter(dword_E50A00);
       *(_BYTE *)result = 0;
       break;
@@ -9980,7 +9980,7 @@ LABEL_212:
         g_found_x = v157;
         g_found_y = v158;
 LABEL_213:
-        return_particle(v157, v158, 0, 1);
+        lookup_particle_at_cell(v157, v158, 0, 1);
         v159 = dword_E50A00;
         v160 = dword_E50A00;
         v161 = &g_particle_records[10 * dword_E50A00];
@@ -11007,7 +11007,7 @@ LABEL_18:
             {
               add_type(column_x, paint_y, 0x59u, 0);
               add_type(paired_material_x, paired_material_y, 0x59u, 0);
-              if ( return_particle(paired_material_x, paired_material_y, 0, 1) )
+              if ( lookup_particle_at_cell(paired_material_x, paired_material_y, 0, 1) )
                 HIBYTE(g_particle_records[10 * dword_E50A00 + 5]) |= 1u;
             }
           }
