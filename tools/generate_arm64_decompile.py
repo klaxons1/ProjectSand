@@ -22,8 +22,17 @@ DATA_SIZE = BSS_START - DATA_START
 BSS_SIZE = BSS_END - BSS_START
 MEMORY_SIZE = BSS_END - DATA_START
 
-# Convert the most important address-derived Hex-Rays globals into stable,
-# role-based names. Keep this table explicit: each name is tied to observed use.
+# Names inferred from concrete function behavior in the frame scheduler and
+# particle-list implementation, applied identically on every generation pass.
+FUNCTION_NAMES = {
+    "chain_update": "synchronize_particle_state_list",
+    "chain_append": "append_particle_state_list",
+    "calc_state_all": "reconcile_particle_states",
+    "init_group": "initialize_material_group_lookup",
+}
+
+# Convert address-derived Hex-Rays globals into stable role-based names.
+# Keep this table explicit: each name is tied to an observed use.
 SEMANTIC_NAMES = {
     "byte_33008": "g_shared_engine_data",
     "dword_3300C": "g_framebuffer_stride",
@@ -1149,6 +1158,77 @@ def main() -> None:
     }.items():
         new_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, new_particle)
     generated = generated[:start] + new_particle + generated[end:]
+
+    # Make the per-particle list reconciliation readable in terms of the
+    # encoded source/destination list and the particle's current record.
+    start_marker = "//----- (0000000000008610)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    list_sync = generated[start:end]
+    for old_name, semantic_name in {
+        "v0": "current_particle_index",
+        "v2": "current_particle_record",
+        "v3": "packed_particle_state",
+        "v4": "material_state_id",
+        "v5": "source_list_index",
+        "v6": "destination_list_index",
+        "v7": "destination_list_offset",
+        "v8": "destination_list_head",
+        "v9": "destination_packed_state",
+        "v10": "source_list_header",
+        "v11": "source_list_tail",
+        "v12": "source_particle_record",
+        "v13": "source_packed_state",
+        "v14": "previous_particle_index",
+    }.items():
+        list_sync = re.sub(r"\b" + old_name + r"\b", semantic_name, list_sync)
+    generated = generated[:start] + list_sync + generated[end:]
+
+    # Clarify the list-splice operation: it appends one complete particle
+    # state list to another, optionally rewriting each particle's list tag.
+    start_marker = "//----- (00000000000082A0)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    append_list = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "source_list_index",
+        "a2": "destination_list_index",
+        "a3": "update_particle_list_tags",
+        "v3": "destination_list_index_copy",
+        "v4": "source_list_header_for_append",
+        "v5": "source_list_tail",
+        "i": "particle_index",
+        "v7": "particle_record",
+        "v8": "source_list_state",
+        "v9": "destination_list_state",
+        "v10": "destination_list_count",
+        "v11": "source_list_count",
+        "v13": "source_list_header_for_empty_destination",
+    }.items():
+        append_list = re.sub(r"\b" + old_name + r"\b", semantic_name, append_list)
+    generated = generated[:start] + append_list + generated[end:]
+
+    # Resolve the list-management and material-table helper names from their
+    # observed roles. Keep this as a final symbol-only pass so prototypes,
+    # definitions, and every call site stay in sync.
+    for old_name, semantic_name in FUNCTION_NAMES.items():
+        if len(re.findall(r"\b" + re.escape(old_name) + r"\b", generated)) < 2:
+            raise SystemExit(f"Expected declaration/definition for {old_name}")
+        generated = re.sub(r"\b" + re.escape(old_name) + r"\b", semantic_name, generated)
+
+    append_list_prototype = (
+        "__int64 __fastcall append_particle_state_list("
+        "unsigned __int8 a1, unsigned __int8 a2, char a3);"
+    )
+    if generated.count(append_list_prototype) != 1:
+        raise SystemExit("Expected one append_particle_state_list prototype")
+    generated = generated.replace(
+        append_list_prototype,
+        "__int64 __fastcall append_particle_state_list("
+        "unsigned __int8 source_list_index, "
+        "unsigned __int8 destination_list_index, "
+        "char update_particle_list_tags);",
+    )
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(generated)

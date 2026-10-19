@@ -50,7 +50,7 @@
 __int64 __fastcall clear_screen(__int64 result);
 void *__fastcall clear_eraser();
 __int64 __fastcall draw_particle(); // idb
-__int64 __fastcall init_group(); // idb
+__int64 __fastcall initialize_material_group_lookup(); // idb
 bool __fastcall is_solid(__int16 a1, __int16 a2);
 __int64 __fastcall pressure(__int16 a1, __int16 a2); // idb
 __int64 __fastcall pressure(__int16 a1, __int16 a2, char a3);
@@ -69,10 +69,10 @@ __int64 __fastcall scan_line(__int16 a1, __int16 a2, __int16 a3, __int16 a4, uns
 bool __fastcall can_sleep(__int16 a1, __int16 a2);
 bool __fastcall can_sleep(int a1);
 bool __fastcall around_matches(__int16 a1, __int16 a2, char a3);
-__int64 __fastcall chain_append(unsigned __int8 a1, unsigned __int8 a2, char a3);
+__int64 __fastcall append_particle_state_list(unsigned __int8 source_list_index, unsigned __int8 destination_list_index, char update_particle_list_tags);
 char *__fastcall restore_box();
-__int16 *__fastcall chain_update();
-char *__fastcall calc_state_all();
+__int16 *__fastcall synchronize_particle_state_list();
+char *__fastcall reconcile_particle_states();
 _BYTE *__fastcall before_first_lock();
 __int64 __fastcall texture(__int16 a1, __int16 a2, unsigned __int8 a3, char a4);
 __int64 __fastcall delete_pixel(__int16 a1, __int16 a2); // idb
@@ -1611,7 +1611,7 @@ LABEL_3:
 // E50A08: using guessed type __int64 g_framebuffer_pixels;
 
 //----- (00000000000067D0) ----------------------------------------------------
-__int64 __fastcall init_group()
+__int64 __fastcall initialize_material_group_lookup()
 {
   unsigned __int8 *v0; // x6
   int v1; // w3
@@ -2997,51 +2997,51 @@ bool __fastcall around_matches(__int16 a1, __int16 a2, char a3)
 // E50A18: using guessed type char g_direction_index;
 
 //----- (00000000000082A0) ----------------------------------------------------
-__int64 __fastcall chain_append(unsigned __int8 a1, unsigned __int8 a2, char a3)
+__int64 __fastcall append_particle_state_list(unsigned __int8 source_list_index, unsigned __int8 destination_list_index, char update_particle_list_tags)
 {
-  __int64 v3; // x5
-  _DWORD *v4; // x9
-  int v5; // w8
-  int i; // w2
-  __int16 *v7; // x3
-  _DWORD *v8; // x1
-  char *v9; // x5
-  int v10; // w3
-  int v11; // w0
+  __int64 destination_list_index_copy; // x5
+  _DWORD *source_list_header_for_append; // x9
+  int source_list_tail; // w8
+  int particle_index; // w2
+  __int16 *particle_record; // x3
+  _DWORD *source_list_state; // x1
+  char *destination_list_state; // x5
+  int destination_list_count; // w3
+  int source_list_count; // w0
   __int64 result; // x0
-  _DWORD *v13; // x8
+  _DWORD *source_list_header_for_empty_destination; // x8
 
-  v3 = a2;
-  if ( *((_DWORD *)&xmmword_E50A40 + 3 * a2) == -1 )
+  destination_list_index_copy = destination_list_index;
+  if ( *((_DWORD *)&xmmword_E50A40 + 3 * destination_list_index) == -1 )
   {
-    v13 = (_DWORD *)&xmmword_E50A40 + 3 * a1;
-    *((_DWORD *)&xmmword_E50A40 + 3 * a2) = *v13;
-    v5 = v13[1];
+    source_list_header_for_empty_destination = (_DWORD *)&xmmword_E50A40 + 3 * source_list_index;
+    *((_DWORD *)&xmmword_E50A40 + 3 * destination_list_index) = *source_list_header_for_empty_destination;
+    source_list_tail = source_list_header_for_empty_destination[1];
   }
   else
   {
-    v4 = (_DWORD *)&xmmword_E50A40 + 3 * a1;
-    v5 = v4[1];
-    particle_next_link(*((int *)&xmmword_E50A40 + 3 * a2 + 1)) = *v4;
+    source_list_header_for_append = (_DWORD *)&xmmword_E50A40 + 3 * source_list_index;
+    source_list_tail = source_list_header_for_append[1];
+    particle_next_link(*((int *)&xmmword_E50A40 + 3 * destination_list_index + 1)) = *source_list_header_for_append;
   }
-  *((_DWORD *)&xmmword_E50A40 + 3 * a2 + 1) = v5;
-  if ( a3 != 0 )
+  *((_DWORD *)&xmmword_E50A40 + 3 * destination_list_index + 1) = source_list_tail;
+  if ( update_particle_list_tags != 0 )
   {
-    for ( i = *((_DWORD *)&xmmword_E50A40 + 3 * a1); i != -1; *((_BYTE *)v7 + 12) = v7[6] & 0x3F | ((a2 & 3) << 6) )
+    for ( particle_index = *((_DWORD *)&xmmword_E50A40 + 3 * source_list_index); particle_index != -1; *((_BYTE *)particle_record + 12) = particle_record[6] & 0x3F | ((destination_list_index & 3) << 6) )
     {
-      v7 = &g_particle_records[10 * i];
-      i = *((_DWORD *)v7 + 1);
+      particle_record = &g_particle_records[10 * particle_index];
+      particle_index = *((_DWORD *)particle_record + 1);
     }
   }
-  v8 = (_DWORD *)&xmmword_E50A40 + 3 * a1;
-  v9 = (char *)&xmmword_E50A40 + 12 * v3;
-  *v8 = -1;
-  v10 = *((_DWORD *)v9 + 2);
-  v11 = v8[2];
-  v8[1] = -1;
-  result = (unsigned int)(v10 + v11);
-  *((_DWORD *)v9 + 2) = result;
-  v8[2] = 0;
+  source_list_state = (_DWORD *)&xmmword_E50A40 + 3 * source_list_index;
+  destination_list_state = (char *)&xmmword_E50A40 + 12 * destination_list_index_copy;
+  *source_list_state = -1;
+  destination_list_count = *((_DWORD *)destination_list_state + 2);
+  source_list_count = source_list_state[2];
+  source_list_state[1] = -1;
+  result = (unsigned int)(destination_list_count + source_list_count);
+  *((_DWORD *)destination_list_state + 2) = result;
+  source_list_state[2] = 0;
   return result;
 }
 // 4C7380: using guessed type __int16 g_particle_records[72];
@@ -3165,7 +3165,7 @@ LABEL_17:
   g_current_particle_index = v14;
   dword_334E0 = v3;
   if ( (_DWORD)xmmword_E50A40 != -1 )
-    return (char *)chain_append(0, 3u, 0);
+    return (char *)append_particle_state_list(0, 3u, 0);
   return result;
 }
 // 198: using guessed type int elf_hash_bucket[263];
@@ -3186,80 +3186,80 @@ LABEL_17:
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
 //----- (0000000000008610) ----------------------------------------------------
-__int16 *__fastcall chain_update()
+__int16 *__fastcall synchronize_particle_state_list()
 {
-  int v0; // w6
+  int current_particle_index; // w6
   __int16 *result; // x0
-  __int16 *v2; // x4
-  unsigned __int64 v3; // x1
-  __int64 v4; // x8
-  int v5; // w1
-  int v6; // w8
-  __int64 v7; // x4
-  int v8; // w9
-  char v9; // w3
-  _DWORD *v10; // x14
-  int v11; // w13
-  __int16 *v12; // x4
-  char v13; // w5
-  int v14; // w4
+  __int16 *current_particle_record; // x4
+  unsigned __int64 packed_particle_state; // x1
+  __int64 material_state_id; // x8
+  int source_list_index; // w1
+  int destination_list_index; // w8
+  __int64 destination_list_offset; // x4
+  int destination_list_head; // w9
+  char destination_packed_state; // w3
+  _DWORD *source_list_header; // x14
+  int source_list_tail; // w13
+  __int16 *source_particle_record; // x4
+  char source_packed_state; // w5
+  int previous_particle_index; // w4
 
-  v0 = g_current_particle_index;
+  current_particle_index = g_current_particle_index;
   result = (__int16 *)g_current_particle_index;
-  v2 = &g_particle_records[10 * g_current_particle_index];
-  v3 = *((unsigned __int8 *)v2 + 12);
-  v4 = (v3 >> 3) & 7;
-  v5 = hx_cast<unsigned __int8>(v3) >> 6;
-  v6 = g_particle_state_lut[v4];
-  if ( v5 != v6 )
+  current_particle_record = &g_particle_records[10 * g_current_particle_index];
+  packed_particle_state = *((unsigned __int8 *)current_particle_record + 12);
+  material_state_id = (packed_particle_state >> 3) & 7;
+  source_list_index = hx_cast<unsigned __int8>(packed_particle_state) >> 6;
+  destination_list_index = g_particle_state_lut[material_state_id];
+  if ( source_list_index != destination_list_index )
   {
-    if ( v5 != 0 )
+    if ( source_list_index != 0 )
     {
-      v10 = (_DWORD *)&xmmword_E50A40 + 3 * v5;
-      v11 = v10[1];
-      if ( *v10 == v11 )
+      source_list_header = (_DWORD *)&xmmword_E50A40 + 3 * source_list_index;
+      source_list_tail = source_list_header[1];
+      if ( *source_list_header == source_list_tail )
       {
-        *((_DWORD *)&xmmword_E50A40 + 3 * v5) = -1;
-        v10[1] = -1;
+        *((_DWORD *)&xmmword_E50A40 + 3 * source_list_index) = -1;
+        source_list_header[1] = -1;
       }
-      else if ( g_current_particle_index == *v10 )
+      else if ( g_current_particle_index == *source_list_header )
       {
-        *((_DWORD *)&xmmword_E50A40 + 3 * v5) = *((_DWORD *)v2 + 1);
+        *((_DWORD *)&xmmword_E50A40 + 3 * source_list_index) = *((_DWORD *)current_particle_record + 1);
       }
-      else if ( g_current_particle_index == v11 )
+      else if ( g_current_particle_index == source_list_tail )
       {
-        v14 = dword_334E0;
-        v10[1] = dword_334E0;
-        *(_DWORD *)&g_particle_records[10 * v14 + 2] = -1;
+        previous_particle_index = dword_334E0;
+        source_list_header[1] = dword_334E0;
+        *(_DWORD *)&g_particle_records[10 * previous_particle_index + 2] = -1;
       }
       else
       {
-        *(_DWORD *)&g_particle_records[10 * dword_334E0 + 2] = *((_DWORD *)v2 + 1);
+        *(_DWORD *)&g_particle_records[10 * dword_334E0 + 2] = *((_DWORD *)current_particle_record + 1);
       }
-      v12 = &g_particle_records[10 * (_QWORD)result];
-      v13 = *((_BYTE *)v12 + 12);
-      --*((_DWORD *)&xmmword_E50A40 + 3 * v5 + 2);
-      *((_BYTE *)v12 + 12) = v13 & 0x3F;
+      source_particle_record = &g_particle_records[10 * (_QWORD)result];
+      source_packed_state = *((_BYTE *)source_particle_record + 12);
+      --*((_DWORD *)&xmmword_E50A40 + 3 * source_list_index + 2);
+      *((_BYTE *)source_particle_record + 12) = source_packed_state & 0x3F;
     }
-    v7 = 12LL * v6;
-    v8 = *(_DWORD *)((char *)&xmmword_E50A40 + v7);
-    if ( v8 == -1 )
+    destination_list_offset = 12LL * destination_list_index;
+    destination_list_head = *(_DWORD *)((char *)&xmmword_E50A40 + destination_list_offset);
+    if ( destination_list_head == -1 )
     {
-      *((_DWORD *)&xmmword_E50A40 + 3 * v6) = v0;
-      *(_DWORD *)((char *)&xmmword_E50A40 + v7 + 4) = v0;
+      *((_DWORD *)&xmmword_E50A40 + 3 * destination_list_index) = current_particle_index;
+      *(_DWORD *)((char *)&xmmword_E50A40 + destination_list_offset + 4) = current_particle_index;
       particle_next_link((_QWORD)result) = -1;
     }
     else
     {
-      *((_DWORD *)&xmmword_E50A40 + 3 * v6) = v0;
-      particle_next_link((_QWORD)result) = v8;
-      if ( v0 == v8 )
-        dword_334E0 = v0;
+      *((_DWORD *)&xmmword_E50A40 + 3 * destination_list_index) = current_particle_index;
+      particle_next_link((_QWORD)result) = destination_list_head;
+      if ( current_particle_index == destination_list_head )
+        dword_334E0 = current_particle_index;
     }
     result = &g_particle_records[10 * (_QWORD)result];
-    v9 = *((_BYTE *)result + 12);
-    ++*((_DWORD *)&xmmword_E50A40 + 3 * v6 + 2);
-    *((_BYTE *)result + 12) = v9 & 0x3F | ((v6 & 3) << 6);
+    destination_packed_state = *((_BYTE *)result + 12);
+    ++*((_DWORD *)&xmmword_E50A40 + 3 * destination_list_index + 2);
+    *((_BYTE *)result + 12) = destination_packed_state & 0x3F | ((destination_list_index & 3) << 6);
   }
   return result;
 }
@@ -3272,7 +3272,7 @@ __int16 *__fastcall chain_update()
 // E50A40: using guessed type __int128 xmmword_E50A40;
 
 //----- (00000000000087C0) ----------------------------------------------------
-char *__fastcall calc_state_all()
+char *__fastcall reconcile_particle_states()
 {
   int *v0; // x19
   int i; // w26
@@ -3361,7 +3361,7 @@ LABEL_6:
     }
     else
     {
-      chain_update();
+      synchronize_particle_state_list();
       result = g_shared_engine_data;
       g_current_particle_index = v4;
       if ( v4 != -1 )
@@ -7413,7 +7413,7 @@ LABEL_10:
     else
     {
       v26 = v2;
-      chain_update();
+      synchronize_particle_state_list();
       v2 = v26;
       g_current_particle_index = v12;
       if ( v12 != -1 )
@@ -8200,7 +8200,7 @@ LABEL_8:
       if ( byte_E50A70 == 0 )
         goto LABEL_11;
       restore_box();
-      calc_state_all();
+      reconcile_particle_states();
     }
     if ( byte_E50A70 != 0 )
     {
@@ -8224,7 +8224,7 @@ LABEL_4:
   {
     byte_E50AF1 = byte_E50AF0;
     g_direction_index = byte_E50AF0;
-    calc_state_all();
+    reconcile_particle_states();
   }
   v1 = &g_framebuffer_state_banks[150003 * (unsigned __int8)g_framebuffer_bank_index];
   v2 = *((_DWORD *)v1 + 2);
@@ -11584,7 +11584,7 @@ __int64 __fastcall init_all(char a1)
       }
     }
   }
-  return init_group();
+  return initialize_material_group_lookup();
 }
 // D08: using guessed type Elf64_Sym;
 // D50: using guessed type Elf64_Sym;
@@ -11879,7 +11879,7 @@ LABEL_13:
       return result;
     case 21:
       restore_from_box();
-      return (__int64)calc_state_all();
+      return (__int64)reconcile_particle_states();
     case 22:
       result = (__int64)&unk_33000;
       g_engine_mode = 8;
@@ -12259,7 +12259,7 @@ LABEL_91:
                 simulation_particle_state = ((unsigned __int64)*((unsigned __int8 *)simulation_particle_record + 12) >> 3) & 7;
                 if ( g_particle_state_lut[hx_cast<int>(simulation_particle_state)] == 1 )
                   break;
-                chain_update();
+                synchronize_particle_state_list();
                 byte_E50C3A = 0;
                 simulation_particle_index = next_simulation_particle;
                 g_current_particle_index = next_simulation_particle;
@@ -12356,7 +12356,7 @@ LABEL_25:
       if ( g_particle_state_lut[((unsigned __int64)*((unsigned __int8 *)active_particle_record + 12) >> 3) & 7] == particle_state_class )
         dword_334E0 = active_particle_index;
       else
-        chain_update();
+        synchronize_particle_state_list();
       g_current_particle_index = next_particle_index;
       if ( next_particle_index != -1 && ++processed_particle_count != 1000000 )
       {
