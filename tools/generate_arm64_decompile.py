@@ -1214,6 +1214,27 @@ def main() -> None:
     can_sleep_for_particle = re.sub(r"\ba1\b", "particle_index", can_sleep_for_particle)
     generated = generated[:start] + can_sleep_for_particle + generated[end:]
 
+    generated = rename_function_block(generated, "//----- (0000000000006AC8)", {
+        "result": "particle_index_or_result",
+        "v1": "particle_record",
+        "v2": "framebuffer_bank_count",
+        "v3": "particle_y",
+        "v4": "particle_x",
+        "v5": "material_pixel",
+        "v6": "framebuffer_pixel_offset",
+        "v7": "particle_state_record",
+    })
+    generated = rename_function_block(generated, "//----- (0000000000006BC8)", {
+        "result": "particle_index_or_record",
+        "a2": "requested_state_code",
+        "v2": "flag_bit_zero",
+        "v3": "packed_state_index",
+        "v4": "flag_bit_one",
+        "v5": "updated_particle_flags",
+        "v6": "particle_record_offset",
+        "v7": "particle_x",
+        "v8": "particle_y",
+    })
     generated = rename_function_block(generated, "//----- (0000000000006840)", {
         "a1": "x", "a2": "y", "v2": "x_checked", "result": "is_solid_result",
     })
@@ -1441,6 +1462,10 @@ def main() -> None:
         generated = generated.replace(old_prototype, named_prototype)
 
     named_helper_prototypes = {
+        "__int64 __fastcall suspend_particle(__int64 result);":
+            "__int64 __fastcall suspend_particle(__int64 particle_index_or_result);",
+        "__int16 *__fastcall set_state(__int16 *result, char a2);":
+            "__int16 *__fastcall set_state(__int16 *particle_index_or_record, char requested_state_code);",
         "bool __fastcall is_solid(__int16 a1, __int16 a2);":
             "bool __fastcall is_solid(__int16 x, __int16 y);",
         "__int64 __fastcall pressure(__int16 a1, __int16 a2); // idb":

@@ -55,8 +55,8 @@ bool __fastcall is_solid(__int16 x, __int16 y);
 __int64 __fastcall pressure(__int16 start_x, __int16 start_y);
 __int64 __fastcall pressure(__int16 start_x, __int16 start_y, char material_property_value);
 bool __fastcall is_lower_density(__int16 x, __int16 y, unsigned __int8 density_threshold);
-__int64 __fastcall suspend_particle(__int64 result);
-__int16 *__fastcall set_state(__int16 *result, char a2);
+__int64 __fastcall suspend_particle(__int64 particle_index_or_result);
+__int16 *__fastcall set_state(__int16 *particle_index_or_record, char requested_state_code);
 __int64 __fastcall get_particle_id(__int16 a1, __int16 a2); // idb
 __int64 __fastcall hold_pixel(__int16 a1, __int16 a2); // idb
 __int64 __fastcall release_pixel(int a1);
@@ -1749,45 +1749,45 @@ bool __fastcall is_lower_density(__int16 x, __int16 y, unsigned __int8 density_t
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (0000000000006AC8) ----------------------------------------------------
-__int64 __fastcall suspend_particle(__int64 result)
+__int64 __fastcall suspend_particle(__int64 particle_index_or_result)
 {
-  __int16 *v1; // x9
-  unsigned int v2; // w8
-  int v3; // w4
-  int v4; // w3
-  __int16 v5; // w5
-  __int64 v6; // x3
-  __int16 *v7; // x2
+  __int16 *particle_record; // x9
+  unsigned int framebuffer_bank_count; // w8
+  int particle_y; // w4
+  int particle_x; // w3
+  __int16 material_pixel; // w5
+  __int64 framebuffer_pixel_offset; // x3
+  __int16 *particle_state_record; // x2
 
-  v1 = &g_particle_records[10 * hx_cast<int>(result)];
-  v2 = (unsigned __int8)g_shared_engine_data[0];
-  v3 = v1[1];
-  v4 = *v1;
-  *(_DWORD *)(g_cell_state_grid + 8LL * (v4 + v3 * g_view_width[0]) + 4) = -2;
-  v5 = *(_WORD *)&g_shared_engine_data[12 * *((unsigned __int8 *)v1 + 8) + 18];
-  if ( v2 != 0 )
+  particle_record = &g_particle_records[10 * hx_cast<int>(particle_index_or_result)];
+  framebuffer_bank_count = (unsigned __int8)g_shared_engine_data[0];
+  particle_y = particle_record[1];
+  particle_x = *particle_record;
+  *(_DWORD *)(g_cell_state_grid + 8LL * (particle_x + particle_y * g_view_width[0]) + 4) = -2;
+  material_pixel = *(_WORD *)&g_shared_engine_data[12 * *((unsigned __int8 *)particle_record + 8) + 18];
+  if ( framebuffer_bank_count != 0 )
   {
-    v6 = 2LL * (v4 + v3 * g_framebuffer_stride);
-    *(_WORD *)(g_framebuffer_state_banks[0] + v6) = v5;
-    if ( v2 > 1 )
+    framebuffer_pixel_offset = 2LL * (particle_x + particle_y * g_framebuffer_stride);
+    *(_WORD *)(g_framebuffer_state_banks[0] + framebuffer_pixel_offset) = material_pixel;
+    if ( framebuffer_bank_count > 1 )
     {
-      *(_WORD *)(qword_1584B0 + v6) = v5;
-      if ( v2 != 2 )
+      *(_WORD *)(qword_1584B0 + framebuffer_pixel_offset) = material_pixel;
+      if ( framebuffer_bank_count != 2 )
       {
-        *(_WORD *)(qword_27D448 + v6) = v5;
-        if ( v2 != 3 )
-          *(_WORD *)(qword_3A23E0 + v6) = v5;
+        *(_WORD *)(qword_27D448 + framebuffer_pixel_offset) = material_pixel;
+        if ( framebuffer_bank_count != 3 )
+          *(_WORD *)(qword_3A23E0 + framebuffer_pixel_offset) = material_pixel;
       }
     }
   }
-  if ( hx_cast<_DWORD>(result) != -2 )
+  if ( hx_cast<_DWORD>(particle_index_or_result) != -2 )
   {
-    v7 = &g_particle_records[10 * hx_cast<int>(result)];
-    result = *((_BYTE *)v7 + 9) & 0xFC | 1u;
-    *((_BYTE *)v7 + 12) = v7[6] & 0xC7 | 0x20;
-    *((_BYTE *)v7 + 9) = result;
+    particle_state_record = &g_particle_records[10 * hx_cast<int>(particle_index_or_result)];
+    particle_index_or_result = *((_BYTE *)particle_state_record + 9) & 0xFC | 1u;
+    *((_BYTE *)particle_state_record + 12) = particle_state_record[6] & 0xC7 | 0x20;
+    *((_BYTE *)particle_state_record + 9) = particle_index_or_result;
   }
-  return result;
+  return particle_index_or_result;
 }
 // EB8: using guessed type Elf64_Sym;
 // F90: using guessed type Elf64_Sym;
@@ -1801,93 +1801,93 @@ __int64 __fastcall suspend_particle(__int64 result)
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (0000000000006BC8) ----------------------------------------------------
-__int16 *__fastcall set_state(__int16 *result, char a2)
+__int16 *__fastcall set_state(__int16 *particle_index_or_record, char requested_state_code)
 {
-  char v2; // w4
-  char v3; // w2
-  char v4; // w5
-  char v5; // w1
-  __int64 v6; // x2
-  int v7; // w3
-  int v8; // w2
+  char flag_bit_zero; // w4
+  char packed_state_index; // w2
+  char flag_bit_one; // w5
+  char updated_particle_flags; // w1
+  __int64 particle_record_offset; // x2
+  int particle_x; // w3
+  int particle_y; // w2
 
-  if ( hx_cast<_DWORD>(result) != -2 )
+  if ( hx_cast<_DWORD>(particle_index_or_record) != -2 )
   {
-    switch ( a2 )
+    switch ( requested_state_code )
     {
       case 0:
-        v3 = 0;
-        v4 = 1;
-        v2 = 0;
+        packed_state_index = 0;
+        flag_bit_one = 1;
+        flag_bit_zero = 0;
         goto LABEL_9;
       case 1:
-        v3 = 0;
-        v2 = 0;
-        v4 = 0;
+        packed_state_index = 0;
+        flag_bit_zero = 0;
+        flag_bit_one = 0;
         goto LABEL_9;
       case 2:
       case 4:
-        v3 = 1;
-        v2 = 0;
-        v4 = 1;
+        packed_state_index = 1;
+        flag_bit_zero = 0;
+        flag_bit_one = 1;
         goto LABEL_9;
       case 3:
       case 5:
-        v2 = 0;
-        v3 = 1;
-        v4 = 0;
+        flag_bit_zero = 0;
+        packed_state_index = 1;
+        flag_bit_one = 0;
         goto LABEL_9;
       case 6:
-        v3 = 3;
-        v2 = 1;
-        v4 = 0;
+        packed_state_index = 3;
+        flag_bit_zero = 1;
+        flag_bit_one = 0;
         goto LABEL_9;
       case 7:
-        v2 = 0;
-        v3 = 3;
-        v4 = 0;
+        flag_bit_zero = 0;
+        packed_state_index = 3;
+        flag_bit_one = 0;
 LABEL_9:
-        result = (__int16 *)hx_cast<int>(result);
-        if ( (particle_flags(hx_cast<int>(result)) & 1) != 0 )
-          return result;
+        particle_index_or_record = (__int16 *)hx_cast<int>(particle_index_or_record);
+        if ( (particle_flags(hx_cast<int>(particle_index_or_record)) & 1) != 0 )
+          return particle_index_or_record;
         goto LABEL_7;
       case 8:
-        result = (__int16 *)hx_cast<int>(result);
+        particle_index_or_record = (__int16 *)hx_cast<int>(particle_index_or_record);
         goto LABEL_22;
       case 9:
-        result = (__int16 *)hx_cast<int>(result);
-        v6 = 10LL * hx_cast<int>(result);
-        v7 = g_particle_records[v6];
-        v8 = g_particle_records[v6 + 1];
-        if ( v7 > 1 && v8 > 1 && v8 < g_view_height - 2 && v7 < g_view_width[0] - 2 )
-          *(_BYTE *)(g_cell_state_grid + 8LL * (v7 + v8 * g_view_width[0])) = 0;
+        particle_index_or_record = (__int16 *)hx_cast<int>(particle_index_or_record);
+        particle_record_offset = 10LL * hx_cast<int>(particle_index_or_record);
+        particle_x = g_particle_records[particle_record_offset];
+        particle_y = g_particle_records[particle_record_offset + 1];
+        if ( particle_x > 1 && particle_y > 1 && particle_y < g_view_height - 2 && particle_x < g_view_width[0] - 2 )
+          *(_BYTE *)(g_cell_state_grid + 8LL * (particle_x + particle_y * g_view_width[0])) = 0;
 LABEL_22:
-        v3 = 4;
-        v2 = 1;
-        v4 = 0;
+        packed_state_index = 4;
+        flag_bit_zero = 1;
+        flag_bit_one = 0;
         goto LABEL_7;
       case 10:
-        v2 = 0;
-        v3 = 5;
-        v4 = 0;
-        result = (__int16 *)hx_cast<int>(result);
+        flag_bit_zero = 0;
+        packed_state_index = 5;
+        flag_bit_one = 0;
+        particle_index_or_record = (__int16 *)hx_cast<int>(particle_index_or_record);
         goto LABEL_7;
       default:
-        result = (__int16 *)hx_cast<int>(result);
-        if ( (particle_flags(hx_cast<int>(result)) & 1) != 0 )
-          return result;
-        v2 = 0;
-        v3 = 0;
-        v4 = 0;
+        particle_index_or_record = (__int16 *)hx_cast<int>(particle_index_or_record);
+        if ( (particle_flags(hx_cast<int>(particle_index_or_record)) & 1) != 0 )
+          return particle_index_or_record;
+        flag_bit_zero = 0;
+        packed_state_index = 0;
+        flag_bit_one = 0;
 LABEL_7:
-        result = &g_particle_records[10 * (_QWORD)result];
-        v5 = *((_BYTE *)result + 9) & 0xFC | v2 & 1 | (2 * (v4 & 1));
-        *((_BYTE *)result + 12) = result[6] & 0xC7 | (8 * (v3 & 7));
-        *((_BYTE *)result + 9) = v5;
+        particle_index_or_record = &g_particle_records[10 * (_QWORD)particle_index_or_record];
+        updated_particle_flags = *((_BYTE *)particle_index_or_record + 9) & 0xFC | flag_bit_zero & 1 | (2 * (flag_bit_one & 1));
+        *((_BYTE *)particle_index_or_record + 12) = particle_index_or_record[6] & 0xC7 | (8 * (packed_state_index & 7));
+        *((_BYTE *)particle_index_or_record + 9) = updated_particle_flags;
         break;
     }
   }
-  return result;
+  return particle_index_or_record;
 }
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
