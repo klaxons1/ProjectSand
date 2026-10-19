@@ -3,6 +3,7 @@ project(sand)
 
 add_library(sand SHARED
     arm64/libsand_decompiled.cpp
+    native_crash_logger.cpp
 )
 
 if(ANDROID AND NOT ANDROID_ABI STREQUAL "arm64-v8a")

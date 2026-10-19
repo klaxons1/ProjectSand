@@ -21,7 +21,9 @@ public class Main extends Activity implements SurfaceHolder.Callback {
     @Override // android.app.Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CrashLogManager.initialize(this);
         setContentView(R.layout.main_menu);
+        CrashLogManager.requestPublicDirectoryAccess(this);
         SurfaceView sand_view = (SurfaceView) findViewById(R.id.sand_view);
         SurfaceHolder holder = sand_view.getHolder();
         holder.addCallback(this);
@@ -131,7 +133,15 @@ public class Main extends Activity implements SurfaceHolder.Callback {
     @Override // android.app.Activity
     protected void onResume() {
         super.onResume();
+        CrashLogManager.refresh(this);
         Engine.resume(1);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CrashLogManager.WRITE_PERMISSION_REQUEST)
+            CrashLogManager.refresh(this);
     }
 
     public void menu_button(View view) {
