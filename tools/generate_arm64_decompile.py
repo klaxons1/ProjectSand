@@ -30,6 +30,7 @@ FUNCTION_NAMES = {
     "calc_state_all": "reconcile_particle_states",
     "init_group": "initialize_material_group_lookup",
     "return_particle": "lookup_particle_at_cell",
+    "current_can_sleep": "current_particle_can_sleep",
 }
 
 # Convert address-derived Hex-Rays globals into stable role-based names.
@@ -86,6 +87,15 @@ assert MEMORY_SIZE == 0xE1DEF8
 
 def safe_id(s: str) -> str:
     return re.sub(r"[^A-Za-z0-9_]", "_", s)
+
+
+def rename_function_block(text: str, marker: str, names: dict[str, str]) -> str:
+    start = text.index(marker)
+    end = text.index("//-----", start + len(marker))
+    block = text[start:end]
+    for old_name, semantic_name in names.items():
+        block = re.sub(r"\b" + old_name + r"\b", semantic_name, block)
+    return text[:start] + block + text[end:]
 
 
 def bss_array_size(name: str, old_size: str) -> str:
@@ -1160,6 +1170,71 @@ def main() -> None:
         new_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, new_particle)
     generated = generated[:start] + new_particle + generated[end:]
 
+    # Clarify the sleep predicate's origin cell, material density threshold,
+    # and the direction-relative neighbor coordinates it inspects.
+    start_marker = "//----- (0000000000007D30)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    can_sleep_at = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "x",
+        "a2": "y",
+        "v2": "material_properties",
+        "v4": "particle_density",
+        "v6": "gravity_neighbor_x",
+        "v7": "direction_entry",
+        "v8": "diagonal_neighbor_x",
+        "v9": "diagonal_neighbor_y",
+        "v10": "sleep_allowed",
+        "v12": "lower_neighbor_x",
+        "v13": "direction_entry_alt",
+        "v14": "side_neighbor_x",
+        "v15": "side_neighbor_y",
+        "v16": "side_material_id",
+        "v17": "direction_entry_secondary",
+        "v18": "upper_diagonal_delta_y",
+        "v19": "upper_diagonal_x",
+        "v20": "upper_diagonal_y",
+        "v21": "direction_entry_for_density_check",
+        "v22": "lower_density_path_found",
+        "v23": "side_diagonal_delta_x",
+        "v24": "side_diagonal_delta_y",
+        "v25": "side_direction_entry",
+        "v26": "gravity_neighbor_y",
+        "v28": "lower_neighbor_y",
+        "v29": "lower_material_id",
+    }.items():
+        can_sleep_at = re.sub(r"\b" + old_name + r"\b", semantic_name, can_sleep_at)
+    generated = generated[:start] + can_sleep_at + generated[end:]
+
+    start_marker = "//----- (00000000000080D8)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    can_sleep_for_particle = generated[start:end]
+    can_sleep_for_particle = re.sub(r"\ba1\b", "particle_index", can_sleep_for_particle)
+    generated = generated[:start] + can_sleep_for_particle + generated[end:]
+
+    generated = rename_function_block(generated, "//----- (0000000000006840)", {
+        "a1": "x", "a2": "y", "v2": "x_checked", "result": "is_solid_result",
+    })
+    generated = rename_function_block(generated, "//----- (00000000000068C4)", {
+        "a1": "start_x", "a2": "start_y", "v2": "current_x", "v3": "current_y",
+        "v5": "gravity_direction_entry", "result": "pressure_distance",
+    })
+    generated = rename_function_block(generated, "//----- (0000000000006984)", {
+        "a1": "start_x", "a2": "start_y", "a3": "material_property_value",
+        "v3": "current_x", "v4": "current_y", "v6": "gravity_direction_entry",
+        "result": "pressure_distance",
+    })
+    generated = rename_function_block(generated, "//----- (0000000000006A40)", {
+        "a1": "x", "a2": "y", "a3": "density_threshold",
+        "v3": "cell_x", "result": "density_check_result", "v5": "cell_material_id",
+    })
+    generated = rename_function_block(generated, "//----- (0000000000008100)", {
+        "a1": "center_x", "a2": "center_y", "a3": "density_to_match",
+        "v3": "direction_entry",
+    })
+
     # Describe the line-walk coordinates and the per-call modes used by
     # particle shifting, drop recovery, and seeking.
     start_marker = "//----- (0000000000007A5C)"
@@ -1354,6 +1429,34 @@ def main() -> None:
         "bool __fastcall lookup_particle_at_cell(__int16 x, __int16 y, "
         "char class_filter, char allow_resume);",
     )
+    sleep_predicate_prototypes = {
+        "bool __fastcall can_sleep(__int16 a1, __int16 a2);":
+            "bool __fastcall can_sleep(__int16 x, __int16 y);",
+        "bool __fastcall can_sleep(int a1);":
+            "bool __fastcall can_sleep(int particle_index);",
+    }
+    for old_prototype, named_prototype in sleep_predicate_prototypes.items():
+        if generated.count(old_prototype) != 1:
+            raise SystemExit(f"Expected one sleep predicate prototype: {old_prototype}")
+        generated = generated.replace(old_prototype, named_prototype)
+
+    named_helper_prototypes = {
+        "bool __fastcall is_solid(__int16 a1, __int16 a2);":
+            "bool __fastcall is_solid(__int16 x, __int16 y);",
+        "__int64 __fastcall pressure(__int16 a1, __int16 a2); // idb":
+            "__int64 __fastcall pressure(__int16 start_x, __int16 start_y);",
+        "__int64 __fastcall pressure(__int16 a1, __int16 a2, char a3);":
+            "__int64 __fastcall pressure(__int16 start_x, __int16 start_y, char material_property_value);",
+        "bool __fastcall is_lower_density(__int16 a1, __int16 a2, unsigned __int8 a3);":
+            "bool __fastcall is_lower_density(__int16 x, __int16 y, unsigned __int8 density_threshold);",
+        "bool __fastcall around_matches(__int16 a1, __int16 a2, char a3);":
+            "bool __fastcall around_matches(__int16 center_x, __int16 center_y, char density_to_match);",
+    }
+    for old_prototype, named_prototype in named_helper_prototypes.items():
+        if generated.count(old_prototype) != 1:
+            raise SystemExit(f"Expected one helper prototype: {old_prototype}")
+        generated = generated.replace(old_prototype, named_prototype)
+
     scan_line_prototype = (
         "__int64 __fastcall scan_line(__int16 a1, __int16 a2, __int16 a3, "
         "__int16 a4, unsigned __int8 a5, unsigned __int8 a6); // idb"

@@ -51,10 +51,10 @@ __int64 __fastcall clear_screen(__int64 result);
 void *__fastcall clear_eraser();
 __int64 __fastcall draw_particle(); // idb
 __int64 __fastcall initialize_material_group_lookup(); // idb
-bool __fastcall is_solid(__int16 a1, __int16 a2);
-__int64 __fastcall pressure(__int16 a1, __int16 a2); // idb
-__int64 __fastcall pressure(__int16 a1, __int16 a2, char a3);
-bool __fastcall is_lower_density(__int16 a1, __int16 a2, unsigned __int8 a3);
+bool __fastcall is_solid(__int16 x, __int16 y);
+__int64 __fastcall pressure(__int16 start_x, __int16 start_y);
+__int64 __fastcall pressure(__int16 start_x, __int16 start_y, char material_property_value);
+bool __fastcall is_lower_density(__int16 x, __int16 y, unsigned __int8 density_threshold);
 __int64 __fastcall suspend_particle(__int64 result);
 __int16 *__fastcall set_state(__int16 *result, char a2);
 __int64 __fastcall get_particle_id(__int16 a1, __int16 a2); // idb
@@ -66,9 +66,9 @@ __int64 __fastcall draw_border(unsigned __int16 a1); // idb
 __int16 *__fastcall set_rocket_direction(int a1, __int16 a2, __int16 a3);
 __int64 __fastcall near_config(__int64 result, char a2, char a3);
 __int64 __fastcall scan_line(__int16 start_x, __int16 start_y, __int16 step_x, __int16 step_y, unsigned __int8 single_step, unsigned __int8 particle_action_mode);
-bool __fastcall can_sleep(__int16 a1, __int16 a2);
-bool __fastcall can_sleep(int a1);
-bool __fastcall around_matches(__int16 a1, __int16 a2, char a3);
+bool __fastcall can_sleep(__int16 x, __int16 y);
+bool __fastcall can_sleep(int particle_index);
+bool __fastcall around_matches(__int16 center_x, __int16 center_y, char density_to_match);
 __int64 __fastcall append_particle_state_list(unsigned __int8 source_list_index, unsigned __int8 destination_list_index, char update_particle_list_tags);
 char *__fastcall restore_box();
 __int16 *__fastcall synchronize_particle_state_list();
@@ -105,7 +105,7 @@ char *__fastcall change_zoom(unsigned __int8 a1, char a2);
 __int64 __fastcall wake_border(); // idb
 __int64 __fastcall restore_from_box(); // idb
 __int64 __fastcall set_frame(); // idb
-__int64 __fastcall current_can_sleep(); // idb
+__int64 __fastcall current_particle_can_sleep(); // idb
 __int64 __fastcall near_count(__int16 a1, __int16 a2, unsigned __int8 a3, unsigned __int8 a4, char a5);
 __int64 __fastcall seek_gas(); // idb
 __int64 __fastcall tap(unsigned __int8 a1); // idb
@@ -1649,46 +1649,46 @@ __int64 __fastcall initialize_material_group_lookup()
 // 33018: using guessed type _BYTE g_material_properties[16];
 
 //----- (0000000000006840) ----------------------------------------------------
-bool __fastcall is_solid(__int16 a1, __int16 a2)
+bool __fastcall is_solid(__int16 x, __int16 y)
 {
-  int v2; // w2
-  _BOOL8 result; // x0
+  int x_checked; // w2
+  _BOOL8 is_solid_result; // x0
 
-  v2 = a1;
-  result = true;
-  if ( v2 > 1 && a2 > 1 && a2 < g_view_height - 2 && v2 < g_view_width[0] - 2 )
-    return (unsigned __int8)(g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v2 + a2 * g_view_width[0])) + 20]
+  x_checked = x;
+  is_solid_result = true;
+  if ( x_checked > 1 && y > 1 && y < g_view_height - 2 && x_checked < g_view_width[0] - 2 )
+    return (unsigned __int8)(g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (x_checked + y * g_view_width[0])) + 20]
                            - 1) <= 1u;
-  return result;
+  return is_solid_result;
 }
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
 // E50A10: using guessed type __int64 g_cell_state_grid;
 
 //----- (00000000000068C4) ----------------------------------------------------
-__int64 __fastcall pressure(__int16 a1, __int16 a2)
+__int64 __fastcall pressure(__int16 start_x, __int16 start_y)
 {
-  int v2; // w2
-  int v3; // w3
-  __int64 result; // x0
-  _WORD *v5; // x5
+  int current_x; // w2
+  int current_y; // w3
+  __int64 pressure_distance; // x0
+  _WORD *gravity_direction_entry; // x5
 
-  v2 = a1;
-  v3 = a2;
-  result = 0xFFFFFFFFLL;
-  v5 = (_WORD *)((char *)&unk_1C858 + 32 * (unsigned __int8)g_direction_index);
-  while ( v2 > 1
-       && v3 > 1
-       && v3 < g_view_height - 2
-       && v2 < g_view_width[0] - 2
-       && (unsigned __int8)(g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v2 + v3 * g_view_width[0])) + 4]
+  current_x = start_x;
+  current_y = start_y;
+  pressure_distance = 0xFFFFFFFFLL;
+  gravity_direction_entry = (_WORD *)((char *)&unk_1C858 + 32 * (unsigned __int8)g_direction_index);
+  while ( current_x > 1
+       && current_y > 1
+       && current_y < g_view_height - 2
+       && current_x < g_view_width[0] - 2
+       && (unsigned __int8)(g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (current_x + current_y * g_view_width[0])) + 4]
                           - 3) <= 1u )
   {
-    result = (unsigned int)(__int16)(result + 1);
-    v2 = (__int16)(v2 + *v5);
-    v3 = (__int16)(v3 + v5[1]);
+    pressure_distance = (unsigned int)(__int16)(pressure_distance + 1);
+    current_x = (__int16)(current_x + *gravity_direction_entry);
+    current_y = (__int16)(current_y + gravity_direction_entry[1]);
   }
-  return result;
+  return pressure_distance;
 }
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 33510: using guessed type __int16 g_view_width[];
@@ -1697,28 +1697,28 @@ __int64 __fastcall pressure(__int16 a1, __int16 a2)
 // E50A18: using guessed type char g_direction_index;
 
 //----- (0000000000006984) ----------------------------------------------------
-__int64 __fastcall pressure(__int16 a1, __int16 a2, char a3)
+__int64 __fastcall pressure(__int16 start_x, __int16 start_y, char material_property_value)
 {
-  int v3; // w3
-  int v4; // w4
-  __int64 result; // x0
-  _WORD *v6; // x6
+  int current_x; // w3
+  int current_y; // w4
+  __int64 pressure_distance; // x0
+  _WORD *gravity_direction_entry; // x6
 
-  v3 = a1;
-  v4 = a2;
-  result = 0xFFFFFFFFLL;
-  v6 = (_WORD *)((char *)&unk_1C858 + 32 * (unsigned __int8)g_direction_index);
-  while ( v3 > 1
-       && v4 > 1
-       && v4 < g_view_height - 2
-       && v3 < g_view_width[0] - 2
-       && g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + v4 * g_view_width[0])) + 1] == a3 )
+  current_x = start_x;
+  current_y = start_y;
+  pressure_distance = 0xFFFFFFFFLL;
+  gravity_direction_entry = (_WORD *)((char *)&unk_1C858 + 32 * (unsigned __int8)g_direction_index);
+  while ( current_x > 1
+       && current_y > 1
+       && current_y < g_view_height - 2
+       && current_x < g_view_width[0] - 2
+       && g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (current_x + current_y * g_view_width[0])) + 1] == material_property_value )
   {
-    result = (unsigned int)(__int16)(result + 1);
-    v3 = (__int16)(v3 + *v6);
-    v4 = (__int16)(v4 + v6[1]);
+    pressure_distance = (unsigned int)(__int16)(pressure_distance + 1);
+    current_x = (__int16)(current_x + *gravity_direction_entry);
+    current_y = (__int16)(current_y + gravity_direction_entry[1]);
   }
-  return result;
+  return pressure_distance;
 }
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 33510: using guessed type __int16 g_view_width[];
@@ -1727,22 +1727,22 @@ __int64 __fastcall pressure(__int16 a1, __int16 a2, char a3)
 // E50A18: using guessed type char g_direction_index;
 
 //----- (0000000000006A40) ----------------------------------------------------
-bool __fastcall is_lower_density(__int16 a1, __int16 a2, unsigned __int8 a3)
+bool __fastcall is_lower_density(__int16 x, __int16 y, unsigned __int8 density_threshold)
 {
-  int v3; // w3
-  _BOOL8 result; // x0
-  __int64 v5; // x1
+  int cell_x; // w3
+  _BOOL8 density_check_result; // x0
+  __int64 cell_material_id; // x1
 
-  v3 = a1;
-  result = false;
-  if ( v3 > 1 && a2 > 1 && a2 < g_view_height - 2 && v3 < g_view_width[0] - 2 )
+  cell_x = x;
+  density_check_result = false;
+  if ( cell_x > 1 && y > 1 && y < g_view_height - 2 && cell_x < g_view_width[0] - 2 )
   {
-    result = true;
-    v5 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v3 + a2 * g_view_width[0]));
-    if ( hx_cast<_DWORD>(v5) != 0 )
-      return (unsigned __int8)g_shared_engine_data[12 * v5 + 17] < hx_cast<unsigned int>(a3);
+    density_check_result = true;
+    cell_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (cell_x + y * g_view_width[0]));
+    if ( hx_cast<_DWORD>(cell_material_id) != 0 )
+      return (unsigned __int8)g_shared_engine_data[12 * cell_material_id + 17] < hx_cast<unsigned int>(density_threshold);
   }
-  return result;
+  return density_check_result;
 }
 // 33510: using guessed type __int16 g_view_width[];
 // 33512: using guessed type __int16 g_view_height;
@@ -2826,121 +2826,121 @@ LABEL_25:
 // E50A3A: using guessed type __int16 g_found_y;
 
 //----- (0000000000007D30) ----------------------------------------------------
-bool __fastcall can_sleep(__int16 a1, __int16 a2)
+bool __fastcall can_sleep(__int16 x, __int16 y)
 {
-  _BYTE *v2; // x2
-  unsigned int v4; // w21
-  int v6; // w5
-  _WORD *v7; // x0
-  int v8; // w4
-  int v9; // w0
-  _BOOL4 v10; // w22
-  int v12; // w2
-  _WORD *v13; // x0
-  int v14; // w2
-  int v15; // w0
-  __int64 v16; // x0
-  _WORD *v17; // x0
-  __int16 v18; // w2
-  int v19; // w0
-  int v20; // w1
-  _WORD *v21; // x23
-  bool v22; // w0
-  __int16 v23; // w0
-  __int16 v24; // w1
-  _WORD *v25; // x23
-  int v26; // w0
-  int v28; // w0
-  __int64 v29; // x0
+  _BYTE *material_properties; // x2
+  unsigned int particle_density; // w21
+  int gravity_neighbor_x; // w5
+  _WORD *direction_entry; // x0
+  int diagonal_neighbor_x; // w4
+  int diagonal_neighbor_y; // w0
+  _BOOL4 sleep_allowed; // w22
+  int lower_neighbor_x; // w2
+  _WORD *direction_entry_alt; // x0
+  int side_neighbor_x; // w2
+  int side_neighbor_y; // w0
+  __int64 side_material_id; // x0
+  _WORD *direction_entry_secondary; // x0
+  __int16 upper_diagonal_delta_y; // w2
+  int upper_diagonal_x; // w0
+  int upper_diagonal_y; // w1
+  _WORD *direction_entry_for_density_check; // x23
+  bool lower_density_path_found; // w0
+  __int16 side_diagonal_delta_x; // w0
+  __int16 side_diagonal_delta_y; // w1
+  _WORD *side_direction_entry; // x23
+  int gravity_neighbor_y; // w0
+  int lower_neighbor_y; // w0
+  __int64 lower_material_id; // x0
 
-  v2 = &g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (a1 + a2 * g_view_width[0]))];
-  if ( v2[4] == 5 )
+  material_properties = &g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (x + y * g_view_width[0]))];
+  if ( material_properties[4] == 5 )
     return false;
-  v4 = hx_cast<unsigned __int8>(v2[1]);
-  v6 = (__int16)(a1 + g_direction_lut[16 * (unsigned __int8)g_direction_index]);
-  if ( v6 > 1 )
+  particle_density = hx_cast<unsigned __int8>(material_properties[1]);
+  gravity_neighbor_x = (__int16)(x + g_direction_lut[16 * (unsigned __int8)g_direction_index]);
+  if ( gravity_neighbor_x > 1 )
   {
-    v26 = (__int16)(a2 + g_direction_lut[16 * (unsigned __int8)g_direction_index + 1]);
-    if ( v26 > 1 && v26 < g_view_height - 2 && v6 < g_view_width[0] - 2 )
+    gravity_neighbor_y = (__int16)(y + g_direction_lut[16 * (unsigned __int8)g_direction_index + 1]);
+    if ( gravity_neighbor_y > 1 && gravity_neighbor_y < g_view_height - 2 && gravity_neighbor_x < g_view_width[0] - 2 )
     {
-      v10 = false;
-      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (v6 + g_view_width[0] * v26)) == 0 )
-        return v10;
-      if ( (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v6 + g_view_width[0] * v26)) + 1] < v4 )
+      sleep_allowed = false;
+      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (gravity_neighbor_x + g_view_width[0] * gravity_neighbor_y)) == 0 )
+        return sleep_allowed;
+      if ( (unsigned __int8)g_material_properties[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (gravity_neighbor_x + g_view_width[0] * gravity_neighbor_y)) + 1] < particle_density )
         return false;
     }
   }
-  v7 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-  v8 = (__int16)(a1 + v7[8]);
-  if ( v8 > 1 )
+  direction_entry = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+  diagonal_neighbor_x = (__int16)(x + direction_entry[8]);
+  if ( diagonal_neighbor_x > 1 )
   {
-    v9 = (__int16)(a2 + v7[9]);
-    if ( v9 > 1 && v9 < g_view_height - 2 && v8 < g_view_width[0] - 2 )
+    diagonal_neighbor_y = (__int16)(y + direction_entry[9]);
+    if ( diagonal_neighbor_y > 1 && diagonal_neighbor_y < g_view_height - 2 && diagonal_neighbor_x < g_view_width[0] - 2 )
     {
-      v10 = false;
-      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (v8 + g_view_width[0] * v9)) == 0
-        || (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v8 + g_view_width[0] * v9)) + 17] < v4 )
+      sleep_allowed = false;
+      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (diagonal_neighbor_x + g_view_width[0] * diagonal_neighbor_y)) == 0
+        || (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (diagonal_neighbor_x + g_view_width[0] * diagonal_neighbor_y)) + 17] < particle_density )
       {
-        return v10;
+        return sleep_allowed;
       }
     }
   }
 
-  v12 = (__int16)(a1 + g_direction_lut[16 * (unsigned __int8)g_direction_index + 10]);
-  if ( v12 > 1 )
+  lower_neighbor_x = (__int16)(x + g_direction_lut[16 * (unsigned __int8)g_direction_index + 10]);
+  if ( lower_neighbor_x > 1 )
   {
-    v28 = (__int16)(a2 + g_direction_lut[16 * (unsigned __int8)g_direction_index + 11]);
-    if ( v28 > 1 && v28 < g_view_height - 2 && v12 < g_view_width[0] - 2 )
+    lower_neighbor_y = (__int16)(y + g_direction_lut[16 * (unsigned __int8)g_direction_index + 11]);
+    if ( lower_neighbor_y > 1 && lower_neighbor_y < g_view_height - 2 && lower_neighbor_x < g_view_width[0] - 2 )
     {
-      v10 = false;
-      v29 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v12 + g_view_width[0] * v28));
-      if ( hx_cast<_DWORD>(v29) == 0 )
-        return v10;
-      if ( (unsigned __int8)g_shared_engine_data[12 * v29 + 17] < v4 )
+      sleep_allowed = false;
+      lower_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (lower_neighbor_x + g_view_width[0] * lower_neighbor_y));
+      if ( hx_cast<_DWORD>(lower_material_id) == 0 )
+        return sleep_allowed;
+      if ( (unsigned __int8)g_shared_engine_data[12 * lower_material_id + 17] < particle_density )
         return false;
     }
   }
-  v13 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-  v14 = (__int16)(a1 + v13[6]);
-  if ( v14 > 1 )
+  direction_entry_alt = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+  side_neighbor_x = (__int16)(x + direction_entry_alt[6]);
+  if ( side_neighbor_x > 1 )
   {
-    v15 = (__int16)(a2 + v13[7]);
-    if ( v15 > 1 && v15 < g_view_height - 2 && v14 < g_view_width[0] - 2 )
+    side_neighbor_y = (__int16)(y + direction_entry_alt[7]);
+    if ( side_neighbor_y > 1 && side_neighbor_y < g_view_height - 2 && side_neighbor_x < g_view_width[0] - 2 )
     {
-      v10 = false;
-      v16 = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v14 + g_view_width[0] * v15));
-      if ( hx_cast<_DWORD>(v16) == 0 || (unsigned __int8)g_shared_engine_data[12 * v16 + 17] < v4 )
-        return v10;
+      sleep_allowed = false;
+      side_material_id = *(unsigned __int8 *)(g_cell_state_grid + 8LL * (side_neighbor_x + g_view_width[0] * side_neighbor_y));
+      if ( hx_cast<_DWORD>(side_material_id) == 0 || (unsigned __int8)g_shared_engine_data[12 * side_material_id + 17] < particle_density )
+        return sleep_allowed;
     }
   }
-  v17 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-  v18 = v17[3];
-  v19 = (__int16)(a1 + v17[2]);
-  if ( v19 > 1 )
+  direction_entry_secondary = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+  upper_diagonal_delta_y = direction_entry_secondary[3];
+  upper_diagonal_x = (__int16)(x + direction_entry_secondary[2]);
+  if ( upper_diagonal_x > 1 )
   {
-    v20 = (__int16)(a2 + v18);
-    if ( v20 > 1 && v20 < g_view_height - 2 && v19 < g_view_width[0] - 2 )
+    upper_diagonal_y = (__int16)(y + upper_diagonal_delta_y);
+    if ( upper_diagonal_y > 1 && upper_diagonal_y < g_view_height - 2 && upper_diagonal_x < g_view_width[0] - 2 )
     {
-      v10 = false;
-      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (v19 + g_view_width[0] * v20)) == 0
-        || (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (v19 + g_view_width[0] * v20))
-                                     + 17] < v4 )
+      sleep_allowed = false;
+      if ( *(_BYTE *)(g_cell_state_grid + 8LL * (upper_diagonal_x + g_view_width[0] * upper_diagonal_y)) == 0
+        || (unsigned __int8)g_shared_engine_data[12 * *(unsigned __int8 *)(g_cell_state_grid + 8LL * (upper_diagonal_x + g_view_width[0] * upper_diagonal_y))
+                                     + 17] < particle_density )
       {
-        return v10;
+        return sleep_allowed;
       }
     }
   }
-  v21 = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
-  v22 = is_lower_density(a1 + v21[4], a2 + v21[5], v4);
-  v10 = v22;
-  if ( !v22 )
+  direction_entry_for_density_check = &g_direction_lut[16 * (unsigned __int8)g_direction_index];
+  lower_density_path_found = is_lower_density(x + direction_entry_for_density_check[4], y + direction_entry_for_density_check[5], particle_density);
+  sleep_allowed = lower_density_path_found;
+  if ( !lower_density_path_found )
   {
-    v23 = v21[14];
-    v24 = v21[15];
-    v25 = v21 + 8;
-    if ( !is_lower_density(a1 + v23, a2 + v24, v4) )
-      return !is_lower_density(a1 + v25[4], a2 + v25[5], v4);
-    return v10;
+    side_diagonal_delta_x = direction_entry_for_density_check[14];
+    side_diagonal_delta_y = direction_entry_for_density_check[15];
+    side_direction_entry = direction_entry_for_density_check + 8;
+    if ( !is_lower_density(x + side_diagonal_delta_x, y + side_diagonal_delta_y, particle_density) )
+      return !is_lower_density(x + side_direction_entry[4], y + side_direction_entry[5], particle_density);
+    return sleep_allowed;
   }
   return false;
 }
@@ -2954,42 +2954,42 @@ bool __fastcall can_sleep(__int16 a1, __int16 a2)
 // E50A18: using guessed type char g_direction_index;
 
 //----- (00000000000080D8) ----------------------------------------------------
-bool __fastcall can_sleep(int a1)
+bool __fastcall can_sleep(int particle_index)
 {
-  return can_sleep(g_particle_records[10 * a1], g_particle_records[10 * a1 + 1]);
+  return can_sleep(g_particle_records[10 * particle_index], g_particle_records[10 * particle_index + 1]);
 }
 // 4C7380: using guessed type __int16 g_particle_records[72];
 
 //----- (0000000000008100) ----------------------------------------------------
-bool __fastcall around_matches(__int16 a1, __int16 a2, char a3)
+bool __fastcall around_matches(__int16 center_x, __int16 center_y, char density_to_match)
 {
-  _WORD *v3; // x6
+  _WORD *direction_entry; // x6
 
-  v3 = (_WORD *)((char *)&unk_1C858 + 32 * (unsigned __int8)g_direction_index);
+  direction_entry = (_WORD *)((char *)&unk_1C858 + 32 * (unsigned __int8)g_direction_index);
   return g_material_properties[12
                   * *(unsigned __int8 *)(g_cell_state_grid
-                                       + 8LL * ((__int16)(a2 + v3[1]) * g_view_width[0] + (__int16)(a1 + *v3)))
-                  + 1] == a3
+                                       + 8LL * ((__int16)(center_y + direction_entry[1]) * g_view_width[0] + (__int16)(center_x + *direction_entry)))
+                  + 1] == density_to_match
       || g_material_properties[12
                   * *(unsigned __int8 *)(g_cell_state_grid
-                                       + 8LL * (g_view_width[0] * (__int16)(a2 + v3[7]) + (__int16)(a1 + v3[6])))
-                  + 1] == a3
+                                       + 8LL * (g_view_width[0] * (__int16)(center_y + direction_entry[7]) + (__int16)(center_x + direction_entry[6])))
+                  + 1] == density_to_match
       || g_material_properties[12
                   * *(unsigned __int8 *)(g_cell_state_grid
-                                       + 8LL * (g_view_width[0] * (__int16)(a2 + v3[3]) + (__int16)(a1 + v3[2])))
-                  + 1] == a3
+                                       + 8LL * (g_view_width[0] * (__int16)(center_y + direction_entry[3]) + (__int16)(center_x + direction_entry[2])))
+                  + 1] == density_to_match
       || g_material_properties[12
                   * *(unsigned __int8 *)(g_cell_state_grid
-                                       + 8LL * (g_view_width[0] * (__int16)(a2 + v3[9]) + (__int16)(a1 + v3[8])))
-                  + 1] == a3
+                                       + 8LL * (g_view_width[0] * (__int16)(center_y + direction_entry[9]) + (__int16)(center_x + direction_entry[8])))
+                  + 1] == density_to_match
       || g_material_properties[12
                   * *(unsigned __int8 *)(g_cell_state_grid
-                                       + 8LL * (g_view_width[0] * (__int16)(a2 + v3[11]) + (__int16)(a1 + v3[10])))
-                  + 1] == a3
+                                       + 8LL * (g_view_width[0] * (__int16)(center_y + direction_entry[11]) + (__int16)(center_x + direction_entry[10])))
+                  + 1] == density_to_match
       || g_material_properties[12
                   * *(unsigned __int8 *)(g_cell_state_grid
-                                       + 8LL * (g_view_width[0] * (__int16)(a2 + v3[5]) + (__int16)(a1 + v3[4])))
-                  + 1] == a3;
+                                       + 8LL * (g_view_width[0] * (__int16)(center_y + direction_entry[5]) + (__int16)(center_x + direction_entry[4])))
+                  + 1] == density_to_match;
 }
 // 33018: using guessed type _BYTE g_material_properties[16];
 // 33510: using guessed type __int16 g_view_width[];
@@ -8258,7 +8258,7 @@ LABEL_4:
 // E50AF1: using guessed type char byte_E50AF1;
 
 //----- (000000000000FF08) ----------------------------------------------------
-__int64 __fastcall current_can_sleep()
+__int64 __fastcall current_particle_can_sleep()
 {
   __int64 result; // x0
 
@@ -12296,7 +12296,7 @@ LABEL_97:
                 switch ( g_shared_engine_data[12 * LOBYTE(g_particle_records[10 * simulation_particle_index + 4]) + 20] )
                 {
                   case 2:
-                    if ( (unsigned __int8)current_can_sleep() == 0 )
+                    if ( (unsigned __int8)current_particle_can_sleep() == 0 )
                       goto LABEL_115;
                     simulation_particle_index = g_current_particle_index;
                     LOBYTE(g_particle_records[10 * g_current_particle_index + 6]) = g_particle_records[10 * g_current_particle_index + 6] & 0xC7 | 0x18;
