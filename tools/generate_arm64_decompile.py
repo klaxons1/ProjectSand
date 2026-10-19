@@ -1159,6 +1159,71 @@ def main() -> None:
         new_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, new_particle)
     generated = generated[:start] + new_particle + generated[end:]
 
+    # Clarify the neighbor-wake path used to reactivate particles around a
+    # changing cell, without changing its sentinel or packed-state handling.
+    start_marker = "//----- (000000000000B080)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    wake_particle = generated[start:end]
+    for old_name, semantic_name in {
+        "a2": "y",
+        "v2": "particle_x",
+        "v4": "cell_record",
+        "v5": "particle_index",
+        "v6": "packed_particle_state",
+        "v7": "updated_particle_flags",
+    }.items():
+        wake_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, wake_particle)
+    generated = generated[:start] + wake_particle + generated[end:]
+
+    start_marker = "//----- (000000000000B1A4)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    wake_neighbors = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "center_x",
+        "a2": "center_y",
+        "v2": "center_x_copy",
+    }.items():
+        wake_neighbors = re.sub(r"\b" + old_name + r"\b", semantic_name, wake_neighbors)
+    generated = generated[:start] + wake_neighbors + generated[end:]
+
+    # Name the coordinates, allocated particle, target list, and per-bank
+    # dirty-pixel queue fields used when an asleep grid cell is resumed.
+    start_marker = "//----- (000000000000A474)"
+    start = generated.index(start_marker)
+    end = generated.index("//-----", start + len(start_marker))
+    resume_particle = generated[start:end]
+    for old_name, semantic_name in {
+        "a1": "x",
+        "a2": "y",
+        "v2": "particle_x",
+        "v3": "particle_y",
+        "v4": "allocated_particle_index",
+        "v5": "particle_index",
+        "v6": "new_particle_record",
+        "v7": "state_list_index",
+        "v8": "state_list_tag",
+        "v9": "state_list_head",
+        "v10": "particle_record",
+        "v11": "framebuffer_bank_count",
+        "v12": "packed_state_byte",
+        "v13": "primary_dirty_ring_end",
+        "v14": "primary_dirty_ring_next",
+        "v15": "primary_dirty_ring_entry",
+        "v16": "secondary_dirty_ring_end",
+        "v17": "secondary_dirty_ring_next",
+        "v18": "secondary_dirty_ring_entry",
+        "v19": "tertiary_dirty_ring_end",
+        "v20": "tertiary_dirty_ring_next",
+        "v21": "tertiary_dirty_ring_entry",
+        "v22": "quaternary_dirty_ring_end",
+        "v23": "quaternary_dirty_ring_next",
+        "v24": "quaternary_dirty_ring_entry",
+    }.items():
+        resume_particle = re.sub(r"\b" + old_name + r"\b", semantic_name, resume_particle)
+    generated = generated[:start] + resume_particle + generated[end:]
+
     # Make the per-particle list reconciliation readable in terms of the
     # encoded source/destination list and the particle's current record.
     start_marker = "//----- (0000000000008610)"
