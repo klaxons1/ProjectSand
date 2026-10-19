@@ -1,6 +1,6 @@
 // Exercise the restored production frame scheduler with only the Android
 // JNI/window boundary stubbed. This catches list-cursor and frame integration
-// regressions that direct seek_particle() host calls cannot expose.
+// regressions that direct process_particle_motion() host calls cannot expose.
 #include "../app/src/main/cpp/arm64/libsand_decompiled.cpp"
 
 #include <cstdint>

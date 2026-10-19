@@ -12,7 +12,7 @@ static void send_touch_command(unsigned char action, short x, short y) {
   const std::uint64_t packed = static_cast<std::uint64_t>(action) |
       (static_cast<std::uint64_t>(static_cast<std::uint16_t>(x)) << 16) |
       (static_cast<std::uint64_t>(static_cast<std::uint16_t>(y)) << 32);
-  run_command(static_cast<__int64>(packed));
+  dispatch_engine_command(static_cast<__int64>(packed));
 }
 
 int main() {
@@ -29,7 +29,7 @@ int main() {
 
   for (const unsigned char material_id : fluid_material_ids) {
     for (int direction = 0; direction < 8; ++direction) {
-      init_all(1);
+      initialize_simulation_state(1);
       g_view_width[0] = width;
       g_view_height = height;
       g_framebuffer_stride = width;
@@ -58,7 +58,7 @@ int main() {
       }
 
       g_current_particle_index = particle_index;
-      seek_particle();
+      process_particle_motion();
 
       const int dx = static_cast<__int16>(g_direction_lut[16 * direction + 4]);
       const int dy = static_cast<__int16>(g_direction_lut[16 * direction + 5]);
@@ -69,8 +69,8 @@ int main() {
                      expected_directions[direction][1]);
         return 1;
       }
-      const int expected_x = start_x + byte_E50A97 * dx;
-      const int expected_y = start_y + byte_E50A97 * dy;
+      const int expected_x = start_x + g_gas_search_radius * dx;
+      const int expected_y = start_y + g_gas_search_radius * dy;
       const int actual_x = g_particle_records[10 * particle_index];
       const int actual_y = g_particle_records[10 * particle_index + 1];
       if (actual_x != expected_x || actual_y != expected_y) {
@@ -95,7 +95,7 @@ int main() {
       {5, 20, 20, 42, 38}, {5, 20, 42, 42, 20},
   };
   for (const auto& stroke : stroke_cases) {
-    init_all(1);
+    initialize_simulation_state(1);
     g_view_width[0] = width;
     g_view_height = height;
     g_framebuffer_stride = width;
@@ -109,12 +109,12 @@ int main() {
     g_engine_mode = 7;
     g_direction_index = 0;
     g_selected_material = static_cast<char>(stroke[0]);
-    byte_E50AF2 = 1;
-    word_E50AF8 = static_cast<__int16>(stroke[1]);
-    word_E50AFA = static_cast<__int16>(stroke[2]);
+    g_brush_radius = 1;
+    g_last_touch_pixel_x = static_cast<__int16>(stroke[1]);
+    g_last_touch_pixel_y = static_cast<__int16>(stroke[2]);
     draw_to(static_cast<__int16>(stroke[3]), static_cast<__int16>(stroke[4]));
 
-    const int particle_count = dword_E50A98;
+    const int particle_count = g_next_particle_index;
     const int material_family_start = g_material_properties_lut[224 + 4 * stroke[0]];
     const int material_family_size = g_material_properties_lut[225 + 4 * stroke[0]];
     if (particle_count == 0 || material_family_size == 0) {
@@ -153,7 +153,7 @@ int main() {
   // interpolated cell, rather than dropping seven of every eight placements.
   constexpr unsigned char dense_stroke_tools[] = {1, 3, 4, 5};
   for (const unsigned char tool_id : dense_stroke_tools) {
-    init_all(1);
+    initialize_simulation_state(1);
     g_view_width[0] = width;
     g_view_height = height;
     g_framebuffer_stride = width;
@@ -167,7 +167,7 @@ int main() {
     g_engine_mode = 7;
     g_zoom_factor = 1;
     g_selected_material = static_cast<char>(tool_id);
-    byte_E50AF2 = 1;
+    g_brush_radius = 1;
     send_touch_command(2, 10, 20);
     for (short x = 11; x <= 50; ++x) {
       send_touch_command(3, x, 20);
@@ -192,7 +192,7 @@ int main() {
 
   // A non-particle wall cell blocks direct gravity; the production liquid
   // scheduler should find a route around it rather than overwrite the obstacle.
-  init_all(1);
+  initialize_simulation_state(1);
   g_view_width[0] = width;
   g_view_height = height;
   g_framebuffer_stride = width;
@@ -213,7 +213,7 @@ int main() {
       g_cell_state_grid + 8LL * (start_x + start_y * width) + 4);
   for (int frame = 0; frame < 4; ++frame) {
     g_current_particle_index = water_index;
-    seek_particle();
+    process_particle_motion();
   }
   const int water_x = g_particle_records[10 * water_index];
   const int water_y = g_particle_records[10 * water_index + 1];
