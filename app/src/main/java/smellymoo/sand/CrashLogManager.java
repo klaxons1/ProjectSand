@@ -27,6 +27,7 @@ final class CrashLogManager {
     private static final String PUBLIC_DIRECTORY = "/storage/emulated/0/sand";
     private static final String PREFERENCES = "crash_logging";
     private static final String PROMPT_SHOWN = "public_storage_prompt_shown";
+    private static final long WATCHDOG_INTERVAL_MS = 5_000L;
     static final int WRITE_PERMISSION_REQUEST = 5182;
 
     private static Context appContext;
@@ -53,10 +54,12 @@ final class CrashLogManager {
     private static void startNativeWatchdog() {
         if (nativeWatchdogThread != null)
             return;
+
+        // The native checker only records a stall; it never kills or resets the engine.
         nativeWatchdogThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    Thread.sleep(5000L);
+                    Thread.sleep(WATCHDOG_INTERVAL_MS);
                     Engine.checkNativeEngineProgress();
                 } catch (InterruptedException stopped) {
                     Thread.currentThread().interrupt();
@@ -75,7 +78,13 @@ final class CrashLogManager {
             initialize(context);
             return;
         }
-        if (!nativeLoggerConfigured || publicAccessAtLastConfiguration != hasPublicDirectoryAccess())
+        if (!nativeLoggerConfigured) {
+            refreshNativeLogger();
+            return;
+        }
+        boolean publicAccessChanged =
+                publicAccessAtLastConfiguration != hasPublicDirectoryAccess();
+        if (publicAccessChanged)
             refreshNativeLogger();
     }
 
@@ -83,7 +92,8 @@ final class CrashLogManager {
         if (Build.VERSION.SDK_INT >= 30)
             return Environment.isExternalStorageManager();
         if (Build.VERSION.SDK_INT >= 23 && Build.VERSION.SDK_INT <= 28)
-            return appContext.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            return appContext.checkSelfPermission(
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     == android.content.pm.PackageManager.PERMISSION_GRANTED;
         return false;
     }
@@ -94,13 +104,15 @@ final class CrashLogManager {
             if (chosen != null && !chosen.isEmpty()) {
                 activeDirectory = chosen;
                 if (!PUBLIC_DIRECTORY.equals(chosen)) {
-                    Log.w(TAG, "Public crash folder unavailable; using app-private logs: " + chosen);
+                    Log.w(TAG, "Public crash folder unavailable; "
+                            + "using app-private logs: " + chosen);
                 } else {
                     Log.i(TAG, "Native crash logs: " + chosen);
                 }
             } else {
                 activeDirectory = fallbackDirectory;
-                Log.e(TAG, "Native logger could not open a crash log; Java logs will use " + fallbackDirectory);
+                Log.e(TAG, "Native logger could not open a crash log; "
+                        + "Java logs will use " + fallbackDirectory);
             }
         } catch (Throwable error) {
             activeDirectory = fallbackDirectory;
@@ -144,7 +156,8 @@ final class CrashLogManager {
         File report = new File(logDirectory,
                 "java_crash_" + timestamp + "_" + Process.myPid() + ".log");
         try (FileOutputStream stream = new FileOutputStream(report);
-             OutputStreamWriter output = new OutputStreamWriter(stream, Charset.forName("UTF-8"));
+             OutputStreamWriter output = new OutputStreamWriter(
+                     stream, Charset.forName("UTF-8"));
              PrintWriter writer = new PrintWriter(output)) {
             writer.println("=== UNCAUGHT JAVA EXCEPTION ===");
             writer.println("time=" + new Date().toString());
@@ -162,25 +175,30 @@ final class CrashLogManager {
         if (Build.VERSION.SDK_INT >= 30) {
             if (Environment.isExternalStorageManager())
                 return;
-            SharedPreferences preferences = activity.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
+            SharedPreferences preferences = activity.getSharedPreferences(
+                    PREFERENCES, Context.MODE_PRIVATE);
             if (preferences.getBoolean(PROMPT_SHOWN, false))
                 return;
             preferences.edit().putBoolean(PROMPT_SHOWN, true).apply();
             new AlertDialog.Builder(activity)
                     .setTitle("Crash log folder access")
-                    .setMessage("Allow all-files access to write crash reports to " +
-                            PUBLIC_DIRECTORY + ". If skipped, reports are saved in the app's private files.")
+                    .setMessage("Allow all-files access to write crash reports to "
+                            + PUBLIC_DIRECTORY
+                            + ". If skipped, reports are saved in the app's private files.")
                     .setPositiveButton("Open settings", (dialog, which) -> {
-                        Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                        Intent intent = new Intent(
+                                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
                                 Uri.parse("package:" + activity.getPackageName()));
                         try {
                             activity.startActivity(intent);
                         } catch (RuntimeException unavailable) {
-                            Intent generalSettings = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                            Intent generalSettings = new Intent(
+                                    Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
                             try {
                                 activity.startActivity(generalSettings);
                             } catch (RuntimeException ignored) {
-                                Log.w(TAG, "All-files access settings are unavailable", unavailable);
+                                Log.w(TAG, "All-files access settings are unavailable",
+                                        unavailable);
                             }
                         }
                     })
@@ -190,10 +208,12 @@ final class CrashLogManager {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= 23 && Build.VERSION.SDK_INT <= 28 &&
-                activity.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        if (Build.VERSION.SDK_INT >= 23 && Build.VERSION.SDK_INT <= 28
+                && activity.checkSelfPermission(
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
                         != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            SharedPreferences preferences = activity.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
+            SharedPreferences preferences = activity.getSharedPreferences(
+                    PREFERENCES, Context.MODE_PRIVATE);
             if (!preferences.getBoolean(PROMPT_SHOWN, false)) {
                 preferences.edit().putBoolean(PROMPT_SHOWN, true).apply();
                 activity.requestPermissions(

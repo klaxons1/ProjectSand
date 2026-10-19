@@ -23,9 +23,17 @@ namespace {
 
 constexpr size_t kPathCapacity = 1024;
 constexpr size_t kAlternateStackSize = 64 * 1024;
+constexpr unsigned int kProgressReportIntervalTicks = 16;
+constexpr int kSimulationMode = 7;
+constexpr int kSimulationTransitionMode = 8;
+constexpr uint64_t kNanosecondsPerSecond = 1000000000ULL;
+constexpr uint64_t kNanosecondsPerMillisecond = 1000000ULL;
+// Test builds shorten this threshold to exercise the watchdog quickly.
 #ifndef SAND_ENGINE_STALL_THRESHOLD_NS
-#define SAND_ENGINE_STALL_THRESHOLD_NS (10ULL * 1000000000ULL)
+#define SAND_ENGINE_STALL_THRESHOLD_NS (10ULL * kNanosecondsPerSecond)
 #endif
+constexpr uint64_t kStallThresholdNs = SAND_ENGINE_STALL_THRESHOLD_NS;
+
 constexpr int kCrashSignals[] = {
     SIGABRT, SIGBUS, SIGFPE, SIGILL, SIGSEGV, SIGTRAP, SIGSYS, SIGXCPU, SIGXFSZ,
     SIGPIPE};
@@ -35,12 +43,14 @@ volatile sig_atomic_t g_inside_crash_handler = 0;
 bool g_handlers_installed = false;
 struct sigaction g_previous_actions[NSIG]{};
 char g_selected_directory[kPathCapacity]{};
+// Published by the engine thread; the Java watchdog reads these atomically.
 std::atomic<int> g_progress_mode{-1};
 std::atomic<unsigned int> g_progress_tick{0};
 std::atomic<uint64_t> g_progress_time_ns{0};
 std::atomic<bool> g_stall_reported{false};
 thread_local void *g_alternate_stack_memory = nullptr;
 
+// Keep this writer allocation-free and syscall-only for signal-handler use.
 void write_all(int fd, const char *data, size_t size) {
   while (size != 0) {
     const ssize_t written = write(fd, data, size);
@@ -49,6 +59,12 @@ void write_all(int fd, const char *data, size_t size) {
     data += written;
     size -= static_cast<size_t>(written);
   }
+}
+
+template <size_t N>
+void write_literal(int fd, const char (&text)[N]) {
+  static_assert(N > 0, "string literals include a trailing null byte");
+  write_all(fd, text, N - 1);
 }
 
 size_t safe_c_string_length(const char *text) {
@@ -78,13 +94,13 @@ void write_number(int fd, const char *label, uint64_t value) {
   char number[32];
   const size_t length = append_unsigned(number, sizeof(number), value, 10);
   write_all(fd, number, length);
-  write_all(fd, "\n", 1);
+  write_literal(fd, "\n");
 }
 
 void write_signed_number(int fd, const char *label, int value) {
   write_all(fd, label, safe_c_string_length(label));
   if (value < 0) {
-    write_all(fd, "-", 1);
+    write_literal(fd, "-");
     const uint64_t magnitude = static_cast<uint64_t>(-(static_cast<int64_t>(value)));
     char number[32];
     const size_t length = append_unsigned(number, sizeof(number), magnitude, 10);
@@ -95,31 +111,53 @@ void write_signed_number(int fd, const char *label, int value) {
                                           static_cast<uint64_t>(value), 10);
     write_all(fd, number, length);
   }
-  write_all(fd, "\n", 1);
+  write_literal(fd, "\n");
 }
 
 void write_hex(int fd, const char *label, uintptr_t value) {
   write_all(fd, label, safe_c_string_length(label));
-  write_all(fd, "0x", 2);
+  write_literal(fd, "0x");
   char number[2 * sizeof(value)];
   const size_t length = append_unsigned(number, sizeof(number), value, 16);
   write_all(fd, number, length);
-  write_all(fd, "\n", 1);
+  write_literal(fd, "\n");
+}
+
+void write_event_metadata(int fd) {
+  timespec event_time{};
+  if (clock_gettime(CLOCK_REALTIME, &event_time) == 0) {
+    write_number(fd, "event_time_epoch_seconds=",
+                 static_cast<uint64_t>(event_time.tv_sec));
+    write_number(fd, "event_time_nanoseconds=",
+                 static_cast<uint64_t>(event_time.tv_nsec));
+  }
+  write_number(fd, "pid=", static_cast<uint64_t>(getpid()));
 }
 
 const char *signal_name(int signal_number) {
   switch (signal_number) {
-    case SIGABRT: return "SIGABRT";
-    case SIGBUS: return "SIGBUS";
-    case SIGFPE: return "SIGFPE";
-    case SIGILL: return "SIGILL";
-    case SIGSEGV: return "SIGSEGV";
-    case SIGTRAP: return "SIGTRAP";
-    case SIGSYS: return "SIGSYS";
-    case SIGXCPU: return "SIGXCPU";
-    case SIGXFSZ: return "SIGXFSZ";
-    case SIGPIPE: return "SIGPIPE";
-    default: return "UNKNOWN";
+    case SIGABRT:
+      return "SIGABRT";
+    case SIGBUS:
+      return "SIGBUS";
+    case SIGFPE:
+      return "SIGFPE";
+    case SIGILL:
+      return "SIGILL";
+    case SIGSEGV:
+      return "SIGSEGV";
+    case SIGTRAP:
+      return "SIGTRAP";
+    case SIGSYS:
+      return "SIGSYS";
+    case SIGXCPU:
+      return "SIGXCPU";
+    case SIGXFSZ:
+      return "SIGXFSZ";
+    case SIGPIPE:
+      return "SIGPIPE";
+    default:
+      return "UNKNOWN";
   }
 }
 
@@ -151,11 +189,11 @@ void crash_signal_handler(int signal_number, siginfo_t *signal_info,
 
   const int fd = g_crash_log_fd;
   if (fd >= 0) {
-    write_all(fd, "=== NATIVE FATAL SIGNAL ===\n", 28);
-    write_all(fd, "signal_name=", 12);
+    write_literal(fd, "=== NATIVE FATAL SIGNAL ===\n");
+    write_literal(fd, "signal_name=");
     const char *name = signal_name(signal_number);
     write_all(fd, name, safe_c_string_length(name));
-    write_all(fd, "\n", 1);
+    write_literal(fd, "\n");
     write_number(fd, "signal=", static_cast<uint64_t>(signal_number));
     if (signal_info != nullptr) {
       write_signed_number(fd, "signal_code=", signal_info->si_code);
@@ -163,7 +201,7 @@ void crash_signal_handler(int signal_number, siginfo_t *signal_info,
         write_hex(fd, "fault_address=",
                   reinterpret_cast<uintptr_t>(signal_info->si_addr));
       } else {
-        write_all(fd, "fault_address=not-applicable\n", 29);
+        write_literal(fd, "fault_address=not-applicable\n");
       }
     }
     timespec crash_time{};
@@ -182,7 +220,7 @@ void crash_signal_handler(int signal_number, siginfo_t *signal_info,
     write_hex(fd, "pc=", pc);
     write_hex(fd, "lr=", lr);
     write_hex(fd, "sp=", sp);
-    write_all(fd, "=== END NATIVE FATAL SIGNAL ===\n", 32);
+    write_literal(fd, "=== END NATIVE FATAL SIGNAL ===\n");
     fsync(fd);
   }
 
@@ -218,6 +256,22 @@ bool make_directories(const char *directory) {
     return false;
   struct stat info {};
   return stat(path, &info) == 0 && S_ISDIR(info.st_mode);
+}
+
+void write_executable_mappings(int fd) {
+  FILE *maps = std::fopen("/proc/self/maps", "r");
+  if (maps == nullptr)
+    return;
+
+  write_literal(fd, "=== EXECUTABLE MAPPINGS AT LOGGER SETUP ===\n");
+  char line[2048];
+  while (std::fgets(line, sizeof(line), maps) != nullptr) {
+    if (std::strstr(line, " r-xp ") != nullptr ||
+        std::strstr(line, " r-xs ") != nullptr) {
+      write_all(fd, line, std::strlen(line));
+    }
+  }
+  std::fclose(maps);
 }
 
 int open_crash_log(const char *directory) {
@@ -296,9 +350,10 @@ extern "C" const char *sand_configure_crash_logging(
   g_crash_log_fd = new_fd;
 
   std::strcpy(g_selected_directory, selected);
-  const char armed_message[] =
-      "Native crash logging armed. Fatal signal records include signal info and PC/LR/SP.\n";
-  write_all(new_fd, armed_message, sizeof(armed_message) - 1);
+  write_literal(new_fd,
+                "Native crash logging armed. Fatal signal records include signal info "
+                "and PC/LR/SP.\n");
+  write_executable_mappings(new_fd);
   fsync(new_fd);
   install_handlers();
   return g_selected_directory;
@@ -309,7 +364,8 @@ extern "C" void sand_report_engine_progress(int engine_mode,
   const int previous_mode = g_progress_mode.load(std::memory_order_relaxed);
   const unsigned int previous_tick = g_progress_tick.load(std::memory_order_relaxed);
   if (previous_mode == engine_mode &&
-      static_cast<unsigned int>(simulation_ticks - previous_tick) < 16u)
+      static_cast<unsigned int>(simulation_ticks - previous_tick) <
+          kProgressReportIntervalTicks)
     return;
 
   timespec now{};
@@ -317,7 +373,8 @@ extern "C" void sand_report_engine_progress(int engine_mode,
     return;
   g_progress_mode.store(engine_mode, std::memory_order_relaxed);
   g_progress_tick.store(simulation_ticks, std::memory_order_relaxed);
-  g_progress_time_ns.store(static_cast<uint64_t>(now.tv_sec) * 1000000000ULL +
+  g_progress_time_ns.store(static_cast<uint64_t>(now.tv_sec) *
+                                   kNanosecondsPerSecond +
                                static_cast<uint64_t>(now.tv_nsec),
                            std::memory_order_release);
   g_stall_reported.store(false, std::memory_order_release);
@@ -328,15 +385,17 @@ extern "C" void sand_check_engine_progress(void) {
   if (last_progress == 0)
     return;
   const int mode = g_progress_mode.load(std::memory_order_relaxed);
-  if (mode != 7 && mode != 8)
+  // These are the two active update phases in main_loop(); idle and paused
+  // modes are deliberately excluded to avoid reporting normal pauses as hangs.
+  if (mode != kSimulationMode && mode != kSimulationTransitionMode)
     return;
 
   timespec now{};
   if (clock_gettime(CLOCK_MONOTONIC, &now) != 0)
     return;
-  const uint64_t now_ns = static_cast<uint64_t>(now.tv_sec) * 1000000000ULL +
+  const uint64_t now_ns = static_cast<uint64_t>(now.tv_sec) *
+                              kNanosecondsPerSecond +
                           static_cast<uint64_t>(now.tv_nsec);
-  constexpr uint64_t kStallThresholdNs = SAND_ENGINE_STALL_THRESHOLD_NS;
   if (now_ns <= last_progress || now_ns - last_progress < kStallThresholdNs)
     return;
 
@@ -348,12 +407,13 @@ extern "C" void sand_check_engine_progress(void) {
   if (fd < 0)
     return;
 
-  write_all(fd, "=== NATIVE ENGINE PROGRESS STALLED ===\n", 39);
+  write_literal(fd, "=== NATIVE ENGINE PROGRESS STALLED ===\n");
   write_signed_number(fd, "engine_mode=", mode);
   write_number(fd, "simulation_ticks=",
                static_cast<uint64_t>(g_progress_tick.load(std::memory_order_relaxed)));
   write_number(fd, "stalled_for_ms=",
-               (now_ns - last_progress) / 1000000ULL);
+               (now_ns - last_progress) / kNanosecondsPerMillisecond);
+  write_event_metadata(fd);
   fsync(fd);
 }
 
@@ -363,15 +423,11 @@ extern "C" void sand_log_engine_loop_exit(int engine_mode,
   if (fd < 0)
     return;
 
-  write_all(fd, "=== NATIVE ENGINE LOOP RETURNED ===\n", 36);
+  write_literal(fd, "=== NATIVE ENGINE LOOP RETURNED ===\n");
   write_signed_number(fd, "engine_mode=", engine_mode);
   write_number(fd, "simulation_ticks=",
                static_cast<uint64_t>(simulation_ticks));
-  timespec event_time{};
-  if (clock_gettime(CLOCK_REALTIME, &event_time) == 0) {
-    write_number(fd, "event_time_epoch_seconds=",
-                 static_cast<uint64_t>(event_time.tv_sec));
-  }
+  write_event_metadata(fd);
   fsync(fd);
 }
 

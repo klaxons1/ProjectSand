@@ -11928,6 +11928,7 @@ void *__fastcall main_loop()
   do
   {
 #if defined(__ANDROID__)
+    // The logger rate-limits heartbeat updates; keep the recovered loop intact.
     sand_report_engine_progress(static_cast<unsigned char>(g_engine_mode),
                                 static_cast<unsigned int>(g_simulation_tick_counter));
 #endif

@@ -15,6 +15,8 @@ void sand_prepare_crash_signal_stack(void);
 
 // Record a normal native engine-loop return, which is not a fatal signal.
 void sand_log_engine_loop_exit(int engine_mode, unsigned int simulation_ticks);
+
+// Publish the engine heartbeat and let the Java watchdog record a stalled loop.
 void sand_report_engine_progress(int engine_mode, unsigned int simulation_ticks);
 void sand_check_engine_progress(void);
 

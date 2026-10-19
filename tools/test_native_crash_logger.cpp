@@ -58,9 +58,11 @@ static bool run_crash_case(const char *preferred, const char *fallback,
   std::ifstream report(path);
   const std::string contents((std::istreambuf_iterator<char>(report)),
                              std::istreambuf_iterator<char>());
-  for (const char *expected : {"NATIVE ENGINE LOOP RETURNED", "engine_mode=7",
+  for (const char *expected : {"EXECUTABLE MAPPINGS AT LOGGER SETUP",
+                               "NATIVE ENGINE LOOP RETURNED", "engine_mode=7",
                                "simulation_ticks=1234", "PROGRESS STALLED",
-                               "stalled_for_ms=", "NATIVE FATAL SIGNAL",
+                               "stalled_for_ms=", "event_time_epoch_seconds=",
+                               "event_time_nanoseconds=", "pid=", "NATIVE FATAL SIGNAL",
                                "signal_name=SIGSEGV", "signal=11", "fault_address=",
                                "crash_time_epoch_seconds=", "pc=0x", "sp=0x"}) {
     if (contents.find(expected) == std::string::npos) {
