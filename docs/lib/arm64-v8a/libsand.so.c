@@ -144,7 +144,8 @@ _QWORD *__fastcall sub_16B08(_QWORD *a1);
 unsigned __int64 __fastcall sub_16B34(unsigned __int64 a1);
 unsigned __int64 sub_16B54();
 void *__fastcall operator new(size_t size);
-__int64 __fastcall operator new[](unsigned __int64); // idb
+void *__fastcall sub_16C00(size_t size); // recovered from ARM64 machine code at 0x16C00
+void *__fastcall operator new[](size_t size); // recovered from ARM64 machine code at 0x16C3C
 __int64 __fastcall _gxx_personality_v0(int a1, char a2, __int64 a3, __int64 a4, _QWORD *a5);
 __int64 sub_16E18();
 __int64 __fastcall sub_16E20(_QWORD *a1);
@@ -13018,10 +13019,20 @@ void *__fastcall operator new(size_t size)
 // E50C40: using guessed type __int64 qword_E50C40;
 
 //----- (0000000000016C00) ----------------------------------------------------
-#error "16C24: call analysis failed (funcsize=15)"
+// Recovered from ARM64 .text: call _Znwm (operator new(size)) and return.
+// The separate cold landing pad at 0x16C14 handles allocation exceptions.
+void *__fastcall sub_16C00(size_t size)
+{
+  return operator new(size);
+}
 
 //----- (0000000000016C3C) ----------------------------------------------------
-#error "16C58: call analysis failed (funcsize=9)"
+// Normal path is the same allocation wrapper; exception landing code is
+// emitted by the compiler for the clean C++ implementation.
+void *__fastcall operator new[](size_t size)
+{
+  return operator new(size);
+}
 
 //----- (0000000000016C64) ----------------------------------------------------
 __int64 __fastcall _gxx_personality_v0(int a1, char a2, __int64 a3, __int64 a4, _QWORD *a5)
@@ -18003,4 +18014,5 @@ LABEL_22:
 // E50EF0: using guessed type __int64 qword_E50EF0;
 
 // nfuncs=334 queued=249 decompiled=249 lumina nreq=0 worse=0 better=0
-#error "There were 2 decompilation failure(s) on 249 function(s)"
+// The Hex-Rays failures in the two allocation wrappers (0x16C00, 0x16C3C)
+// were recovered from ARM64 machine code; cold exception paths are compiler-generated.

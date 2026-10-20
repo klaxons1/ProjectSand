@@ -6,21 +6,11 @@
     <item name="about_email" type="id" />
     <item name="about_rate" type="id" />
     <item name="about_text" type="id" />
-    <item name="button_state" type="id" />
     <item name="back_button" type="id" />
     <item name="brush_size" type="id" />
     <item name="email_button" type="id" />
     <item name="enable_dev" type="id" />
-    <item name="ex1" type="id" />
-    <item name="ex2" type="id" />
-    <item name="ex3" type="id" />
-    <item name="ex4" type="id" />
-    <item name="ex5" type="id" />
-    <item name="ex6" type="id" />
-    <item name="ex7" type="id" />
-    <item name="ex8" type="id" />
     <item name="fix_button" type="id" />
-    <item name="freemium_back" type="id" />
     <item name="help_back" type="id" />
     <item name="help_email" type="id" />
     <item name="help_html" type="id" />
@@ -31,7 +21,6 @@
     <item name="menu_sandbox" type="id" />
     <item name="menu_settings" type="id" />
     <item name="menu_puzzle" type="id" />
-    <item name="never" type="id" />
     <item name="option_background" type="id" />
     <item name="option_background_blue" type="id" />
     <item name="option_background_grey" type="id" />
@@ -41,7 +30,6 @@
     <item name="option_engine_diag" type="id" />
     <item name="option_engine_first" type="id" />
     <item name="option_engine_onesim" type="id" />
-    <item name="option_show_pro" type="id" />
     <item name="option_toolbox" type="id" />
     <item name="option_toolbox_color" type="id" />
     <item name="option_toolbox_one" type="id" />
@@ -56,7 +44,6 @@
     <item name="sand_view" type="id" />
     <item name="save_button" type="id" />
     <item name="scroll_tools" type="id" />
-    <item name="show_premium" type="id" />
     <item name="tableRow2" type="id" />
     <item name="tool_acid" type="id" />
     <item name="tool_algae" type="id" />

@@ -1,18 +1,86 @@
-# Полный декомпил libsand.so — REA via Hex-Rays 9.4 + rea-agents objdump
+# ARM64 source reconstruction status
 
-## Источник
-- `docs/lib/x86_64/libsand.so` sha256 `670b355a1fcef6022479342af6c957792fc41294459677cc4b7b925a4fb23660` (elf64 x86_64, 136K) — REA `inspect-with-objdump disassemble` + `inspect-binary-layout` + Hex-Rays decompile 17 287 строк → `docs/lib/x86_64/libsand.so.c`
-- `docs/lib/arm64-v8a/libsand.so` (elf aarch64, 143K) — 18 006 строк → `docs/lib/arm64-v8a/libsand.so.c`
-- Сигнатуры: `Java_smellymoo_sand_Engine_init` x86 `0x15100` / arm64 `0x16778`, `run_command 0x140D0/0x169a0`, `main_loop 0x14620/0x16f10`, `init_all 0x13DD0/0x16510` — `readelf -Ws` + `nm -D`
+## Target and source of truth
 
-## Что декомпилировано
-- `init_all(char a1)` — вся таблица частиц `qword_9ABE80[150003*idx]`, `byte_22058` групп, `xmmword_225E0/225F0/22600` состояние, `chain_update/clear_screen/clear_eraser`
-- `run_command(command_struct)` — 24 ветки switch (1 KILL/2 DOWN/3 MOVE/4 UP/5 SET_MAT/7 slowMo/8 borders/9-10 zoom/11 init_all/12 clear/13 spouts/14 release/15 line/16 background/17 random type/18 pause/19 view/20 brushSize/22 restore+calc_state_all/23 snapshot/24 wipe)
-- `main_loop()` — ANativeWindow lock loop, очередь 50 команд `unk_9ABD40`, `spouts texture()→add_type()`, particle scan `current_can_sleep/seek_particle/seek_gas/seek_boom/seek_ray/pressures`, `set_frame + ANativeWindow_unlockAndPost + usleep 100ms`, состояния `byte_2204B`
-- 40+ физик-функций: `slide_powder/liquid`, `pull_surface_HRib`, `drop_interupted`, `process_transistion`, `wake_around`, `shift_drop/lines`, `draw_point/square/particle`, `texture`, `chain_append` — в `.c` с адресами
+The requested ABI is `arm64-v8a`. The reference inputs are `docs/lib/arm64-v8a/libsand.so.c` and the matching AArch64 ELF `docs/lib/arm64-v8a/libsand.so`. The x86_64 artifacts are cross-reference material only. The original `.so` is not linked or packaged as a replacement.
 
-## Как перенесено в свой cpp
-`app/src/main/cpp/sand_engine.{h,cpp}` arm64-only, CMake 3.22.1 — все 60 mangled `_Z...` объявлены как обёртки на `init_simulation/simulate_step/render_frame/process_command/main_loop/init_all/texture/change_zoom`. Полная 1:1 физика требует Ghidra типов, сейчас MVP рисует и собирает CI; декомпил лежит как референс для добивки.
+## Current source path
 
-## REA-трасса
-`npx rea-agents inspect-with-objdump libsand.so disassemble --format json` → evidence `ev_29b64de7...`, objdump .plt/.text, JSON-верификация.
+`tools/generate_arm64_decompile.py` produces `app/src/main/cpp/arm64/libsand_decompiled.cpp`; `app/src/main/cpp/CMakeLists.txt` builds that file as `libsand.so` (output name `sand`) and rejects non-ARM64 Android ABIs. The former standalone grid-simulation prototype (`sand_engine.cpp/.h`) and its separate ported-decompile stub have been removed; there is one active native engine source, not parallel implementations.
+
+The generator maps the ELF `.data` and `.bss` address range into one contiguous, zero-initialized native memory arena. It copies the original `.data` bytes into the start of that arena and maps the named globals at their original offsets. This is needed because engine code indexes through `g_shared_engine_data` across the `.data`/`.bss` boundary. The `.bss` range remains `0x33510`–`0xE50EF8` (size `0xE1D9E8`). A referenced read-only table is kept in the generated source. ELF startup/libc++abi teardown shims are omitted in favor of Android's runtime, the private JNI dispatch is expressed through the NDK `JNIEnv` API, and both native entry points retain unmangled `JNIEXPORT`/`JNICALL` linkage for ART lookup.
+
+The generator removes the orphan PLT resolver and dead libc++abi prototypes, gives the active native functions descriptive names, replaces all remaining Hex-Rays `aN`/`vN`/`result` locals and address-derived data labels with semantic or role-based names, and names the principal engine globals and particle-record fields. It also makes several decompiler pointer/integer casts explicit and preserves unsigned initializer bit patterns. Array views for the shared engine data, material table, particle records, and native-window buffer are extended to the bounds actually used in the shared arena. In `draw_particle`, the invalid `dword_0 + particle_pointer` expression is rewritten as a field read at `particle_pointer + 2`, matching the ARM64 load from `[x7, #2]`. These are concrete deobfuscation/reconstruction steps, not proof that every inferred type or operation matches the original behavior.
+
+## Runtime defect found: startup never entered simulation
+
+The device report (static water/propane and incomplete drawing) matches a startup deadlock in the recovered `update_framebuffer()`/`main_loop()` flow. On a successful `ANativeWindow_lock`, `main_loop()` stores the non-null `ANativeWindow_Buffer.bits` pointer in `g_framebuffer_pixels` before calling `update_framebuffer()`. When `g_engine_mode == 2`, the recovered frame update changed the mode to 3 and then used that non-null pointer to jump past initialization, including the transition to mode 7 and the Java initialization callback. `main_loop()` then skips both queued commands and simulation for modes 0–4, leaving the engine permanently at mode 3. This also prevents the initial queued commands from configuring the scene, consistent with the rendering symptoms.
+
+The generator now removes that stale-framebuffer shortcut: mode 2 always completes one-time/resume initialization while retaining the valid pixel pointer for framebuffer bookkeeping. This lets the existing path advance to mode 7, invoke the Java initialization callback, consume queued commands, and reach particle update/render branches. The ARM64 disassembly at `0xFCE0` and `0x15BB0` confirms the branch and call ordering; the behavioral correction is intentionally source-only and does not use or package the reference `.so`.
+
+## Recovered state names
+
+| Generated name | ELF address | Recovered role |
+|---|---:|---|
+| `g_shared_engine_data` | `0x33008` | Shared header/material-state area; its first byte is also a layer/buffer count. |
+| `g_material_properties` | `0x33018` | 12-byte material-property records overlaid on the shared data area. |
+| `g_framebuffer_stride` | `0x3300C` | Row stride copied from the locked `ANativeWindow_Buffer`. |
+| `g_engine_mode` | `0x33010` | Native engine lifecycle/render mode. |
+| `g_current_particle_index` | `0x33014` | Current particle index, including the `-2` sentinel. |
+| `g_view_width`, `g_view_height` | `0x33510`, `0x33512` | Simulation dimensions after zoom scaling. |
+| `g_background_color` | `0x33514` | Background color used when clearing. |
+| `g_particle_records` | `0x4C7380` | Short-oriented view of the 20-byte particle records. |
+| `g_particle_record_bytes` | `0x4C7410` | Overlapping byte-oriented view of that same arena, not a separate auxiliary array; Hex-Rays expressions use negative constants to address fields relative to each record. |
+| `g_framebuffer_pixels`, `g_cell_state_grid` | `0xE50A08`, `0xE50A10` | Current pixel buffer and per-cell simulation allocation. |
+| `g_jni_env`, `g_surface_global_ref`, `g_native_window` | `0xE50A78`, `0xE50A80`, `0xE50A88` | JNI/window lifecycle handles. |
+| `g_command_queue` | `0xE50B08` | 50-entry, 6-byte command ring; adjacent names are its read/write indexes. |
+| `g_direction_index` | `0xE50A18` | Eight-way movement/direction table selector (`g_direction_lut` entries are 16 shorts per direction). |
+| `g_search_direction`, `g_search_remaining`, `g_search_step` | `0xE50A30`–`0xE50A32` | Shared angular-scan cursor, remaining probes, and signed direction increment used by `near_point()` and the movement routines. |
+| `g_found_x`, `g_found_y` | `0xE50A38`, `0xE50A3A` | Coordinates written when `pixel_is()` finds a matching neighboring cell and consumed by the particle movement routines. |
+
+### Particle-record layout (20 bytes per record)
+
+The two decompiler globals at `0x4C7380` and `0x4C7410` are not separate arrays. Their accesses resolve to the same record: for example, the original `g_particle_record_bytes[20 * i - 136]` expression is byte offset 8 of record `i`, while `...[20 * i - 140]` addresses byte offset 4. The generator now expresses these as record-relative accessors (`particle_material_id(i)`, `particle_flags(i)`, `particle_packed_state(i)`, `particle_counter(i)`, and `particle_next_link(i)`) rather than preserving the shifted-base arithmetic. This recovers structure without changing storage or behavior.
+
+| Byte offset | Recovered use |
+|---:|---|
+| `0`–`1` | Particle x coordinate. |
+| `2`–`3` | Particle y coordinate. |
+| `4`–`7` | 32-bit next-particle/list link. |
+| `8` | Material identifier. |
+| `9` | Bit flags (masks `1`, `2`, and `4` are independently tested). |
+| `11` | Additional one-bit state flag. |
+| `12` | Packed particle state/category bits. |
+| `16` | Mutable per-particle counter (incremented, cleared, and assigned by update routines; exact gameplay meaning remains under audit). |
+| Other bytes | Not assigned semantic names until their use is fully traced. |
+
+### Movement routine findings
+
+- `process_gas_motion()` seeds the shared eight-direction scan cursor from the engine RNG, tests neighbors through `near_point()`, then relocates the gas particle record and cell-grid entry to the match. Its two gas-mode paths apply different boundary/fallback checks.
+- `process_particle_motion()` takes its x/y step from direction-table entries 4 and 5, compares the adjacent material property at offset 1 (the density ordering used elsewhere), and selects the material motion family from the property record: category 3 dispatches to `slide_powder()`, category 4 to `slide_liquid()`. The generated function names its main position, delta, density, scan, and target-cell locals while preserving the original branches.
+- `slide_powder()` and `slide_liquid()` share the same two-stage move policy: test a preferred offset combined with the flow vector, then a lateral-only fallback; both use the destination material's property at offset 17 against the caller-provided movement threshold before `shift_line()`. The direction table's entries 2/3 and 6/7 are the side probes, 4/5 the primary flow delta, 10/11 are used by `can_sleep()` and `process_flames()`, and 12/13 or 14/15 are the side-dependent slide offsets. Liquid movement adds an initial side-probe gate and calls `pull_surface_particles()` if its primary candidate is blocked; powder goes directly through the preferred/fallback checks. Both encode the selected slide variant back into the particle state bits.
+
+The original listing accessed direction-vector components 10–15 by indexing past the end of the 440-byte material-property table. The ELF places the direction table immediately after it (`0x1C6A0 + 0x1B8 = 0x1C858`), so those same addresses are now expressed as in-bounds `g_direction_lut[16 * direction + component]` accesses. This preserves the address calculation while making the table boundary explicit and avoiding out-of-bounds C++ pointer arithmetic.
+
+## Crash fixes for ignition and frame scheduling
+
+The host AddressSanitizer regression reproduced two invalid-memory paths relevant to frequent ignition. In `extinguish_fire()`, Hex-Rays had left a computed-goto lookup through a one-entry table immediately before a normal `switch`; combustible material behavior codes (including firework powder and gunpowder) indexed beyond that table. The native C++ switch already performs the dispatch, so the synthetic read is removed. The same artifact was present in `dispatch_engine_command()` and has also been removed. Separately, `main_loop()` passed a one-byte decompiler local to `clock_gettime()`, which writes a full 16-byte `timespec`; the local is now correctly declared as `struct timespec` and the scheduler reads `tv_nsec` explicitly. These stack writes could corrupt adjacent scheduler state during frequent particle updates.
+
+The host probe now exercises the material-action cases for material IDs 22 and 23, and the test script runs both native probes under AddressSanitizer. This confirms the ignition dispatch and frame scheduler paths no longer trigger the reproduced out-of-bounds accesses. It does not replace an Android/device test.
+
+## Verification and remaining work
+
+- **Passed:** generator execution; strict host `g++ -std=c++17 -fsyntax-only` using temporary host Android/JNI stubs (zero syntax errors); host object compilation; `nm` confirms both unmangled JNI exports; focused assertions cover startup mode progression, particle-record accessors, and in-bounds direction-table references in the movement helpers; `git diff --check`.
+- **Not run here:** Android/NDK compile and link. This environment has no Android NDK toolchain or Java/JDK executable available.
+- **External Gradle log received:** it linked `sand_engine.cpp.o` and `ported_decompile.cpp.o` and failed on undefined simulation globals (`g_zoom_raw`, `g_selectedMat`, etc.). That log used the old CMake source list, so it did not build this generated source. The current `CMakeLists.txt` lists only `arm64/libsand_decompiled.cpp`; do not fix that old failure by adding simulation stubs.
+- **Not run:** device/emulator behavior comparison against the original ARM64 library.
+
+Therefore the source is wired into the ARM64 CMake target, but a successful Android build and behavioral 1:1 equivalence have **not** been established. In particular, the decompiler's inferred signatures and pointer/integer conversions still need audit against the ARM64 instructions, followed by NDK build and runtime tests covering JNI lifecycle, drawing, commands, and particle evolution.
+
+## Important artifacts
+
+- ARM64 ELF: `docs/lib/arm64-v8a/libsand.so`
+- ARM64 decompilation: `docs/lib/arm64-v8a/libsand.so.c`
+- Generator: `tools/generate_arm64_decompile.py`
+- Generated candidate: `app/src/main/cpp/arm64/libsand_decompiled.cpp`
+- Compatibility layer: `app/src/main/cpp/defs.h`

@@ -34,8 +34,15 @@ public class Engine {
 
     private static native void command(char c, short s, short s2, boolean z);
 
+    static native String configureCrashLogging(String preferredDirectory,
+                                               String fallbackDirectory);
+
+    static native void prepareCrashSignalStack();
+
+    static native void checkNativeEngineProgress();
+
     /* JADX INFO: Access modifiers changed from: private */
-    public static native void init(Surface surface2, char c, boolean z, boolean z2);
+    private static native void init(Surface surface2, char c, boolean z, boolean z2);
 
     static {
         System.loadLibrary("sand");
@@ -95,6 +102,7 @@ public class Engine {
 
     public static int construct_engine(Context app_c) {
         app_context = app_c;
+        CrashLogManager.initialize(app_context);
         prefs = PreferenceManager.getDefaultSharedPreferences(app_context);
         engine_mode = prefs.getInt("mode", 1);
         dev = prefs.getBoolean("dev", false);
@@ -264,6 +272,7 @@ public class Engine {
 
         @Override // java.lang.Thread, java.lang.Runnable
         public void run() {
+            Engine.prepareCrashSignalStack();
             Engine.init(Engine.surface, this.from == 1 ? (char) 3 : Engine.zoom, false, false);
         }
     }
