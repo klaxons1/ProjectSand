@@ -1,0 +1,12 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" style="@style/page">
+  <TextView android:id="@+id/help_title" android:text="@string/help_title" style="@style/title"/>
+  <ScrollView android:id="@+id/scrollView1" android:paddingTop="10.000000dip" android:paddingBottom="10.000000dip" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@+id/help_buttons" android:layout_below="@+id/help_title">
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+      <WebView android:id="@+id/help_html" android:background="#FF000000" android:layout_width="wrap_content" android:layout_height="match_parent"/>
+    </LinearLayout>
+  </ScrollView>
+  <LinearLayout android:id="@+id/help_buttons" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:layout_centerHorizontal="true">
+    <Button android:id="@+id/help_back" android:text="@string/button_back" android:onClick="click" style="@style/button"/>
+    <Button android:textColor="#FF00FF00" android:id="@+id/help_email" android:text="@string/button_email" android:onClick="click" style="@style/button"/>
+  </LinearLayout>
+</RelativeLayout>

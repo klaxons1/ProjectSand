@@ -136,7 +136,7 @@ __int64 (__fastcall **__fastcall sub_15460(_QWORD *a1))();
 __int64 (__fastcall **__fastcall sub_15480(_QWORD *a1))();
 void *__fastcall operator new(size_t size);
 void *__fastcall sub_15530(size_t a1);
-__int64 __fastcall operator new[](unsigned __int64); // idb
+void *__fastcall operator new[](size_t size); // recovered from the x86_64 machine code at 0x15570
 __int64 __fastcall _gxx_personality_v0(int a1, char a2, __int64 a3, __int64 a4, __int64 a5);
 __int64 sub_15760(); // weak
 __int64 __fastcall sub_15770(_QWORD *a1);
@@ -12432,7 +12432,13 @@ void *__fastcall sub_15530(size_t a1)
 }
 
 //----- (0000000000015570) ----------------------------------------------------
-#error "15589: call analysis failed (funcsize=9)"
+// Recovered from x86_64 .text: `call operator new(size)` followed by `ret`.
+// The decompiler's failed block at 0x15589 is an unwind landing pad after the
+// normal return path, not part of the allocation's success path.
+void *__fastcall operator new[](size_t size)
+{
+  return operator new(size);
+}
 
 //----- (00000000000155B0) ----------------------------------------------------
 __int64 __fastcall _gxx_personality_v0(int a1, char a2, __int64 a3, __int64 a4, __int64 a5)
@@ -17284,4 +17290,4 @@ LABEL_6:
 // E3FFB0: using guessed type __int64 qword_E3FFB0;
 
 // nfuncs=315 queued=236 decompiled=236 lumina nreq=0 worse=0 better=0
-#error "There were 1 decompilation failure(s) on 236 function(s)"
+// The sole Hex-Rays failure (0x15589) is recovered above from the machine code.
